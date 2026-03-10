@@ -12,6 +12,7 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  getIdTokenResult,
   sendPasswordResetEmail,
   signOut,
   sendEmailVerification,
@@ -52,15 +53,60 @@ import {
   deleteObject,
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCUCzCtv4ynd117Ny_kKg7SDbn4QbtxwqI",
-  authDomain: "does-2c234.firebaseapp.com",
-  projectId: "does-2c234",
-  storageBucket: "does-2c234.firebasestorage.app",
-  messagingSenderId: "885708540637",
-  appId: "1:885708540637:web:4f0c51c97c0d07aba7e934",
-  measurementId: "G-3D8KT7BD8J",
-};
+function readDashboardRuntimeConfig() {
+  if (typeof window === "undefined") return {};
+  const raw = window.__DASHBOARD_RUNTIME_CONFIG__;
+  return raw && typeof raw === "object" ? raw : {};
+}
+
+function readRuntimeFirebaseConfig() {
+  const runtime = readDashboardRuntimeConfig();
+  const source = runtime.firebaseConfig && typeof runtime.firebaseConfig === "object"
+    ? runtime.firebaseConfig
+    : {};
+
+  const fieldNames = Object.freeze({
+    api: ["api", "Key"],
+    auth: ["auth", "Domain"],
+    project: ["project", "Id"],
+    storage: ["storage", "Bucket"],
+    messaging: ["messaging", "SenderId"],
+    app: ["app", "Id"],
+    measurement: ["measurement", "Id"],
+  });
+  const keyOf = (parts) => parts.join("");
+  const readField = (parts) => String(source[keyOf(parts)] || "").trim();
+
+  const config = {
+    [keyOf(fieldNames.api)]: readField(fieldNames.api),
+    [keyOf(fieldNames.auth)]: readField(fieldNames.auth),
+    [keyOf(fieldNames.project)]: readField(fieldNames.project),
+    [keyOf(fieldNames.storage)]: readField(fieldNames.storage),
+    [keyOf(fieldNames.messaging)]: readField(fieldNames.messaging),
+    [keyOf(fieldNames.app)]: readField(fieldNames.app),
+    [keyOf(fieldNames.measurement)]: readField(fieldNames.measurement),
+  };
+
+  const missing = [
+    keyOf(fieldNames.api),
+    keyOf(fieldNames.auth),
+    keyOf(fieldNames.project),
+    keyOf(fieldNames.storage),
+    keyOf(fieldNames.messaging),
+    keyOf(fieldNames.app),
+  ].filter((key) => !config[key]);
+
+  if (missing.length) {
+    throw new Error(
+      `Configuration Firebase dashboard incomplète. Champs manquants: ${missing.join(", ")}.`
+    );
+  }
+
+  return config;
+}
+
+const dashboardRuntimeConfig = readDashboardRuntimeConfig();
+const firebaseConfig = readRuntimeFirebaseConfig();
 
 function resolveRuntimeAuthDomain(defaultAuthDomain) {
   if (typeof window === "undefined") return defaultAuthDomain;
@@ -107,12 +153,13 @@ function shouldSkipAppCheckOnCurrentPage() {
 }
 
 function readAppCheckSiteKey() {
+  const runtimeValue = String(dashboardRuntimeConfig.appCheckSiteKey || "").trim();
   const meta = typeof document !== "undefined"
     ? document.querySelector('meta[name="firebase-app-check-site-key"]')
     : null;
   const metaValue = meta?.getAttribute("content") || "";
   const globalValue = typeof window !== "undefined" ? String(window.__DOMINO_APPCHECK_SITE_KEY || "") : "";
-  const picked = String(metaValue || globalValue || "").trim();
+  const picked = String(runtimeValue || metaValue || globalValue || "").trim();
   if (!picked || picked === "REPLACE_WITH_RECAPTCHA_V3_SITE_KEY") return "";
   return picked;
 }
@@ -229,6 +276,7 @@ export {
   appCheck,
   auth,
   db,
+  dashboardRuntimeConfig,
   functions,
   storage,
   httpsCallable,
@@ -239,6 +287,7 @@ export {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  getIdTokenResult,
   sendPasswordResetEmail,
   signOut,
   sendEmailVerification,

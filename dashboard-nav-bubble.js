@@ -1,6 +1,7 @@
 (function () {
   const NAV_ID = "dlkDashboardNav";
   const STYLE_ID = "dlkDashboardNavStyle";
+  const SW_URL = "./sw.js";
   const currentPath = (() => {
     const pathname = String(window.location?.pathname || "");
     const last = pathname.split("/").filter(Boolean).pop() || "index.html";
@@ -159,9 +160,22 @@
     document.body.prepend(nav);
   }
 
+  async function registerDashboardServiceWorker() {
+    if (!("serviceWorker" in navigator)) return;
+    try {
+      await navigator.serviceWorker.register(SW_URL, { scope: "./" });
+    } catch (error) {
+      console.warn("[DASHBOARD_PWA] service worker dashboard indisponible", error);
+    }
+  }
+
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", renderNav, { once: true });
+    document.addEventListener("DOMContentLoaded", () => {
+      renderNav();
+      void registerDashboardServiceWorker();
+    }, { once: true });
   } else {
     renderNav();
+    void registerDashboardServiceWorker();
   }
 })();

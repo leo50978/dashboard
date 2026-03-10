@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="firebase-app-check-site-key" content="6Lc80IAsAAAAAD1dmys7iHV4bu8DeWdbYeM86y8D" />
+    <script src="./runtime-config.js"></script>
     <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="shortcut icon" href="./favicon.ico" />
@@ -128,6 +128,43 @@
         margin: 0;
         color: var(--muted);
         line-height: 1.65;
+      }
+
+      .cta-stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .install-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        border: none;
+        border-radius: 999px;
+        padding: 14px 18px;
+        font: inherit;
+        font-weight: 800;
+        color: #081120;
+        background: linear-gradient(135deg, #40c4ff 0%, #9ce4ff 100%);
+        cursor: pointer;
+        box-shadow: 0 18px 36px rgba(64, 196, 255, 0.22);
+      }
+
+      .install-button[disabled] {
+        cursor: default;
+        opacity: 0.72;
+      }
+
+      .install-note {
+        font-size: 0.9rem;
+        color: #d5e4ff;
+      }
+
+      .install-footnote {
+        font-size: 0.84rem;
+        color: var(--muted);
       }
 
       .stat-grid,
@@ -263,14 +300,20 @@
         </article>
 
         <aside class="info-card">
-          <h2>Structure prévue</h2>
+          <h2>Installer l’app</h2>
           <p>
-            `index.html` sert de point d’entrée. Chaque page du dossier utilise une barre de navigation commune et les imports locaux
-            du dossier `dashboard/`.
+            Installe le dashboard sur ton téléphone ou ton ordinateur pour l’ouvrir en plein écran et recevoir les notifications push
+            de nouvelles inscriptions et commandes.
           </p>
-          <p>
-            Les liens vers l’application publique restent orientés vers Dominoes Lakay pour éviter que les notifications ou retours
-            utilisateurs partent vers le mauvais domaine après extraction.
+          <div class="cta-stack">
+            <button id="dashboardInstallAppBtn" class="install-button" type="button">Installer l’app</button>
+            <p id="dashboardInstallStatus" class="install-note">
+              Le navigateur prépare l’installation. Laisse le dashboard chargé quelques instants si le bouton n’est pas encore prêt.
+            </p>
+          </div>
+          <p class="install-footnote">
+            Sur iPhone, l’installation passe par le menu Partager de Safari. Sur Android et desktop, le navigateur peut proposer une
+            installation native en un clic.
           </p>
         </aside>
       </section>
@@ -321,5 +364,13 @@
     </main>
 
     <script src="./dashboard-nav-bubble.js"></script>
+    <script type="module">
+      import { initDashboardPwaInstallPrompt, attachDashboardInstallButton } from "./pwa-install.js";
+      void initDashboardPwaInstallPrompt();
+      attachDashboardInstallButton(
+        document.getElementById("dashboardInstallAppBtn"),
+        document.getElementById("dashboardInstallStatus"),
+      );
+    </script>
   </body>
 </html>

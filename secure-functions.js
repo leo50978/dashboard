@@ -139,3 +139,19 @@ export async function adminCheckSecure(payload = {}) {
 export async function setBotDifficultySecure(payload = {}) {
   return invokeCallable("setBotDifficulty", payload, "Impossible de changer le niveau des bots.");
 }
+
+export async function registerDashboardPushSubscriptionSecure(payload = {}) {
+  return invokeCallable(
+    "registerDashboardPushSubscriptionSecure",
+    payload,
+    "Impossible d'enregistrer les notifications push du dashboard."
+  );
+}
+
+export async function unregisterDashboardPushSubscriptionSecure(payload = {}) {
+  return invokeCallable(
+    "unregisterDashboardPushSubscriptionSecure",
+    payload,
+    "Impossible de désactiver les notifications push du dashboard."
+  );
+}

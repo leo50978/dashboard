@@ -11,6 +11,7 @@ import {
   query,
   orderBy,
   limit,
+  where,
   onSnapshot,
   serverTimestamp,
 } from "./firebase-init.js";
@@ -21,6 +22,7 @@ import {
   SUPPORT_MESSAGES_SUBCOLLECTION,
   CHANNEL_LIMIT,
   THREAD_MESSAGES_LIMIT,
+  MESSAGE_RETENTION_MS,
   formatMessageTime,
   uploadChatMedia,
   deleteChatMedia,
@@ -43,11 +45,14 @@ const CLIENT_WINDOW_STEP = 160;
 const CLIENT_WINDOW_MAX = 1280;
 const CLIENT_RENDER_LIMIT = 80;
 const THREAD_RENDER_LIMIT = 80;
+const PINNED_EXPIRES_AT_MS = 253402300799000;
 
 let channelUnsub = null;
+let channelPinnedUnsub = null;
 let threadsUnsub = null;
 let clientsUnsub = null;
 let selectedThreadUnsub = null;
+let selectedThreadPinnedUnsub = null;
 let selectedThreadId = "";
 let knownThreads = [];
 let knownClients = [];
@@ -55,6 +60,10 @@ let pendingChannelFile = null;
 let pendingThreadFile = null;
 let clientWindowSize = CLIENT_WINDOW_STEP;
 let clientsFallbackQuery = false;
+let recentChannelEntries = [];
+let pinnedChannelEntries = [];
+let recentThreadEntries = [];
+let pinnedThreadEntries = [];
 
 const openPublicBtn = document.getElementById("dashboardOpenPublicBtn");
 const metricThreadsEl = document.getElementById("dashMetricThreads");
@@ -287,6 +296,52 @@ function messageDocRef(scope, messageId, threadId = "") {
   return doc(db, SUPPORT_THREADS_COLLECTION, threadId, SUPPORT_MESSAGES_SUBCOLLECTION, messageId);
 }
 
+function mergePinnedEntries(recentEntries = [], pinnedEntries = []) {
+  const byId = new Map();
+  [...recentEntries, ...pinnedEntries].forEach((entry) => {
+    const id = String(entry?.id || "").trim();
+    if (!id) return;
+    byId.set(id, entry);
+  });
+  return Array.from(byId.values()).sort((left, right) => {
+    const leftPinned = left?.data?.pinned === true;
+    const rightPinned = right?.data?.pinned === true;
+    if (leftPinned !== rightPinned) return leftPinned ? -1 : 1;
+    if (leftPinned && rightPinned) {
+      const rightPinnedAt = Number(right?.data?.pinnedAtMs || 0);
+      const leftPinnedAt = Number(left?.data?.pinnedAtMs || 0);
+      if (rightPinnedAt !== leftPinnedAt) return rightPinnedAt - leftPinnedAt;
+    }
+    return Number(left?.data?.createdAtMs || 0) - Number(right?.data?.createdAtMs || 0);
+  });
+}
+
+function buildPinnedPatch(entry, pinned) {
+  if (pinned) {
+    return {
+      pinned: true,
+      pinnedAt: serverTimestamp(),
+      pinnedAtMs: Date.now(),
+      pinnedBy: AGENT_ACTOR.senderKey,
+      expiresAtMs: PINNED_EXPIRES_AT_MS,
+      expiresAt: new Date(PINNED_EXPIRES_AT_MS),
+      updatedAt: serverTimestamp(),
+    };
+  }
+
+  const createdAtMs = Number(entry?.data?.createdAtMs || Date.now());
+  const expiresAtMs = createdAtMs + MESSAGE_RETENTION_MS;
+  return {
+    pinned: false,
+    pinnedAt: null,
+    pinnedAtMs: 0,
+    pinnedBy: "",
+    expiresAtMs,
+    expiresAt: new Date(expiresAtMs),
+    updatedAt: serverTimestamp(),
+  };
+}
+
 async function refreshThreadSummary(threadId) {
   if (!threadId) return;
 
@@ -350,6 +405,33 @@ async function editMessage(scope, entry, threadId = "") {
   }
 }
 
+async function togglePinnedMessage(scope, entry, threadId = "") {
+  const currentlyPinned = entry?.data?.pinned === true;
+  const nextPinned = !currentlyPinned;
+
+  try {
+    await updateDoc(
+      messageDocRef(scope, entry.id, threadId),
+      buildPinnedPatch(entry, nextPinned)
+    );
+    if (scope === "thread") {
+      await refreshThreadSummary(threadId);
+    }
+    setStatus(
+      scope === "channel" ? channelStatusEl : threadStatusEl,
+      nextPinned ? "Message épinglé." : "Message désépinglé.",
+      "success"
+    );
+  } catch (error) {
+    console.error("[DASH_CHAT] togglePinnedMessage error", error);
+    setStatus(
+      scope === "channel" ? channelStatusEl : threadStatusEl,
+      "Impossible de mettre à jour l'épinglage.",
+      "error"
+    );
+  }
+}
+
 async function removeMessage(scope, entry, threadId = "") {
   const ok = window.confirm("Supprimer ce message ?");
   if (!ok) return;
@@ -385,22 +467,31 @@ function renderBubbleList(target, entries, options = {}) {
   entries.forEach((entry) => {
     const data = entry?.data || {};
     const role = String(data.senderRole || "user");
+    const isPinned = data.pinned === true;
     const bubble = document.createElement("article");
     bubble.className = `bubble ${role === "agent" ? "agent" : "user"}`;
 
     const head = document.createElement("div");
     head.className = "bubble-head";
     const left = document.createElement("span");
-    left.textContent = String(data.displayName || (role === "agent" ? "Agent Dominoes" : "Utilisateur"));
+    left.textContent = `${isPinned ? "📌 " : ""}${String(data.displayName || (role === "agent" ? "Agent Dominoes" : "Utilisateur"))}`;
     const rightWrap = document.createElement("span");
     rightWrap.className = "bubble-head-right";
     const time = document.createElement("span");
-    time.textContent = formatMessageTime(data.createdAt || data.createdAtMs);
+    time.textContent = `${isPinned ? "Épinglé · " : ""}${formatMessageTime(data.createdAt || data.createdAtMs)}`;
     rightWrap.appendChild(time);
 
     if (options.editable === true) {
       const actions = document.createElement("span");
       actions.className = "bubble-actions";
+
+      const pinBtn = document.createElement("button");
+      pinBtn.type = "button";
+      pinBtn.className = "action-mini";
+      pinBtn.textContent = isPinned ? "Désépingler" : "Épingler";
+      pinBtn.addEventListener("click", () => {
+        togglePinnedMessage(options.scope || "channel", entry, options.threadId || "");
+      });
 
       const editBtn = document.createElement("button");
       editBtn.type = "button";
@@ -418,7 +509,7 @@ function renderBubbleList(target, entries, options = {}) {
         removeMessage(options.scope || "channel", entry, options.threadId || "");
       });
 
-      actions.append(editBtn, deleteBtn);
+      actions.append(pinBtn, editBtn, deleteBtn);
       rightWrap.appendChild(actions);
     }
 
@@ -602,10 +693,27 @@ async function openClientThread(clientId) {
 function selectThread(threadId) {
   if (!threadId) return;
   selectedThreadId = String(threadId);
+  recentThreadEntries = [];
+  pinnedThreadEntries = [];
   renderClientList(getFilteredClients());
   renderThreadList(getFilteredThreads());
   updateSelectedThreadHeader(findThreadById(selectedThreadId) || buildUserThreadFallback(selectedThreadId));
   watchSelectedThreadMessages(selectedThreadId);
+}
+
+function renderChannelEntries() {
+  renderBubbleList(channelFeedEl, mergePinnedEntries(recentChannelEntries, pinnedChannelEntries), {
+    editable: true,
+    scope: "channel",
+  });
+}
+
+function renderSelectedThreadEntries(threadId) {
+  renderBubbleList(threadFeedEl, mergePinnedEntries(recentThreadEntries, pinnedThreadEntries), {
+    editable: true,
+    scope: "thread",
+    threadId,
+  });
 }
 
 function watchChannel() {
@@ -613,22 +721,40 @@ function watchChannel() {
     channelUnsub();
     channelUnsub = null;
   }
+  if (channelPinnedUnsub) {
+    channelPinnedUnsub();
+    channelPinnedUnsub = null;
+  }
 
   channelUnsub = onSnapshot(
     query(collection(db, CHAT_COLLECTION), orderBy("createdAtMs", "desc"), limit(CHANNEL_LIMIT)),
     (snapshot) => {
-      const entries = snapshot.docs.map((item) => ({
+      recentChannelEntries = snapshot.docs.map((item) => ({
         id: item.id,
         data: item.data() || {},
-      })).reverse();
-      renderBubbleList(channelFeedEl, entries, {
-        editable: true,
-        scope: "channel",
-      });
+      }));
+      renderChannelEntries();
     },
     (error) => {
       console.error("[DASH_CHAT] watchChannel error", error);
       setStatus(channelStatusEl, "Impossible de lire le canal public.", "error");
+    }
+  );
+
+  channelPinnedUnsub = onSnapshot(
+    query(
+      collection(db, CHAT_COLLECTION),
+      where("pinned", "==", true)
+    ),
+    (snapshot) => {
+      pinnedChannelEntries = snapshot.docs.map((item) => ({
+        id: item.id,
+        data: item.data() || {},
+      }));
+      renderChannelEntries();
+    },
+    (error) => {
+      console.error("[DASH_CHAT] watchPinnedChannel error", error);
     }
   );
 }
@@ -688,6 +814,10 @@ function watchThreads() {
           selectedThreadUnsub();
           selectedThreadUnsub = null;
         }
+        if (selectedThreadPinnedUnsub) {
+          selectedThreadPinnedUnsub();
+          selectedThreadPinnedUnsub = null;
+        }
       }
       if (!selectedThreadId && knownThreads.length) {
         selectedThreadId = knownThreads[0].id;
@@ -698,6 +828,8 @@ function watchThreads() {
       if (selectedThreadId) {
         watchSelectedThreadMessages(selectedThreadId);
       } else if (threadFeedEl) {
+        recentThreadEntries = [];
+        pinnedThreadEntries = [];
         renderBubbleList(threadFeedEl, [], { editable: true, scope: "thread", threadId: "" });
       }
     },
@@ -710,9 +842,15 @@ function watchThreads() {
 
 function watchSelectedThreadMessages(threadId) {
   if (!threadId) return;
+  recentThreadEntries = [];
+  pinnedThreadEntries = [];
   if (selectedThreadUnsub) {
     selectedThreadUnsub();
     selectedThreadUnsub = null;
+  }
+  if (selectedThreadPinnedUnsub) {
+    selectedThreadPinnedUnsub();
+    selectedThreadPinnedUnsub = null;
   }
 
   selectedThreadUnsub = onSnapshot(
@@ -722,15 +860,11 @@ function watchSelectedThreadMessages(threadId) {
       limit(THREAD_MESSAGES_LIMIT)
     ),
     async (snapshot) => {
-      const entries = snapshot.docs.map((item) => ({
+      recentThreadEntries = snapshot.docs.map((item) => ({
         id: item.id,
         data: item.data() || {},
-      })).reverse();
-      renderBubbleList(threadFeedEl, entries, {
-        editable: true,
-        scope: "thread",
-        threadId,
-      });
+      }));
+      renderSelectedThreadEntries(threadId);
       await setDoc(doc(db, SUPPORT_THREADS_COLLECTION, threadId), {
         unreadForAgent: false,
         agentSeenAt: serverTimestamp(),
@@ -740,6 +874,23 @@ function watchSelectedThreadMessages(threadId) {
     (error) => {
       console.error("[DASH_CHAT] watchSelectedThreadMessages error", error);
       setStatus(threadStatusEl, "Impossible de lire ce fil.", "error");
+    }
+  );
+
+  selectedThreadPinnedUnsub = onSnapshot(
+    query(
+      collection(db, SUPPORT_THREADS_COLLECTION, threadId, SUPPORT_MESSAGES_SUBCOLLECTION),
+      where("pinned", "==", true)
+    ),
+    (snapshot) => {
+      pinnedThreadEntries = snapshot.docs.map((item) => ({
+        id: item.id,
+        data: item.data() || {},
+      }));
+      renderSelectedThreadEntries(threadId);
+    },
+    (error) => {
+      console.error("[DASH_CHAT] watchPinnedThreadMessages error", error);
     }
   );
 }

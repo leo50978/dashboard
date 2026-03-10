@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-  <meta name="firebase-app-check-site-key" content="6Lc80IAsAAAAAD1dmys7iHV4bu8DeWdbYeM86y8D" />
+  <script src="./runtime-config.js"></script>
   <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
   <link rel="shortcut icon" href="./favicon.ico" />
@@ -1003,13 +1003,20 @@
                 <div class="pt-2 border-t border-border">
                   <label class="flex items-center gap-2 mb-3">
                     <input type="checkbox" id="dashboardNotifToggle">
-                    <span class="text-sm">Activer notifications nouvelles commandes</span>
+                    <span class="text-sm">Activer les notifications push du dashboard</span>
                   </label>
-                  <p id="dashboardNotifStatus" class="text-sm text-text-secondary mb-2">Notifications navigateur: non activées</p>
-                  <button id="enableDashboardNotifBtn" class="btn btn-secondary">
-                    <i class="fas fa-bell"></i>
-                    Activer les notifications navigateur
-                  </button>
+                  <p id="dashboardNotifStatus" class="text-sm text-text-secondary mb-1">Notifications push: non activées</p>
+                  <p id="dashboardNotifDeviceStatus" class="text-xs text-text-secondary mb-3">Appareil courant: non synchronisé.</p>
+                  <div class="flex flex-wrap gap-3">
+                    <button id="enableDashboardNotifBtn" class="btn btn-secondary">
+                      <i class="fas fa-bell"></i>
+                      Activer les notifications push
+                    </button>
+                    <button id="testDashboardNotifBtn" class="btn btn-secondary">
+                      <i class="fas fa-vial"></i>
+                      Tester sur cet appareil
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1159,83 +1166,57 @@
   </div>
 
   <script type="module">
-    import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
-    import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app-check.js';
-    import { sendBroadcastNotification, NotificationComponent } from './notification.js';
-    import { 
-      getFirestore, 
-      collection, 
+    import {
+      auth,
+      db,
+      functions,
+      httpsCallable,
+      collection,
       collectionGroup,
-      addDoc, 
-      getDocs, 
+      addDoc,
+      getDocs,
       getDoc,
-      doc, 
-      updateDoc, 
+      doc,
+      updateDoc,
       setDoc,
       runTransaction,
       serverTimestamp,
-      deleteDoc, 
-      query, 
+      deleteDoc,
+      query,
       orderBy,
       where,
       limit,
-      onSnapshot 
-    } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
-    import { 
-      getAuth, 
+      onSnapshot,
       onAuthStateChanged,
       signInWithEmailAndPassword,
       createUserWithEmailAndPassword,
-      getIdTokenResult,
-      signOut 
-    } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
-    import {
-      getFunctions,
-      httpsCallable
-    } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-functions.js';
+      signOut,
+    } from './firebase-init.js';
+    import { sendBroadcastNotification } from './notification.js';
+    import { DashboardPushSubscriptionController } from './push-subscriptions.js';
 
-    // ========== CONFIG ==========
-  const firebaseConfig = {
-  apiKey: "AIzaSyCUCzCtv4ynd117Ny_kKg7SDbn4QbtxwqI",
-  authDomain: "does-2c234.firebaseapp.com",
-  projectId: "does-2c234",
-  storageBucket: "does-2c234.firebasestorage.app",
-  messagingSenderId: "885708540637",
-  appId: "1:885708540637:web:4f0c51c97c0d07aba7e934",
-  measurementId: "G-3D8KT7BD8J",
-};
-
-    const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-    const appCheckSiteKey = String(
-      document.querySelector('meta[name="firebase-app-check-site-key"]')?.getAttribute('content') || ''
-    ).trim();
-    if (appCheckSiteKey) {
-      try {
-        initializeAppCheck(app, {
-          provider: new ReCaptchaV3Provider(appCheckSiteKey),
-          isTokenAutoRefreshEnabled: true,
-        });
-      } catch (error) {
-        console.warn('[APP_CHECK][DPAYMENT] initialisation échouée', error);
-      }
-    }
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-    const functions = getFunctions(app);
     const adminCheckCallable = httpsCallable(functions, 'adminCheck');
     const migrateAmbassadorSecretsCallable = httpsCallable(functions, 'migrateAmbassadorSecrets');
     const bootstrapConfigCallable = httpsCallable(functions, 'getDpaymentBootstrapConfig');
-    const dashboardNotifier = new NotificationComponent({
-      mode: 'dashboard',
-      defaultUrl: './Dpayment.html',
-      enabledStorageKey: 'veltrixa_dashboard_payment_notif_enabled'
+    const dashboardPushController = new DashboardPushSubscriptionController({
+      defaultUrl: './Dpayment.html'
     });
-    dashboardNotifier.init();
 
-    const ADMIN_EMAIL_ALLOWLIST = ["leovitch2004@gmail.com"];
     const DISABLE_DASHBOARD_ADMIN_GUARD = false;
     const DISABLE_DASHBOARD_AUTH_GUARD = false;
     const DPAYMENT_ADMIN_BOOTSTRAP_DOC = 'dpayment_admin_bootstrap';
+
+    function isLocalDashboardDevHost() {
+      const host = String(window.location?.hostname || '').trim().toLowerCase();
+      const protocol = String(window.location?.protocol || '').trim().toLowerCase();
+      return (
+        protocol === 'file:' ||
+        host === 'localhost' ||
+        host === '127.0.0.1' ||
+        host === '::1' ||
+        host.endsWith('.local')
+      );
+    }
     
     // Collections
     const CLIENTS = "clients";
@@ -1377,7 +1358,9 @@
       addGameStakeBtn: document.getElementById('addGameStakeBtn'),
       dashboardNotifToggle: document.getElementById('dashboardNotifToggle'),
       dashboardNotifStatus: document.getElementById('dashboardNotifStatus'),
+      dashboardNotifDeviceStatus: document.getElementById('dashboardNotifDeviceStatus'),
       enableDashboardNotifBtn: document.getElementById('enableDashboardNotifBtn'),
+      testDashboardNotifBtn: document.getElementById('testDashboardNotifBtn'),
       customNotifTitle: document.getElementById('customNotifTitle'),
       customNotifBody: document.getElementById('customNotifBody'),
       customNotifUrl: document.getElementById('customNotifUrl'),
@@ -1938,15 +1921,10 @@
         if (!ordersNotifReady) {
           orders.forEach((o) => seenOrderIds.add(o.id));
           ordersNotifReady = true;
-        } else if (dashboardNotifier.isEnabled()) {
+        } else {
           for (const o of orders) {
             if (!seenOrderIds.has(o.id)) {
               seenOrderIds.add(o.id);
-              dashboardNotifier.notify(
-                'Nouvelle commande',
-                `Commande reçue ${o.uniqueCode || o.id}.`,
-                { url: './Dpayment.html', tag: `dashboard_order_${o.id}` }
-              );
             }
           }
         }
@@ -2136,21 +2114,12 @@
       return adminBootstrapConfig;
     }
 
-    function getAllowedAdminEmails() {
-      const emails = new Set(
-        ADMIN_EMAIL_ALLOWLIST
-          .map((item) => String(item || '').trim().toLowerCase())
-          .filter(Boolean)
-      );
-      const bootstrapEmail = String(adminBootstrapConfig?.email || '').trim().toLowerCase();
-      if (bootstrapEmail) emails.add(bootstrapEmail);
-      return emails;
-    }
-
-    function isAllowlistedAdminEmail(email) {
+    function matchesBootstrapAdminEmail(email) {
       const normalized = String(email || '').trim().toLowerCase();
       if (!normalized) return false;
-      return getAllowedAdminEmails().has(normalized);
+      const bootstrapEmail = String(adminBootstrapConfig?.email || '').trim().toLowerCase();
+      if (!bootstrapEmail) return true;
+      return normalized === bootstrapEmail;
     }
 
     function ensureDashboardAuthOverlay() {
@@ -2233,6 +2202,119 @@
       if (!overlay) return;
       overlay.classList.add('hidden');
       overlay.classList.remove('flex');
+    }
+
+    function ensureDashboardPushPermissionOverlay() {
+      let overlay = document.getElementById('dashboardPushPermissionOverlay');
+      if (overlay) return overlay;
+
+      overlay = document.createElement('div');
+      overlay.id = 'dashboardPushPermissionOverlay';
+      overlay.className = 'fixed inset-0 z-[5100] hidden items-center justify-center bg-slate-950/70 px-6 py-8 backdrop-blur-sm';
+      document.body.appendChild(overlay);
+      return overlay;
+    }
+
+    function hideDashboardPushPermissionOverlay() {
+      const overlay = document.getElementById('dashboardPushPermissionOverlay');
+      if (!overlay) return;
+      overlay.classList.add('hidden');
+      overlay.classList.remove('flex');
+      overlay.innerHTML = '';
+    }
+
+    function openDashboardPushPermissionOverlay({
+      mode = 'request',
+      onConfirm = null,
+      onClose = null,
+    } = {}) {
+      const overlay = ensureDashboardPushPermissionOverlay();
+      const isBlocked = mode === 'blocked';
+      const title = isBlocked
+        ? 'Notifications bloquées'
+        : 'Activer les alertes du dashboard';
+      const description = isBlocked
+        ? 'Le navigateur bloque déjà les notifications pour cette adresse. Réactive-les dans les réglages du site, puis réessaie.'
+        : 'Le navigateur va ouvrir sa fenêtre native pour te demander l’autorisation d’envoyer des alertes de nouveau client et de nouvelle commande.';
+      const hint = isBlocked
+        ? 'Sur desktop : clique sur l’icône à gauche de l’URL puis autorise les notifications. Sur iPhone : ouvre la PWA installée et active les notifications depuis Safari.'
+        : 'Tu verras ensuite la demande officielle du navigateur. Sans cette autorisation, les notifications hors app ne peuvent pas fonctionner.';
+      const primaryLabel = isBlocked ? "J'ai compris" : 'Autoriser maintenant';
+      const secondaryLabel = isBlocked ? '' : 'Plus tard';
+
+      overlay.innerHTML = `
+        <div class="w-full max-w-lg overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/92 shadow-2xl shadow-black/40">
+          <div class="border-b border-white/10 bg-gradient-to-r from-cyan-500/10 via-slate-950 to-amber-400/10 px-6 py-5">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex items-start gap-4">
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500/15 text-cyan-300">
+                  <i class="fas fa-bell text-lg"></i>
+                </div>
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Notifications push</p>
+                  <h3 class="mt-2 text-2xl font-semibold text-white">${escapeHtml(title)}</h3>
+                </div>
+              </div>
+              <button
+                id="dashboardPushPermissionClose"
+                type="button"
+                class="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 transition hover:bg-white/10 hover:text-white"
+                aria-label="Fermer"
+              >
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+          <div class="space-y-4 px-6 py-6 text-slate-200">
+            <p class="text-base leading-7 text-slate-200">${escapeHtml(description)}</p>
+            <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm leading-6 text-slate-300">
+              ${escapeHtml(hint)}
+            </div>
+            <div class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+              ${secondaryLabel ? `
+                <button
+                  id="dashboardPushPermissionSecondary"
+                  type="button"
+                  class="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 font-medium text-slate-200 transition hover:bg-white/10"
+                >${escapeHtml(secondaryLabel)}</button>
+              ` : ''}
+              <button
+                id="dashboardPushPermissionPrimary"
+                type="button"
+                class="inline-flex items-center justify-center rounded-2xl bg-cyan-400 px-5 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300"
+              >${escapeHtml(primaryLabel)}</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+
+      const close = () => {
+        hideDashboardPushPermissionOverlay();
+        if (typeof onClose === 'function') onClose();
+      };
+
+      overlay.querySelector('#dashboardPushPermissionClose')?.addEventListener('click', close);
+      overlay.querySelector('#dashboardPushPermissionSecondary')?.addEventListener('click', close);
+      overlay.addEventListener('click', (event) => {
+        if (event.target === overlay) close();
+      }, { once: true });
+
+      overlay.querySelector('#dashboardPushPermissionPrimary')?.addEventListener('click', async () => {
+        if (typeof onConfirm !== 'function') {
+          close();
+          return;
+        }
+        try {
+          await onConfirm();
+        } finally {
+          hideDashboardPushPermissionOverlay();
+        }
+      });
+
+      return overlay;
     }
 
     async function waitForInitialAuthUser() {
@@ -2369,13 +2451,10 @@
       if (DISABLE_DASHBOARD_ADMIN_GUARD) {
         return { ok: true };
       }
-      const tokenResult = await getIdTokenResult(user, true);
-      const hasAdminClaim = tokenResult?.claims?.admin === true;
-      const allowlistedEmail = isAllowlistedAdminEmail(user?.email);
-      if (!hasAdminClaim && !allowlistedEmail) {
+      if (!matchesBootstrapAdminEmail(user?.email)) {
         return {
           ok: false,
-          reason: "Ce compte n'est pas l'email admin autorisé pour ce dashboard.",
+          reason: "Ce compte ne correspond pas à l'email admin enregistré pour ce dashboard.",
         };
       }
 
@@ -2415,7 +2494,7 @@
         }
         user = await promptBootstrapAdminCreation();
       } else {
-        if (user && !isAllowlistedAdminEmail(user?.email)) {
+        if (user && !matchesBootstrapAdminEmail(user?.email)) {
           await signOut(auth).catch(() => {});
           user = null;
         }
@@ -2495,63 +2574,148 @@
       });
     }
 
-    function updateDashboardNotificationStatus() {
-      const enabled = dashboardNotifier.isEnabled();
+    async function updateDashboardNotificationStatus() {
+      const state = await dashboardPushController.getState();
       if (elements.dashboardNotifToggle) {
-        elements.dashboardNotifToggle.checked = enabled;
+        elements.dashboardNotifToggle.checked = !!state.preferenceEnabled;
       }
-      if (!('Notification' in window)) {
-        elements.dashboardNotifStatus.textContent = enabled
-          ? 'Notifications commandes: activées, mais navigateur non supporté'
-          : 'Notifications commandes: désactivées (navigateur non supporté)';
+
+      if (!state.supported) {
+        elements.dashboardNotifStatus.textContent = 'Notifications push non supportées sur cet appareil.';
+        elements.dashboardNotifDeviceStatus.textContent = 'Installe le dashboard en PWA sur un navigateur compatible pour recevoir les alertes.';
         elements.enableDashboardNotifBtn.disabled = true;
+        elements.testDashboardNotifBtn.disabled = true;
         return;
       }
-      const p = Notification.permission;
-      if (p === 'granted') {
-        elements.dashboardNotifStatus.textContent = enabled
-          ? 'Notifications commandes: activées'
-          : 'Notifications commandes: désactivées';
-        elements.enableDashboardNotifBtn.disabled = !enabled;
-      } else if (p === 'denied') {
-        elements.dashboardNotifStatus.textContent = enabled
-          ? 'Notifications commandes activées, mais bloquées par le navigateur'
-          : 'Notifications commandes désactivées';
+
+      if (!state.pushConfigured) {
+        elements.dashboardNotifStatus.textContent = 'Notifications push indisponibles : clé publique VAPID absente.';
+        elements.dashboardNotifDeviceStatus.textContent = 'Ajoute la clé Web Push publique dans runtime-config.js.';
         elements.enableDashboardNotifBtn.disabled = true;
-      } else {
-        elements.dashboardNotifStatus.textContent = enabled
-          ? 'Notifications commandes activées, permission navigateur requise'
-          : 'Notifications commandes désactivées';
-        elements.enableDashboardNotifBtn.disabled = !enabled;
+        elements.testDashboardNotifBtn.disabled = true;
+        return;
+      }
+
+      if (state.permission === 'denied') {
+        elements.dashboardNotifStatus.textContent = 'Notifications push bloquées par le navigateur.';
+        elements.dashboardNotifDeviceStatus.textContent = 'Réactive la permission navigateur puis réessaie.';
+        elements.enableDashboardNotifBtn.disabled = false;
+        elements.enableDashboardNotifBtn.innerHTML = '<i class="fas fa-circle-info"></i> Voir comment autoriser';
+        elements.testDashboardNotifBtn.disabled = true;
+        return;
+      }
+
+      elements.dashboardNotifStatus.textContent = state.subscribed
+        ? 'Notifications push actives sur cet appareil.'
+        : (state.preferenceEnabled
+            ? 'Notifications prêtes, permission navigateur requise.'
+            : 'Notifications push désactivées sur cet appareil.');
+      elements.dashboardNotifDeviceStatus.textContent = state.subscribed
+        ? 'Appareil synchronisé avec le backend dashboard.'
+        : 'Appareil courant non synchronisé.';
+      elements.enableDashboardNotifBtn.disabled = false;
+      elements.enableDashboardNotifBtn.innerHTML = state.subscribed
+        ? '<i class="fas fa-bell-slash"></i> Désactiver sur cet appareil'
+        : '<i class="fas fa-bell"></i> Activer les notifications push';
+      elements.testDashboardNotifBtn.disabled = !state.subscribed;
+    }
+
+    async function performDashboardPushEnable() {
+      try {
+        await dashboardPushController.enable();
+        showToast('Notifications push activées', 'success');
+      } catch (error) {
+        const message = String(error?.message || '');
+        if (message.includes('Permission notifications refusée')) {
+          console.warn('⚠️ Permission notifications refusée par le navigateur.');
+          showToast('Le navigateur a refusé les notifications. Autorise-les dans les réglages du site puis réessaie.', 'warning');
+        } else {
+          console.error('❌ Erreur activation notifications dashboard:', error);
+          showToast(message || 'Erreur activation notifications push', 'error');
+        }
+      } finally {
+        await updateDashboardNotificationStatus();
       }
     }
 
-    function toggleDashboardNotifications() {
-      const enabled = !!elements.dashboardNotifToggle?.checked;
-      dashboardNotifier.setEnabled(enabled);
-      if (!enabled) {
-        showToast('Notifications commandes désactivées', 'info');
-      } else {
-        showToast('Notifications commandes activées', 'success');
+    async function performDashboardPushDisable() {
+      try {
+        await dashboardPushController.disable();
+        showToast('Notifications push désactivées', 'info');
+      } catch (error) {
+        const message = String(error?.message || '');
+        console.error('❌ Erreur désactivation notifications dashboard:', error);
+        showToast(message || 'Impossible de désactiver les notifications push.', 'error');
+      } finally {
+        await updateDashboardNotificationStatus();
       }
-      updateDashboardNotificationStatus();
+    }
+
+    async function promptDashboardPushPermissionIfNeeded() {
+      const state = await dashboardPushController.getState();
+      if (!state.supported) {
+        showToast('Notifications push non supportées sur cet appareil.', 'warning');
+        await updateDashboardNotificationStatus();
+        return;
+      }
+      if (!state.pushConfigured) {
+        showToast('Clé publique VAPID absente dans la configuration du dashboard.', 'warning');
+        await updateDashboardNotificationStatus();
+        return;
+      }
+      if (state.permission === 'denied') {
+        if (elements.dashboardNotifToggle) {
+          elements.dashboardNotifToggle.checked = false;
+        }
+        openDashboardPushPermissionOverlay({
+          mode: 'blocked',
+          onClose: () => {
+            updateDashboardNotificationStatus();
+          },
+        });
+        return;
+      }
+      if (state.permission === 'granted') {
+        await performDashboardPushEnable();
+        return;
+      }
+
+      openDashboardPushPermissionOverlay({
+        mode: 'request',
+        onClose: () => {
+          updateDashboardNotificationStatus();
+        },
+        onConfirm: async () => {
+          await performDashboardPushEnable();
+        },
+      });
+    }
+
+    async function toggleDashboardNotifications() {
+      const enabled = !!elements.dashboardNotifToggle?.checked;
+      if (!enabled) {
+        await performDashboardPushDisable();
+        return;
+      }
+      await promptDashboardPushPermissionIfNeeded();
     }
 
     async function enableDashboardNotifications() {
+      const state = await dashboardPushController.getState();
+      if (state.subscribed) {
+        await performDashboardPushDisable();
+        return;
+      }
+      await promptDashboardPushPermissionIfNeeded();
+    }
+
+    async function testDashboardNotifications() {
       try {
-        const permission = await dashboardNotifier.requestPermission();
-        if (permission === 'granted') {
-          showToast('Notifications navigateur activées', 'success');
-        } else if (permission === 'denied') {
-          showToast('Notifications bloquées par le navigateur', 'error');
-        } else {
-          showToast('Activation annulée', 'info');
-        }
+        await dashboardPushController.showTestNotification();
+        showToast('Notification de test envoyée sur cet appareil', 'success');
       } catch (error) {
-        console.error('❌ Erreur activation notifications dashboard:', error);
-        showToast('Erreur activation notifications', 'error');
-      } finally {
-        updateDashboardNotificationStatus();
+        console.error('❌ Erreur test notification push:', error);
+        showToast(error?.message || 'Impossible de tester la notification.', 'error');
       }
     }
 
@@ -4106,6 +4270,7 @@
       elements.saveSettingsBtn.addEventListener('click', saveSettings);
       elements.dashboardNotifToggle.addEventListener('change', toggleDashboardNotifications);
       elements.enableDashboardNotifBtn.addEventListener('click', enableDashboardNotifications);
+      elements.testDashboardNotifBtn.addEventListener('click', testDashboardNotifications);
       elements.sendCustomNotifBtn.addEventListener('click', sendCustomNotification);
     }
 
@@ -4115,7 +4280,7 @@
       const adminUser = await ensureAdminSession();
       if (!adminUser) return;
 
-      if (!DISABLE_DASHBOARD_ADMIN_GUARD) {
+      if (!DISABLE_DASHBOARD_ADMIN_GUARD && !isLocalDashboardDevHost()) {
         try {
           const migration = await migrateAmbassadorSecretsCallable({});
           const migratedCount = Number(migration?.data?.migrated || 0);
@@ -4125,6 +4290,8 @@
         } catch (err) {
           console.warn('⚠️ Migration secrets ambassadeur non exécutée:', err);
         }
+      } else if (isLocalDashboardDevHost()) {
+        console.info('ℹ️ Migration secrets ambassadeur ignorée en environnement local.');
       }
 
       await loadAllData();
@@ -4132,8 +4299,13 @@
       setupTabs();
       setupEventListeners();
       updatePdfPreview();
-      updateDashboardNotificationStatus();
-      document.addEventListener('visibilitychange', updateDashboardNotificationStatus);
+      await dashboardPushController.syncCurrentSubscription().catch((error) => {
+        console.warn('⚠️ Synchronisation push dashboard ignorée:', error);
+      });
+      await updateDashboardNotificationStatus();
+      document.addEventListener('visibilitychange', () => {
+        void updateDashboardNotificationStatus();
+      });
       
       // Écouter en temps réel les changements
       onSnapshot(collection(db, CLIENTS), async () => {

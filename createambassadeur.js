@@ -4,8 +4,6 @@ import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js";
 import { withButtonLoading } from "./loading-ui.js";
 import { createAmbassadorAccount, normalizeCode } from "./referral.js";
 
-const OWNER_EMAIL_ALLOWLIST = ["leovitch2004@gmail.com"];
-const DISABLE_DASHBOARD_OWNER_GUARD = false;
 const AMBASSADOR_UI_ENABLED = false;
 
 const elements = {
@@ -43,23 +41,8 @@ function renderOwnerStatus(user) {
     return;
   }
 
-  if (!DISABLE_DASHBOARD_OWNER_GUARD && !canUseOwnerEmail(user)) {
-    elements.ownerAuthStatus.textContent = `Connecté (non autorisé): ${user.email || user.uid}`;
-    elements.ownerAuthStatus.className = "rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700";
-    return;
-  }
-
-  elements.ownerAuthStatus.textContent = DISABLE_DASHBOARD_OWNER_GUARD
-    ? `Connecté: ${user.email || user.uid} (garde owner désactivée)`
-    : `Connecté: ${user.email || user.uid} (validation admin serveur requise)`;
+  elements.ownerAuthStatus.textContent = `Connecté: ${user.email || user.uid} (validation admin serveur requise)`;
   elements.ownerAuthStatus.className = "rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700";
-}
-
-function canUseOwnerEmail(user) {
-  if (!user?.email) return OWNER_EMAIL_ALLOWLIST.length === 0;
-  if (OWNER_EMAIL_ALLOWLIST.length === 0) return true;
-  const email = String(user.email || "").trim().toLowerCase();
-  return OWNER_EMAIL_ALLOWLIST.map((v) => String(v || "").trim().toLowerCase()).includes(email);
 }
 
 async function copyToClipboard(text) {
@@ -105,10 +88,6 @@ async function submitCreateAmbassador(event) {
 
   if (!currentUser) {
     setError("Connecte-toi d'abord avec ton compte owner.");
-    return;
-  }
-  if (!DISABLE_DASHBOARD_OWNER_GUARD && !canUseOwnerEmail(currentUser)) {
-    setError("Email non autorisé pour cette page owner.");
     return;
   }
   if (!name) {

@@ -1,7 +1,6 @@
 import { auth, loginWithEmail, logoutCurrentUser, watchAuthState } from "./auth.js";
 import { db, doc, getDoc } from "./firebase-init.js";
 
-const FINANCE_ADMIN_EMAIL = "leovitch2004@gmail.com";
 const BOOTSTRAP_DOC_ID = "dpayment_admin_bootstrap";
 
 function normalizeEmail(value = "") {
@@ -120,8 +119,8 @@ async function loadBootstrapEmail() {
 function isAllowedAdminUser(user, expectedEmail = "") {
   const email = normalizeEmail(user?.email || "");
   if (!email) return false;
-  const target = normalizeEmail(expectedEmail || FINANCE_ADMIN_EMAIL);
-  return email === target;
+  const target = normalizeEmail(expectedEmail || "");
+  return target ? email === target : true;
 }
 
 async function promptAdminLogin(expectedEmail = "", context = {}) {
@@ -134,7 +133,7 @@ async function promptAdminLogin(expectedEmail = "", context = {}) {
       const overlay = renderOverlay({
         title: contextTitle,
         description,
-        lockedEmail: expectedEmail || FINANCE_ADMIN_EMAIL,
+        lockedEmail: expectedEmail || "",
         error,
         busy,
       });
@@ -144,7 +143,7 @@ async function promptAdminLogin(expectedEmail = "", context = {}) {
         if (busy) return;
 
         const email = normalizeEmail(
-          overlay.querySelector("#sharedDashboardAuthEmail")?.value || expectedEmail || FINANCE_ADMIN_EMAIL
+          overlay.querySelector("#sharedDashboardAuthEmail")?.value || expectedEmail || ""
         );
         const password = String(overlay.querySelector("#sharedDashboardAuthPassword")?.value || "");
 
@@ -173,7 +172,7 @@ async function promptAdminLogin(expectedEmail = "", context = {}) {
 }
 
 export async function ensureFinanceDashboardSession(options = {}) {
-  const expectedEmail = normalizeEmail((await loadBootstrapEmail()) || FINANCE_ADMIN_EMAIL);
+  const expectedEmail = normalizeEmail(await loadBootstrapEmail());
   let user = auth.currentUser || await waitForFirstAuthUser();
 
   if (user && !isAllowedAdminUser(user, expectedEmail)) {
