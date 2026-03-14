@@ -580,9 +580,23 @@ function computeMetrics(raw, range) {
   completedRooms.forEach((room) => {
     const humans = Math.max(
       1,
-      safeInt(room.startedHumanCount || room.humanCount || asArray(room.playerUids).filter(Boolean).length || 1)
+      safeInt(
+        Number.isFinite(Number(room.startedHumanCount))
+          ? Number(room.startedHumanCount)
+          : (room.humanCount || asArray(room.playerUids).filter(Boolean).length || 1)
+      )
     );
-    const bots = Math.max(0, Math.min(3, safeInt(room.startedBotCount || room.botCount)));
+    const bots = Math.max(
+      0,
+      Math.min(
+        3,
+        safeInt(
+          Number.isFinite(Number(room.startedBotCount))
+            ? Number(room.startedBotCount)
+            : (room.botCount || 0)
+        )
+      )
+    );
     const entryCostDoes = Math.max(0, safeInt(room.entryCostDoes || room.stakeDoes || 100));
     const winnerSeat = typeof room.winnerSeat === "number" ? Math.trunc(room.winnerSeat) : -1;
     const hasWinner = Boolean(String(room.winnerUid || "").trim()) || winnerSeat >= 0;
