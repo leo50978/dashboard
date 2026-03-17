@@ -67,6 +67,7 @@ function setStatus(text, tone = "neutral") {
 function botDifficultyLabel(level) {
   const normalized = normalizeBotDifficulty(level);
   if (normalized === "amateur") return "Amateur";
+  if (normalized === "userpro") return "UserPro";
   if (normalized === "ultra") return "Ultra";
   return "Expert";
 }
@@ -104,7 +105,7 @@ function safeSignedInt(value) {
 
 function normalizeBotDifficulty(value) {
   const level = String(value || "").trim().toLowerCase();
-  return level === "amateur" || level === "expert" || level === "ultra"
+  return level === "amateur" || level === "expert" || level === "ultra" || level === "userpro"
     ? level
     : DEFAULT_BOT_DIFFICULTY;
 }
