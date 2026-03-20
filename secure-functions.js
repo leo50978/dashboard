@@ -163,3 +163,23 @@ export async function unregisterDashboardPushSubscriptionSecure(payload = {}) {
     "Impossible de désactiver les notifications push du dashboard."
   );
 }
+
+export async function upsertSurveySecure(payload = {}) {
+  return invokeCallable("upsertSurveySecure", payload, "Impossible d'enregistrer le sondage.");
+}
+
+export async function listSurveysSecure(payload = {}) {
+  return invokeCallable("listSurveysSecure", payload, "Impossible de charger les sondages.");
+}
+
+export async function publishSurveySecure(payload = {}) {
+  return invokeCallable("publishSurveySecure", payload, "Impossible de publier le sondage.");
+}
+
+export async function deleteSurveySecure(payload = {}) {
+  return invokeCallable("deleteSurveySecure", payload, "Impossible de supprimer le sondage.");
+}
+
+export async function getSurveyResponsesSecure(payload = {}) {
+  return invokeCallable("getSurveyResponsesSecure", payload, "Impossible de charger les réponses du sondage.");
+}

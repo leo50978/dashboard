@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="firebase-app-check-site-key" content="6Lc80IAsAAAAAD1dmys7iHV4bu8DeWdbYeM86y8D">
+  <title>Réponses Sondage</title>
+  <link rel="icon" type="image/png" href="./favicon-96x96.png">
+  <style>
+    :root {
+      --bg: #071018;
+      --panel: rgba(10, 19, 34, 0.82);
+      --panel-soft: rgba(13, 25, 45, 0.68);
+      --line: rgba(148, 163, 184, 0.14);
+      --text: #f8fbff;
+      --muted: rgba(226, 232, 240, 0.72);
+      --cyan: #67e8f9;
+      --violet: #c084fc;
+      --green: #4ade80;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background:
+      radial-gradient(circle at top right, rgba(192,132,252,.14), transparent 34%),
+      linear-gradient(180deg, #071018, #040912 78%); color: var(--text); font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    body { padding: max(16px, env(safe-area-inset-top)) 14px max(20px, env(safe-area-inset-bottom)); }
+    .shell { max-width: 1180px; margin: 0 auto; display: grid; gap: 18px; }
+    .panel, .hero { border: 1px solid var(--line); background: var(--panel); border-radius: 24px; backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: 0 24px 60px rgba(2, 8, 23, 0.34); }
+    .hero, .panel { padding: 18px; }
+    .eyebrow { font-size: .74rem; letter-spacing: .18em; text-transform: uppercase; color: var(--cyan); font-weight: 800; }
+    .hero h1 { margin: 10px 0 0; font-size: clamp(1.65rem, 4vw, 2.8rem); line-height: 1.04; }
+    .hero p { margin: 12px 0 0; color: var(--muted); line-height: 1.65; max-width: 62ch; }
+    .hero-actions, .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+    .link-btn {
+      appearance: none; border: 1px solid var(--line); border-radius: 999px; min-height: 44px; padding: 0 16px; text-decoration: none;
+      display: inline-flex; align-items: center; justify-content: center; font-weight: 800; color: var(--text); background: rgba(255,255,255,.04);
+    }
+    .filters { display: grid; gap: 12px; }
+    label { display: grid; gap: 8px; font-size: .9rem; font-weight: 700; }
+    select, input {
+      width: 100%; border-radius: 18px; border: 1px solid var(--line); background: rgba(255,255,255,.04); color: var(--text);
+      padding: 13px 14px; font: inherit; outline: none;
+    }
+    .stats { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+    .stat { border: 1px solid var(--line); background: var(--panel-soft); border-radius: 18px; padding: 14px; }
+    .stat strong { display: block; font-size: 1.4rem; }
+    .stat small { color: var(--muted); }
+    .choices { display: grid; gap: 10px; }
+    .choice-row, .response-card {
+      border: 1px solid var(--line);
+      background: var(--panel-soft);
+      border-radius: 20px;
+      padding: 14px;
+    }
+    .choice-row strong { display: block; font-size: 1rem; }
+    .choice-row small, .response-meta, .empty, .status-line { color: var(--muted); }
+    .response-list { display: grid; gap: 12px; }
+    .response-head { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: start; }
+    .response-meta { display: flex; flex-wrap: wrap; gap: 8px; font-size: .85rem; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: rgba(255,255,255,.04); border-radius: 999px; padding: 6px 10px; }
+    .status-line { min-height: 22px; margin: 0; font-size: .9rem; }
+    .empty { border: 1px dashed var(--line); border-radius: 22px; padding: 18px; text-align: center; }
+    @media (min-width: 960px) {
+      body { padding-left: 20px; padding-right: 20px; }
+      .filters { grid-template-columns: minmax(260px, 360px) minmax(0, 1fr); align-items: end; }
+      .stats { grid-template-columns: repeat(4, minmax(0,1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="eyebrow">Réponses</div>
+      <h1>Analyse les retours des joueurs</h1>
+      <p>Choisis un sondage, vois quelle réponse domine, et lis précisément qui a répondu quoi. La page reste légère même sur mobile.</p>
+      <div class="hero-actions">
+        <a class="link-btn" href="./sondage.html">Retour sondages</a>
+        <a class="link-btn" href="./Dpayment.html">Accueil admin</a>
+      </div>
+    </section>
+
+    <section class="panel filters">
+      <label>Sondage
+        <select id="surveySelect"></select>
+      </label>
+      <label>Recherche client
+        <input id="responseSearchInput" type="search" placeholder="Nom, email, téléphone ou UID">
+      </label>
+    </section>
+
+    <section class="panel">
+      <div class="stats">
+        <div class="stat"><strong id="responseTotalCount">0</strong><small>Réponses</small></div>
+        <div class="stat"><strong id="responseChoiceCount">0</strong><small>Réponses guidées</small></div>
+        <div class="stat"><strong id="responseTextCount">0</strong><small>Réponses texte</small></div>
+        <div class="stat"><strong id="responseLatestAt">-</strong><small>Dernière réponse</small></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 style="margin:0 0 8px;">Répartition</h2>
+      <p class="status-line" id="responseChoiceStatus"></p>
+      <div id="responseChoiceBreakdown" class="choices"></div>
+    </section>
+
+    <section class="panel">
+      <h2 style="margin:0 0 8px;">Réponses individuelles</h2>
+      <p class="status-line" id="responseListStatus"></p>
+      <div id="responseList" class="response-list"></div>
+    </section>
+  </div>
+
+  <script type="module" src="./reponsesondage.js"></script>
+  <script src="./dashboard-nav-bubble.js"></script>
+</body>
+</html>

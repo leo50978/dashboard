@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="firebase-app-check-site-key" content="6Lc80IAsAAAAAD1dmys7iHV4bu8DeWdbYeM86y8D">
+  <title>Sondages Admin</title>
+  <link rel="icon" type="image/png" href="./favicon-96x96.png">
+  <style>
+    :root {
+      --bg: #09111f;
+      --panel: rgba(11, 20, 38, 0.82);
+      --panel-soft: rgba(15, 26, 48, 0.68);
+      --line: rgba(148, 163, 184, 0.16);
+      --text: #f8fbff;
+      --muted: rgba(226, 232, 240, 0.72);
+      --blue: #4cc9f0;
+      --orange: #fb8500;
+      --green: #22c55e;
+      --red: #f43f5e;
+      --radius: 24px;
+      --shadow: 0 24px 60px rgba(2, 8, 23, 0.34);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background:
+      radial-gradient(circle at top, rgba(76, 201, 240, 0.12), transparent 35%),
+      linear-gradient(180deg, #09111f, #050a14 78%);
+      color: var(--text); font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    body { padding: max(16px, env(safe-area-inset-top)) 14px max(20px, env(safe-area-inset-bottom)); }
+    .shell { max-width: 1180px; margin: 0 auto; display: grid; gap: 18px; }
+    .hero, .panel { border: 1px solid var(--line); background: var(--panel); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: var(--shadow); border-radius: var(--radius); }
+    .hero { padding: 20px; display: grid; gap: 14px; }
+    .eyebrow { font-size: .74rem; letter-spacing: .18em; text-transform: uppercase; color: #9bdaf7; font-weight: 800; }
+    .hero h1 { margin: 0; font-size: clamp(1.7rem, 4vw, 3rem); line-height: 1.02; }
+    .hero p { margin: 0; color: var(--muted); line-height: 1.65; max-width: 62ch; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .link-btn, .primary-btn, .ghost-btn, .danger-btn {
+      appearance: none; border: 1px solid var(--line); border-radius: 999px; min-height: 44px; padding: 0 16px;
+      font-weight: 800; font-size: .94rem; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: transform .16s ease, background .16s ease, border-color .16s ease, opacity .16s ease;
+    }
+    .primary-btn { background: linear-gradient(135deg, rgba(251,133,0,.9), rgba(255,183,77,.86)); color: white; border-color: rgba(255, 195, 128, .34); }
+    .ghost-btn, .link-btn { background: rgba(255,255,255,.04); color: var(--text); }
+    .danger-btn { background: rgba(244,63,94,.12); color: #ffd4dd; border-color: rgba(244,63,94,.26); }
+    .grid { display: grid; gap: 18px; }
+    .form-layout { grid-template-columns: 1fr; }
+    .panel { padding: 18px; }
+    .panel h2 { margin: 0 0 6px; font-size: 1.1rem; }
+    .panel-copy { margin: 0 0 14px; color: var(--muted); line-height: 1.6; font-size: .95rem; }
+    .stats { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+    .stat { border: 1px solid var(--line); background: var(--panel-soft); border-radius: 18px; padding: 14px; }
+    .stat strong { display: block; font-size: 1.4rem; }
+    .stat small { color: var(--muted); }
+    label { display: grid; gap: 8px; font-size: .9rem; font-weight: 700; color: #e9f2ff; }
+    input, textarea, select {
+      width: 100%; border-radius: 18px; border: 1px solid var(--line); background: rgba(255,255,255,.04); color: var(--text);
+      padding: 13px 14px; font: inherit; outline: none;
+    }
+    textarea { min-height: 124px; resize: vertical; }
+    .row { display: grid; gap: 12px; }
+    .toggles { display: grid; gap: 10px; }
+    .toggle { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,.03); padding: 12px 14px; }
+    .toggle input { width: 18px; height: 18px; margin-top: 2px; }
+    .toggle span { display: block; color: var(--muted); font-size: .88rem; font-weight: 500; margin-top: 4px; }
+    .form-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .survey-list { display: grid; gap: 14px; }
+    .survey-card { border: 1px solid var(--line); background: var(--panel-soft); border-radius: 22px; padding: 16px; display: grid; gap: 12px; }
+    .survey-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+    .survey-title { margin: 0; font-size: 1rem; }
+    .survey-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--line); font-size: .78rem; color: var(--muted); }
+    .chip.live { color: #d1fae5; border-color: rgba(34,197,94,.32); background: rgba(34,197,94,.12); }
+    .chip.draft { color: #dbeafe; border-color: rgba(76,201,240,.24); background: rgba(76,201,240,.1); }
+    .chip.closed { color: #fde68a; border-color: rgba(251,191,36,.24); background: rgba(251,191,36,.1); }
+    .survey-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .muted { color: var(--muted); }
+    .status-line { min-height: 22px; margin: 0; color: #fdb4c0; font-size: .9rem; }
+    .empty { border: 1px dashed var(--line); border-radius: 22px; padding: 18px; text-align: center; color: var(--muted); }
+    @media (min-width: 960px) {
+      body { padding-left: 20px; padding-right: 20px; }
+      .form-layout { grid-template-columns: minmax(0, 420px) minmax(0, 1fr); align-items: start; }
+      .stats { grid-template-columns: repeat(4, minmax(0,1fr)); }
+      .row.two { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="eyebrow">Sondages</div>
+      <h1>Pilote les sondages globaux sans toucher au reste du site</h1>
+      <p>Crée, modifie, republie et ferme tes sondages depuis une page indépendante. Un seul sondage est publié à la fois pour garder le flux utilisateur propre sur mobile et Safari.</p>
+      <div class="hero-actions">
+        <a class="link-btn" href="./Dpayment.html">Retour accueil admin</a>
+        <a class="link-btn" href="./reponsesondage.html">Voir les réponses</a>
+      </div>
+      <div class="stats">
+        <div class="stat"><strong id="surveyStatAll">0</strong><small>Sondages chargés</small></div>
+        <div class="stat"><strong id="surveyStatLive">0</strong><small>Actifs</small></div>
+        <div class="stat"><strong id="surveyStatDraft">0</strong><small>Brouillons</small></div>
+        <div class="stat"><strong id="surveyStatResponses">0</strong><small>Réponses totales</small></div>
+      </div>
+    </section>
+
+    <section class="grid form-layout">
+      <article class="panel">
+        <h2 id="surveyFormTitle">Créer un sondage</h2>
+        <p class="panel-copy">Prépare le contenu ici, puis publie quand tu es prêt. La publication ferme automatiquement l’ancien sondage live.</p>
+        <form id="surveyForm" class="grid">
+          <input id="surveyIdInput" type="hidden">
+          <label>Titre
+            <input id="surveyTitleInput" type="text" maxlength="140" placeholder="Ex: Quelle amélioration veux-tu voir en premier ?">
+          </label>
+          <label>Description
+            <textarea id="surveyDescriptionInput" maxlength="600" placeholder="Présente le contexte du sondage en quelques phrases."></textarea>
+          </label>
+          <div class="toggles">
+            <label class="toggle">
+              <input id="surveyAllowChoiceInput" type="checkbox" checked>
+              <div>
+                Réponses guidées
+                <span>L’utilisateur choisit une option parmi tes propositions.</span>
+              </div>
+            </label>
+            <label class="toggle">
+              <input id="surveyAllowTextInput" type="checkbox">
+              <div>
+                Réponse libre
+                <span>L’utilisateur peut aussi écrire son avis avec son clavier.</span>
+              </div>
+            </label>
+          </div>
+          <label>Choix proposés
+            <textarea id="surveyChoicesInput" placeholder="Un choix par ligne&#10;Ex: Plus de tournois&#10;Ex: Plus de bonus"></textarea>
+          </label>
+          <div class="row two">
+            <label>Statut de travail
+              <select id="surveyStatusInput">
+                <option value="draft">Brouillon</option>
+                <option value="closed">Fermé</option>
+              </select>
+            </label>
+          </div>
+          <p id="surveyFormStatus" class="status-line"></p>
+          <div class="form-actions">
+            <button class="primary-btn" id="surveySaveBtn" type="submit">Enregistrer</button>
+            <button class="ghost-btn" id="surveyResetBtn" type="button">Nouveau sondage</button>
+          </div>
+        </form>
+      </article>
+
+      <article class="panel">
+        <h2>Tous les sondages</h2>
+        <p class="panel-copy">Tu peux modifier un brouillon, republier un ancien sondage, ou le masquer sans casser les réponses déjà reçues.</p>
+        <p id="surveyListStatus" class="status-line"></p>
+        <div id="surveyList" class="survey-list"></div>
+      </article>
+    </section>
+  </div>
+
+  <script type="module" src="./sondage.js"></script>
+  <script src="./dashboard-nav-bubble.js"></script>
+</body>
+</html>

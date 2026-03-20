@@ -32,7 +32,158 @@ let activeDecisionKey = "";
 let toastTimeout = 0;
 let modalHistoryToken = 0;
 
+function ensureOrdersStatusUiStyles() {
+  if (document.getElementById("ordersStatusUiStyles")) return;
+  const style = document.createElement("style");
+  style.id = "ordersStatusUiStyles";
+  style.textContent = `
+    #ordersStatusToast {
+      right: max(14px, env(safe-area-inset-right, 0px));
+      bottom: max(14px, env(safe-area-inset-bottom, 0px));
+    }
+    #ordersStatusModal {
+      position: fixed;
+      inset: 0;
+      z-index: 1600;
+    }
+    #ordersStatusModal.hidden {
+      display: none !important;
+    }
+    .orders-status-modal-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding:
+        max(12px, env(safe-area-inset-top, 0px))
+        max(12px, env(safe-area-inset-right, 0px))
+        max(12px, env(safe-area-inset-bottom, 0px))
+        max(12px, env(safe-area-inset-left, 0px));
+      background: rgba(15, 23, 42, 0.52);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .orders-status-modal-panel {
+      width: min(100%, 980px);
+      max-height: min(92dvh, 960px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-radius: 24px;
+      background: white;
+      border: 1px solid rgba(148,163,184,.24);
+      box-shadow: 0 32px 64px rgba(15,23,42,.26);
+    }
+    .orders-status-modal-header {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      padding: clamp(16px, 3.6vw, 24px);
+      background: rgba(255,255,255,.96);
+      border-bottom: 1px solid rgba(148,163,184,.16);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .orders-status-modal-content {
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 clamp(16px, 3.6vw, 24px) clamp(18px, 3.8vw, 26px);
+    }
+    .orders-status-modal-footer {
+      position: sticky;
+      bottom: 0;
+      z-index: 1;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding:
+        16px
+        clamp(16px, 3.6vw, 24px)
+        max(16px, env(safe-area-inset-bottom, 0px))
+        clamp(16px, 3.6vw, 24px);
+      border-top: 1px solid rgba(148,163,184,.2);
+      background: rgba(255,255,255,.98);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .orders-status-modal-btn {
+      min-height: 46px;
+      border-radius: 16px;
+      padding: 12px 16px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .orders-status-modal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .orders-status-modal-card {
+      border: 1px solid rgba(148,163,184,.2);
+      border-radius: 18px;
+      padding: 16px;
+      min-width: 0;
+    }
+    .orders-status-modal-card.soft {
+      background: #f8fafc;
+    }
+    .orders-status-modal-section {
+      margin-top: 16px;
+    }
+    .orders-status-modal-pre {
+      margin: 12px 0 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: ui-monospace,SFMono-Regular,Menlo,monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 16px;
+      padding: 14px;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    @media (max-width: 899px) {
+      .orders-status-modal-panel {
+        width: 100%;
+        max-height: min(94dvh, 1000px);
+        border-radius: 24px 24px 18px 18px;
+      }
+      .orders-status-modal-header {
+        padding-bottom: 14px;
+      }
+      .orders-status-modal-content {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+      .orders-status-modal-footer {
+        justify-content: stretch;
+      }
+      .orders-status-modal-footer .orders-status-modal-btn {
+        width: 100%;
+      }
+      .orders-status-modal-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (min-width: 900px) {
+      .orders-status-modal-overlay {
+        align-items: center;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 document.documentElement.style.setProperty("--page-accent", meta.accent);
+ensureOrdersStatusUiStyles();
 if (titleEl) titleEl.textContent = meta.label;
 if (badgeEl) badgeEl.textContent = meta.shortLabel;
 if (subtitleEl) {
@@ -236,20 +387,20 @@ function ensureModal() {
   modal.id = "ordersStatusModal";
   modal.className = "hidden";
   modal.innerHTML = `
-    <div data-modal-overlay="true" style="position:fixed;inset:0;background:rgba(15,23,42,.52);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));z-index:1600;">
-      <div style="width:min(900px,100%);max-height:min(92dvh,920px);overflow:auto;-webkit-overflow-scrolling:touch;border-radius:24px;background:white;border:1px solid rgba(148,163,184,.24);box-shadow:0 32px 64px rgba(15,23,42,.26);padding:clamp(16px,3.6vw,24px);">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;">
+    <div data-modal-overlay="true" class="orders-status-modal-overlay">
+      <div class="orders-status-modal-panel">
+        <div class="orders-status-modal-header">
           <div>
             <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.18em;color:#64748b;font-weight:800;">Commande</p>
             <h2 id="ordersStatusModalTitle" style="margin:10px 0 0;font-size:clamp(1.6rem,3vw,2.5rem);line-height:1.08;">Details</h2>
           </div>
-          <button type="button" id="ordersStatusModalClose" style="border:none;background:#f8fafc;color:#0f172a;border-radius:999px;width:44px;height:44px;font-size:18px;font-weight:900;cursor:pointer;">×</button>
+          <button type="button" id="ordersStatusModalClose" style="border:none;background:#f8fafc;color:#0f172a;border-radius:999px;width:44px;height:44px;font-size:18px;font-weight:900;cursor:pointer;flex:0 0 auto;">×</button>
         </div>
-        <div id="ordersStatusModalContent" style="margin-top:22px;"></div>
-        <div style="display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap;margin-top:24px;padding-top:20px;border-top:1px solid rgba(148,163,184,.2);">
-          <button type="button" id="ordersStatusApproveBtn" style="display:none;border:none;background:#059669;color:white;border-radius:16px;padding:12px 16px;font-weight:800;cursor:pointer;">Approuver</button>
-          <button type="button" id="ordersStatusRejectBtn" style="display:none;border:none;background:#dc2626;color:white;border-radius:16px;padding:12px 16px;font-weight:800;cursor:pointer;">Rejeter</button>
-          <button type="button" id="ordersStatusModalDone" style="border:1px solid rgba(148,163,184,.35);background:white;color:#0f172a;border-radius:16px;padding:12px 16px;font-weight:800;cursor:pointer;">Fermer</button>
+        <div id="ordersStatusModalContent" class="orders-status-modal-content"></div>
+        <div class="orders-status-modal-footer">
+          <button type="button" id="ordersStatusApproveBtn" class="orders-status-modal-btn" style="display:none;border:none;background:#059669;color:white;">Approuver</button>
+          <button type="button" id="ordersStatusRejectBtn" class="orders-status-modal-btn" style="display:none;border:none;background:#dc2626;color:white;">Rejeter</button>
+          <button type="button" id="ordersStatusModalDone" class="orders-status-modal-btn" style="border:1px solid rgba(148,163,184,.35);background:white;color:#0f172a;">Fermer</button>
         </div>
       </div>
     </div>
@@ -338,8 +489,8 @@ function renderOrderModal(order, options = {}) {
 
   if (content) {
     content.innerHTML = `
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
-        <div style="border:1px solid rgba(148,163,184,.2);border-radius:18px;padding:16px;background:#f8fafc;">
+      <div class="orders-status-modal-grid" style="margin-top:18px;">
+        <div class="orders-status-modal-card soft">
           <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:#64748b;font-weight:800;">Client</p>
           <p style="margin:10px 0 0;font-size:1.05rem;font-weight:800;">${escapeHtml(order.customerName || "-")}</p>
           <p style="margin:8px 0 0;color:#475569;">${escapeHtml(order.customerEmail || "-")}</p>
@@ -347,7 +498,7 @@ function renderOrderModal(order, options = {}) {
           <p style="margin:10px 0 0;font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:#64748b;font-weight:800;">Numero deposant</p>
           <p style="margin:6px 0 0;color:#0f172a;font-weight:700;">${escapeHtml(order.depositorPhone || "-")}</p>
         </div>
-        <div style="border:1px solid rgba(148,163,184,.2);border-radius:18px;padding:16px;background:#f8fafc;">
+        <div class="orders-status-modal-card soft">
           <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:#64748b;font-weight:800;">Montant</p>
           <p style="margin:10px 0 0;font-size:1.3rem;font-weight:900;">${formatPrice(order.amount)}</p>
           <p style="margin:8px 0 0;color:#475569;">${escapeHtml(order.methodName || "Methode non definie")}</p>
@@ -355,20 +506,20 @@ function renderOrderModal(order, options = {}) {
         </div>
       </div>
       ${renderHistorySection(history, order.id, historyLoading, historyError)}
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:16px;">
-        <div style="border:1px solid rgba(148,163,184,.2);border-radius:18px;padding:16px;">
+      <div class="orders-status-modal-grid orders-status-modal-section">
+        <div class="orders-status-modal-card">
           <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:#64748b;font-weight:800;">Adresse</p>
           <p style="margin:10px 0 0;line-height:1.7;">${escapeHtml(order.customerAddress || "-")}</p>
           <p style="margin:8px 0 0;color:#475569;">Ville: ${escapeHtml(order.customerCity || "-")}</p>
         </div>
-        <div style="border:1px solid rgba(148,163,184,.2);border-radius:18px;padding:16px;">
+        <div class="orders-status-modal-card">
           <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:#64748b;font-weight:800;">Trace</p>
           <p style="margin:10px 0 0;">Code: <strong>${escapeHtml(order.uniqueCode || "-")}</strong></p>
           <p style="margin:8px 0 0;color:#475569;">Soumis le ${escapeHtml(formatDate(order.createdAtMs))}</p>
           <p style="margin:8px 0 0;color:#475569;">Nom sur preuve: ${escapeHtml(order.proofName || "-")}</p>
         </div>
       </div>
-      <div style="margin-top:16px;border:1px solid rgba(148,163,184,.2);border-radius:18px;padding:16px;">
+      <div class="orders-status-modal-card orders-status-modal-section">
         <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:#64748b;font-weight:800;">Livraison</p>
         <p style="margin:10px 0 0;font-weight:800;">${escapeHtml(getDeliveryLabel(delivery))}</p>
         ${deliveryTarget ? `<p style="margin:8px 0 0;color:#475569;">Zone/Point: ${escapeHtml(deliveryTarget)}</p>` : ""}
@@ -376,7 +527,7 @@ function renderOrderModal(order, options = {}) {
         ${deliveryContact ? `<p style="margin:8px 0 0;color:#475569;">Contact: ${escapeHtml(deliveryContact)}</p>` : ""}
         ${delivery?.meetupProposal ? `<p style="margin:8px 0 0;color:#475569;">Proposition: ${escapeHtml(delivery.meetupProposal)}</p>` : ""}
       </div>
-      <div style="margin-top:16px;border:1px solid rgba(148,163,184,.2);border-radius:18px;padding:16px;">
+      <div class="orders-status-modal-card orders-status-modal-section">
         <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:#64748b;font-weight:800;">Produits (${items.length})</p>
         <div style="margin-top:12px;display:grid;gap:12px;">
           ${items.length ? items.map((item, index) => {
@@ -398,10 +549,10 @@ function renderOrderModal(order, options = {}) {
           }).join("") : `<p style="margin:0;color:#64748b;">Aucun produit detaille pour cette commande.</p>`}
         </div>
       </div>
-      <div style="margin-top:16px;border:1px solid rgba(148,163,184,.2);border-radius:18px;padding:16px;">
+      <div class="orders-status-modal-card orders-status-modal-section">
         <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:#64748b;font-weight:800;">OCR</p>
         <p style="margin:10px 0 0;color:#475569;">Statut: ${escapeHtml(order.extractedTextStatus || (extractedText ? "success" : "empty"))}</p>
-        <pre style="margin:12px 0 0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.7;background:#0f172a;color:#e2e8f0;border-radius:16px;padding:14px;">${escapeHtml(extractedText || "-")}</pre>
+        <pre class="orders-status-modal-pre">${escapeHtml(extractedText || "-")}</pre>
       </div>
     `;
   }
