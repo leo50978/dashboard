@@ -344,6 +344,8 @@ function renderOrderModal(order, options = {}) {
           <p style="margin:10px 0 0;font-size:1.05rem;font-weight:800;">${escapeHtml(order.customerName || "-")}</p>
           <p style="margin:8px 0 0;color:#475569;">${escapeHtml(order.customerEmail || "-")}</p>
           <p style="margin:6px 0 0;color:#475569;">${escapeHtml(order.customerPhone || "-")}</p>
+          <p style="margin:10px 0 0;font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:#64748b;font-weight:800;">Numero deposant</p>
+          <p style="margin:6px 0 0;color:#0f172a;font-weight:700;">${escapeHtml(order.depositorPhone || "-")}</p>
         </div>
         <div style="border:1px solid rgba(148,163,184,.2);border-radius:18px;padding:16px;background:#f8fafc;">
           <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:#64748b;font-weight:800;">Montant</p>

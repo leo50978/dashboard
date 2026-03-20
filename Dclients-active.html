@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <script src="./runtime-config.js"></script>
+  <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="shortcut icon" href="./favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+  <title>Vitch Studio · Comptes actifs</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --page-accent: #059669;
+      --bg: #ecfdf5;
+      --text: #064e3b;
+      --muted: #166534;
+      --line: rgba(5,150,105,.22);
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      font-family: Inter, system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(16,185,129,.14), transparent 25%),
+        linear-gradient(180deg, #f0fdf4 0%, var(--bg) 100%);
+    }
+    .shell {
+      width: min(100%, 1180px);
+      margin: 0 auto;
+      padding:
+        calc(16px + env(safe-area-inset-top, 0px))
+        max(14px, env(safe-area-inset-left, 0px))
+        calc(32px + env(safe-area-inset-bottom, 0px))
+        max(14px, env(safe-area-inset-right, 0px));
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 20px 40px rgba(6,78,59,.08);
+      padding: 18px;
+    }
+    .topbar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 48px;
+      border-radius: 16px;
+      padding: 12px 16px;
+      text-decoration: none;
+      font-weight: 800;
+    }
+    .btn-primary { background: var(--page-accent); color: white; }
+    .btn-secondary { background: white; color: var(--text); border: 1px solid var(--line); }
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .search {
+      margin-top: 18px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: rgba(255,255,255,.96);
+      padding: 14px;
+    }
+    .search__label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      color: var(--muted);
+      font-weight: 800;
+    }
+    .search__row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+    .search__input {
+      width: 100%;
+      min-height: 50px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 0 14px;
+      font: inherit;
+      color: var(--text);
+      outline: none;
+    }
+    .search__input:focus {
+      border-color: rgba(5,150,105,.5);
+      box-shadow: 0 0 0 4px rgba(5,150,105,.12);
+    }
+    .search__meta {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .search__controls {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .search__select {
+      width: 100%;
+      min-height: 50px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 0 14px;
+      font: inherit;
+      color: var(--text);
+      outline: none;
+    }
+    .search__select:focus {
+      border-color: rgba(5,150,105,.5);
+      box-shadow: 0 0 0 4px rgba(5,150,105,.12);
+    }
+    .stat {
+      border: 1px solid var(--line);
+      background: white;
+      border-radius: 18px;
+      padding: 16px;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 20px;
+    }
+    .client-card {
+      border: 1px solid rgba(5,150,105,.18);
+      border-radius: 22px;
+      padding: 16px;
+      background: rgba(255,255,255,.96);
+      box-shadow: 0 12px 28px rgba(6,78,59,.06);
+    }
+    .client-card__head {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .client-card__eyebrow {
+      margin: 0;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      color: var(--muted);
+      font-weight: 800;
+    }
+    .client-card__title {
+      margin: 8px 0 0;
+      font-size: 1.35rem;
+      line-height: 1.15;
+    }
+    .client-card__subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .client-card__badge {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: rgba(5,150,105,.1);
+      color: var(--page-accent);
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .client-card__grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .client-card__label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: var(--muted);
+      font-weight: 800;
+    }
+    .client-card__actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .client-card__action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      border-radius: 16px;
+      padding: 12px 14px;
+      text-decoration: none;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+    }
+    .client-card__action--primary {
+      background: var(--page-accent);
+      color: white;
+    }
+    .hidden { display: none !important; }
+    @media (min-width: 640px) {
+      .panel { padding: 24px; }
+      .topbar { flex-direction: row; justify-content: space-between; align-items: center; }
+      .chip { width: auto; border-radius: 999px; }
+      .actions { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .stats { grid-template-columns: repeat(3, minmax(0,1fr)); }
+      .search__row { grid-template-columns: minmax(0, 1fr) auto; }
+      .search__controls { grid-template-columns: minmax(240px, 1fr) minmax(220px, 280px); }
+      .client-card__head { flex-direction: row; justify-content: space-between; align-items: flex-start; }
+      .client-card__grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .client-card__actions { grid-template-columns: 1fr; }
+    }
+    @media (min-width: 900px) {
+      .shell {
+        padding:
+          calc(28px + env(safe-area-inset-top, 0px))
+          max(18px, env(safe-area-inset-left, 0px))
+          calc(56px + env(safe-area-inset-bottom, 0px))
+          max(18px, env(safe-area-inset-right, 0px));
+      }
+      .panel { padding: 28px; }
+      .cards { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .client-card__grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <script>window.__CLIENTS_SCOPE = "active";</script>
+  <main class="shell">
+    <section class="panel">
+      <div class="topbar">
+        <div>
+          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.18em;color:var(--muted);font-weight:800;">Clients</p>
+          <h1 style="margin:10px 0 0;font-size:clamp(2rem,4vw,3.2rem);line-height:1.05;">Comptes actifs</h1>
+          <p style="margin:14px 0 0;max-width:760px;line-height:1.8;color:var(--muted);">
+            Les comptes actifs sont ceux qui ont déjà fait au moins une commande. Ouvre leur dossier pour analyser l’activité et les soldes.
+          </p>
+        </div>
+        <div class="chip">
+          <span style="width:10px;height:10px;border-radius:999px;background:var(--page-accent);"></span>
+          <span id="clientsListAdminEmail">Connexion admin...</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <a class="btn btn-secondary" href="./Dclients.html"><i class="fas fa-arrow-left"></i>Retour clients</a>
+        <a class="btn btn-primary" href="./Dpayment.html"><i class="fas fa-house"></i>Accueil admin</a>
+      </div>
+
+      <p id="clientsListLoading" style="margin-top:22px;color:var(--muted);">Chargement des comptes actifs...</p>
+      <p id="clientsListError" class="hidden" style="margin-top:22px;color:#b91c1c;font-weight:800;"></p>
+
+      <div id="clientsListContent" class="hidden">
+        <div class="stats">
+          <div class="stat"><p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:800;">Comptes</p><p id="clientsListCount" style="margin:10px 0 0;font-size:2rem;font-weight:900;">0</p></div>
+          <div class="stat"><p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:800;">Commandes</p><p id="clientsListOrders" style="margin:10px 0 0;font-size:2rem;font-weight:900;">0</p></div>
+          <div class="stat"><p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:800;">Balances visibles</p><p id="clientsListBalance" style="margin:10px 0 0;font-size:1.25rem;font-weight:900;">0</p></div>
+        </div>
+
+        <div class="search">
+          <label class="search__label" for="clientsSearchInput">Rechercher un client</label>
+          <div class="search__controls">
+            <input id="clientsSearchInput" class="search__input" type="search" inputmode="search" placeholder="Nom, email, téléphone ou UID">
+            <select id="clientsSortSelect" class="search__select" aria-label="Trier les clients">
+              <option value="default">Dernière commande récente</option>
+              <option value="htg_desc">HTG dispo décroissant</option>
+              <option value="htg_asc">HTG dispo croissant</option>
+              <option value="does_desc">Does dispo décroissant</option>
+              <option value="does_asc">Does dispo croissant</option>
+            </select>
+          </div>
+          <div class="search__row">
+            <p id="clientsSearchMeta" class="search__meta">0 client(s) chargés</p>
+          </div>
+        </div>
+
+        <div id="clientsCards" class="cards"></div>
+        <div id="clientsListEmpty" class="hidden" style="margin-top:24px;border:1px dashed var(--line);border-radius:20px;padding:28px;text-align:center;color:var(--muted);font-weight:700;">
+          Aucun compte actif trouvé.
+        </div>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="./clients-list.js"></script>
+</body>
+</html>

@@ -1,0 +1,314 @@
+import { ensureClientsAccess, loadClientRows, computeClientStats, formatDate, formatDoes, formatPrice, formatSignedDoes } from "./clients-data.js";
+import { unfreezeClientAccountSecure } from "./secure-functions.js";
+
+const scope = String(window.__CLIENTS_SCOPE || "active").trim().toLowerCase();
+const isFrozenPage = scope === "frozen";
+const pageLabel = scope === "frozen"
+  ? "comptes gelés"
+  : scope === "gain"
+    ? "comptes en gain"
+    : scope === "loss"
+      ? "comptes en perte"
+      : "comptes actifs";
+const emptyLabel = scope === "frozen"
+  ? "compte gelé"
+  : scope === "gain"
+    ? "compte en gain"
+    : scope === "loss"
+      ? "compte en perte"
+      : "compte actif";
+
+const adminEmailEl = document.getElementById("clientsListAdminEmail");
+const loadingEl = document.getElementById("clientsListLoading");
+const errorEl = document.getElementById("clientsListError");
+const contentEl = document.getElementById("clientsListContent");
+const countEl = document.getElementById("clientsListCount");
+const ordersEl = document.getElementById("clientsListOrders");
+const balanceEl = document.getElementById("clientsListBalance");
+const listEl = document.getElementById("clientsCards");
+const emptyEl = document.getElementById("clientsListEmpty");
+const searchInputEl = document.getElementById("clientsSearchInput");
+const searchMetaEl = document.getElementById("clientsSearchMeta");
+const sortSelectEl = document.getElementById("clientsSortSelect");
+
+let allRows = [];
+let currentRows = [];
+let unfreezeKey = "";
+let toastTimer = 0;
+
+function escapeHtml(value = "") {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function showToast(message, tone = "info") {
+  let toast = document.getElementById("clientsToast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "clientsToast";
+    toast.style.position = "fixed";
+    toast.style.right = "18px";
+    toast.style.bottom = "18px";
+    toast.style.zIndex = "3000";
+    toast.style.minWidth = "220px";
+    toast.style.maxWidth = "min(92vw, 420px)";
+    toast.style.padding = "14px 16px";
+    toast.style.borderRadius = "18px";
+    toast.style.boxShadow = "0 18px 36px rgba(15,23,42,.18)";
+    toast.style.fontWeight = "800";
+    toast.style.transition = "opacity .2s ease, transform .2s ease";
+    document.body.appendChild(toast);
+  }
+
+  toast.textContent = String(message || "");
+  toast.style.opacity = "1";
+  toast.style.transform = "translateY(0)";
+  toast.style.color = "white";
+  toast.style.background = tone === "success" ? "#065f46" : tone === "error" ? "#991b1b" : "#0f172a";
+
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(8px)";
+  }, 2800);
+}
+
+function getFreezeLabel(row = {}) {
+  if (row.freezeMode === "global") return "Gel global";
+  if (row.freezeMode === "withdrawal") return "Gel retrait";
+  return "Actif";
+}
+
+function getPerformanceLabel(row = {}) {
+  const net = Number(row.netGameDoes || 0);
+  if (net > 0) return "En gain";
+  if (net < 0) return "En perte";
+  return "Neutre";
+}
+
+function renderRows(rows = []) {
+  if (!listEl || !emptyEl) return;
+  if (!rows.length) {
+    listEl.innerHTML = "";
+    const query = String(searchInputEl?.value || "").trim();
+    emptyEl.textContent = query
+      ? `Aucun client ne correspond à “${query}”.`
+      : `Aucun ${emptyLabel} trouvé.`;
+    emptyEl.classList.remove("hidden");
+    return;
+  }
+
+  emptyEl.classList.add("hidden");
+  listEl.innerHTML = rows.map((row) => `
+    <article class="client-card" data-client-card="${escapeHtml(row.id)}">
+      <div class="client-card__head">
+        <div class="client-card__identity">
+          <p class="client-card__eyebrow">${escapeHtml(getFreezeLabel(row))}</p>
+          <h2 class="client-card__title">${escapeHtml(row.displayName)}</h2>
+          <p class="client-card__subtitle">${escapeHtml(row.email || row.phone || row.id)}</p>
+        </div>
+        <span class="client-card__badge">${safeText(row.orderCount)} commande(s)</span>
+      </div>
+
+      <div class="client-card__grid">
+        <div><span class="client-card__label">Téléphone</span><strong>${escapeHtml(row.phone || "-")}</strong></div>
+        <div><span class="client-card__label">Créé le</span><strong>${escapeHtml(formatDate(row.createdAtMs))}</strong></div>
+        <div><span class="client-card__label">Dernière commande</span><strong>${escapeHtml(formatDate(row.lastOrderAtMs))}</strong></div>
+        <div><span class="client-card__label">Rejets</span><strong>${safeText(row.rejectedDepositStrikeCount)}/3</strong></div>
+        <div><span class="client-card__label">HTG actuel</span><strong>${escapeHtml(formatPrice(row.htgBalance))}</strong></div>
+        <div><span class="client-card__label">Does actuel</span><strong>${escapeHtml(formatDoes(row.doesBalanceCurrent))}</strong></div>
+        <div><span class="client-card__label">Performance</span><strong>${escapeHtml(getPerformanceLabel(row))}</strong></div>
+        <div><span class="client-card__label">Net jeu</span><strong>${escapeHtml(formatSignedDoes(row.netGameDoes))}</strong></div>
+      </div>
+
+      <div class="client-card__actions">
+        <a class="client-card__action client-card__action--primary" href="./Dclient-view.html?id=${encodeURIComponent(row.id)}">Voir le dossier</a>
+        ${isFrozenPage && row.isFrozen ? `
+          <button type="button" class="client-card__action client-card__action--warn" data-unfreeze-client="${escapeHtml(row.id)}">
+            Dégeler
+          </button>
+        ` : ""}
+      </div>
+    </article>
+  `).join("");
+}
+
+function safeText(value) {
+  return String(Number.isFinite(Number(value)) ? Math.trunc(Number(value)) : value ?? "");
+}
+
+function normalizeSearch(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function filterRows(rows = [], query = "") {
+  const normalizedQuery = normalizeSearch(query);
+  if (!normalizedQuery) return [...rows];
+  return rows.filter((row) => {
+    const haystack = [
+      row.displayName,
+      row.email,
+      row.phone,
+      row.id,
+      row.freezeMode,
+      row.gamePerformance,
+    ]
+      .map((item) => normalizeSearch(item))
+      .join(" ");
+    return haystack.includes(normalizedQuery);
+  });
+}
+
+function compareDefault(left = {}, right = {}) {
+  if (scope === "frozen") {
+    return safeNumber(right.rejectedDepositStrikeCount) - safeNumber(left.rejectedDepositStrikeCount)
+      || safeNumber(right.updatedAtMs) - safeNumber(left.updatedAtMs)
+      || String(left.displayName || "").localeCompare(String(right.displayName || ""), "fr");
+  }
+  if (scope === "gain") {
+    return safeNumber(right.netGameDoes) - safeNumber(left.netGameDoes)
+      || safeNumber(right.lastOrderAtMs) - safeNumber(left.lastOrderAtMs)
+      || String(left.displayName || "").localeCompare(String(right.displayName || ""), "fr");
+  }
+  if (scope === "loss") {
+    return safeNumber(left.netGameDoes) - safeNumber(right.netGameDoes)
+      || safeNumber(right.lastOrderAtMs) - safeNumber(left.lastOrderAtMs)
+      || String(left.displayName || "").localeCompare(String(right.displayName || ""), "fr");
+  }
+  return safeNumber(right.lastOrderAtMs) - safeNumber(left.lastOrderAtMs)
+    || safeNumber(right.createdAtMs) - safeNumber(left.createdAtMs)
+    || String(left.displayName || "").localeCompare(String(right.displayName || ""), "fr");
+}
+
+function safeNumber(value) {
+  return Number.isFinite(Number(value)) ? Number(value) : 0;
+}
+
+function sortRows(rows = [], sortKey = "") {
+  const list = [...rows];
+  switch (String(sortKey || "default").trim().toLowerCase()) {
+    case "htg_desc":
+      return list.sort((left, right) =>
+        safeNumber(right.htgBalance) - safeNumber(left.htgBalance)
+        || compareDefault(left, right)
+      );
+    case "htg_asc":
+      return list.sort((left, right) =>
+        safeNumber(left.htgBalance) - safeNumber(right.htgBalance)
+        || compareDefault(left, right)
+      );
+    case "does_desc":
+      return list.sort((left, right) =>
+        safeNumber(right.doesBalanceCurrent) - safeNumber(left.doesBalanceCurrent)
+        || compareDefault(left, right)
+      );
+    case "does_asc":
+      return list.sort((left, right) =>
+        safeNumber(left.doesBalanceCurrent) - safeNumber(right.doesBalanceCurrent)
+        || compareDefault(left, right)
+      );
+    default:
+      return list.sort(compareDefault);
+  }
+}
+
+function renderStats(rows = []) {
+  const stats = computeClientStats(rows);
+
+  if (countEl) countEl.textContent = String(stats.total);
+  if (ordersEl) ordersEl.textContent = String(stats.totalOrders);
+  if (balanceEl) {
+    balanceEl.textContent = scope === "frozen"
+      ? formatPrice(stats.totalHtgBalance)
+      : `${formatPrice(stats.totalHtgBalance)} · ${formatDoes(stats.totalDoesBalance)}`;
+  }
+}
+
+function applySearch() {
+  const query = String(searchInputEl?.value || "").trim();
+  const sortKey = String(sortSelectEl?.value || "default").trim().toLowerCase();
+  currentRows = sortRows(filterRows(allRows, query), sortKey);
+  if (searchMetaEl) {
+    const sortLabel = sortSelectEl?.selectedOptions?.[0]?.textContent?.trim();
+    searchMetaEl.textContent = query
+      ? `${currentRows.length} résultat(s) sur ${allRows.length}${sortLabel ? ` · ${sortLabel}` : ""}`
+      : `${allRows.length} client(s) chargés${sortLabel ? ` · ${sortLabel}` : ""}`;
+  }
+  renderStats(currentRows);
+  renderRows(currentRows);
+}
+
+async function refresh() {
+  const rows = await loadClientRows(scope);
+  allRows = rows;
+  applySearch();
+}
+
+async function handleUnfreeze(clientId) {
+  const normalizedId = String(clientId || "").trim();
+  if (!normalizedId || unfreezeKey) return;
+  const target = currentRows.find((item) => item.id === normalizedId);
+  if (!target) return;
+
+  const confirmed = window.confirm(`Dégeler ${target.displayName} ?`);
+  if (!confirmed) return;
+
+  unfreezeKey = normalizedId;
+  try {
+    await unfreezeClientAccountSecure({
+      uid: normalizedId,
+      reason: "dashboard_clients_frozen",
+    });
+    showToast("Compte dégélé avec succès.", "success");
+    await refresh();
+  } catch (error) {
+    console.error("[CLIENTS_LIST] unfreeze failed", error);
+    showToast(error?.message || "Impossible de dégeler ce compte.", "error");
+  } finally {
+    unfreezeKey = "";
+  }
+}
+
+listEl?.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-unfreeze-client]");
+  if (!button) return;
+  const clientId = String(button.dataset.unfreezeClient || "").trim();
+  void handleUnfreeze(clientId);
+});
+
+searchInputEl?.addEventListener("input", () => {
+  applySearch();
+});
+
+sortSelectEl?.addEventListener("change", () => {
+  applySearch();
+});
+
+async function init() {
+  try {
+    const adminUser = await ensureClientsAccess(pageLabel.charAt(0).toUpperCase() + pageLabel.slice(1));
+    if (adminEmailEl) {
+      adminEmailEl.textContent = adminUser?.email || adminUser?.uid || "Admin connecté";
+    }
+    await refresh();
+    loadingEl?.classList.add("hidden");
+    contentEl?.classList.remove("hidden");
+  } catch (error) {
+    console.error("[CLIENTS_LIST] init failed", error);
+    loadingEl?.classList.add("hidden");
+    if (errorEl) {
+      errorEl.textContent = error?.message || "Impossible de charger les clients.";
+      errorEl.classList.remove("hidden");
+    }
+  }
+}
+
+void init();

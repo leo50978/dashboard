@@ -144,6 +144,10 @@ export async function resolveDepositReviewSecure(payload = {}) {
   return invokeCallable("resolveDepositReviewSecure", payload, "Impossible de traiter la commande.");
 }
 
+export async function unfreezeClientAccountSecure(payload = {}) {
+  return invokeCallable("unfreezeClientAccountSecure", payload, "Impossible de dégeler le compte.");
+}
+
 export async function registerDashboardPushSubscriptionSecure(payload = {}) {
   return invokeCallable(
     "registerDashboardPushSubscriptionSecure",

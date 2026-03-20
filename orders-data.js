@@ -64,6 +64,7 @@ function normalizeOrder(docSnap) {
     customerName: String(data.customerName || data.name || "").trim(),
     customerEmail: String(data.customerEmail || data.email || "").trim(),
     customerPhone: String(data.customerPhone || data.phone || "").trim(),
+    depositorPhone: String(data.depositorPhone || "").trim(),
     customerAddress: String(data.customerAddress || data.address || "").trim(),
     customerCity: String(data.customerCity || data.city || "").trim(),
     methodName: String(data.methodName || "").trim(),
