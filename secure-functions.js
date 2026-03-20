@@ -140,6 +140,10 @@ export async function setBotDifficultySecure(payload = {}) {
   return invokeCallable("setBotDifficulty", payload, "Impossible de changer le niveau des bots.");
 }
 
+export async function resolveDepositReviewSecure(payload = {}) {
+  return invokeCallable("resolveDepositReviewSecure", payload, "Impossible de traiter la commande.");
+}
+
 export async function registerDashboardPushSubscriptionSecure(payload = {}) {
   return invokeCallable(
     "registerDashboardPushSubscriptionSecure",

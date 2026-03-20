@@ -9,7 +9,7 @@
   <link rel="shortcut icon" href="./favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
   <link rel="manifest" href="./site.webmanifest" />
-  <title>Vitch Studio · Dashboard Paiements Pro</title>
+  <title>Vitch Studio · Dashboard Paiements Pro · Ambassadeurs</title>
   
   <!-- TailwindCSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -472,116 +472,18 @@
       border-top-color: white;
       animation: spin 1s ease-in-out infinite;
     }
-
-    .dashboard-link-card {
-      position: relative;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      border-radius: 1.5rem;
-      background: linear-gradient(145deg, rgba(255,255,255,0.96), rgba(248,250,252,0.92));
-      padding: 1.35rem;
-      box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
-      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-    }
-
-    .dashboard-link-card:hover {
-      transform: translateY(-3px);
-      border-color: rgba(59, 130, 246, 0.18);
-      box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
-    }
-
-    .dashboard-link-card::after {
-      content: "";
-      position: absolute;
-      inset: auto -24px -24px auto;
-      width: 92px;
-      height: 92px;
-      border-radius: 999px;
-      background: radial-gradient(circle, rgba(59,130,246,0.12), transparent 68%);
-      pointer-events: none;
-    }
-
-    body.admin-home {
-      background:
-        radial-gradient(circle at top left, rgba(59, 130, 246, 0.08), transparent 28%),
-        radial-gradient(circle at top right, rgba(14, 165, 233, 0.08), transparent 24%),
-        var(--background);
-    }
-
-    body.admin-home .app-container {
-      display: block;
-      min-height: 100vh;
-    }
-
-    body.admin-home .sidebar {
-      display: none;
-    }
-
-    body.admin-home .main-content {
-      margin-left: 0;
-      width: 100%;
-      min-height: 100vh;
-    }
-
-    body.admin-home #menuToggle {
-      display: none;
-    }
-
-    body.admin-home .header {
-      background: transparent;
-      border-bottom: none;
-      padding-bottom: 0;
-    }
-
-    body.admin-home .landing-shell {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    body.admin-home .landing-hero {
-      border: 1px solid var(--border);
-      border-radius: 2rem;
-      background: linear-gradient(145deg, rgba(255,255,255,0.96), rgba(241,245,249,0.94));
-      padding: 1.5rem;
-      box-shadow: 0 24px 48px rgba(15, 23, 42, 0.08);
-    }
-
-    body.admin-home .landing-connection {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.6rem;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      background: white;
-      padding: 0.55rem 0.9rem;
-      color: var(--text-secondary);
-      font-size: 0.875rem;
-      font-weight: 500;
-    }
-
-    body.admin-home #tab-clients,
-    body.admin-home #tab-orders,
-    body.admin-home #tab-withdrawals,
-    body.admin-home #tab-xchanges,
-    body.admin-home #tab-ambassadors,
-    body.admin-home #tab-methods,
-    body.admin-home #tab-pdf,
-    body.admin-home #tab-settings,
-    body.admin-home #tab-notifications {
-      display: none !important;
-    }
     
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
   </style>
 </head>
-<body class="admin-home">
+<body>
   <div class="app-container">
     <!-- ========== SIDEBAR ========== -->
     <aside class="sidebar" id="sidebar">
       <div class="p-6">
-        <div class="flex items-center gap-3 mb-6">
+        <div class="flex items-center gap-3 mb-8">
           <div class="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
             <i class="fas fa-credit-card text-white text-xl"></i>
           </div>
@@ -590,20 +492,69 @@
             <p class="text-xs text-text-secondary">Paiements Pro</p>
           </div>
         </div>
+        
+        <nav class="space-y-1">
+          <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors tab-btn active" data-tab="dashboard">
+            <i class="fas fa-chart-line w-5 text-text-secondary"></i>
+            <span class="flex-1">Tableau de bord</span>
+          </button>
+          
+          <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors tab-btn" data-tab="clients">
+            <i class="fas fa-users w-5 text-text-secondary"></i>
+            <span class="flex-1">Clients</span>
+            <span class="text-xs bg-background px-2 py-1 rounded-full" id="clients-count">0</span>
+          </button>
+          
+          <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors tab-btn" data-tab="orders">
+            <i class="fas fa-shopping-cart w-5 text-text-secondary"></i>
+            <span class="flex-1">Commandes</span>
+            <span class="text-xs bg-background px-2 py-1 rounded-full" id="orders-count">0</span>
+          </button>
 
-        <div class="rounded-2xl border border-border bg-white/70 p-4">
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">Accueil admin</p>
-          <h2 class="mt-2 text-lg font-semibold text-text-primary">Navigation rapide</h2>
-          <p class="mt-2 text-sm leading-6 text-text-secondary">
-            Dpayment devient maintenant une porte d’entrée. Ouvre la page qu’il te faut sans charger tout le dashboard dans un seul écran.
-          </p>
-        </div>
+          <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors tab-btn" data-tab="withdrawals">
+            <i class="fas fa-money-bill-transfer w-5 text-text-secondary"></i>
+            <span class="flex-1">Retraits</span>
+            <span class="text-xs bg-background px-2 py-1 rounded-full" id="withdrawals-count">0</span>
+          </button>
+
+          <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors tab-btn" data-tab="xchanges">
+            <i class="fas fa-coins w-5 text-text-secondary"></i>
+            <span class="flex-1">Xchanges Does</span>
+            <span class="text-xs bg-background px-2 py-1 rounded-full" id="xchanges-count">0</span>
+          </button>
+
+          <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors tab-btn" data-tab="ambassadors">
+            <i class="fas fa-user-tie w-5 text-text-secondary"></i>
+            <span class="flex-1">Ambassadeurs</span>
+            <span class="text-xs bg-background px-2 py-1 rounded-full" id="ambassadors-count">0</span>
+          </button>
+          
+          <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors tab-btn" data-tab="methods">
+            <i class="fas fa-credit-card w-5 text-text-secondary"></i>
+            <span class="flex-1">Moyens de paiement</span>
+          </button>
+          
+          <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors tab-btn" data-tab="pdf">
+            <i class="fas fa-file-pdf w-5 text-text-secondary"></i>
+            <span class="flex-1">Gestion PDF</span>
+          </button>
+          
+          <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors tab-btn" data-tab="settings">
+            <i class="fas fa-cog w-5 text-text-secondary"></i>
+            <span>Paramètres</span>
+          </button>
+
+          <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors tab-btn" data-tab="notifications">
+            <i class="fas fa-bell w-5 text-text-secondary"></i>
+            <span>Notifications</span>
+          </button>
+        </nav>
       </div>
       
       <div class="absolute bottom-0 left-0 right-0 p-6 border-t border-border">
         <div class="flex items-center gap-3">
-          <div class="w-2 h-2 rounded-full" style="background: var(--success);"></div>
-          <span class="text-sm text-text-secondary">Firebase connecté</span>
+          <div class="w-2 h-2 rounded-full" id="connection-status" style="background: var(--success);"></div>
+          <span class="text-sm text-text-secondary" id="connection-text">Firebase connecté</span>
         </div>
       </div>
     </aside>
@@ -616,127 +567,79 @@
           <i class="fas fa-bars text-xl"></i>
         </button>
         
-        <h2 id="currentTabTitle" class="text-xl font-semibold">Accueil dashboard</h2>
+        <h2 id="currentTabTitle" class="text-xl font-semibold">Tableau de bord</h2>
         
         <div class="flex items-center gap-3"></div>
       </header>
 
       <!-- Content -->
-      <div class="landing-shell p-4 md:p-6">
+      <div class="p-4 md:p-6">
         <!-- ========== TAB DASHBOARD ========== -->
         <div id="tab-dashboard" class="tab-content">
-          <div class="landing-hero">
-            <div class="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
-              <div class="max-w-3xl">
-                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-text-secondary">Centre de controle</p>
-                <h3 class="mt-3 text-3xl font-semibold leading-tight text-text-primary">Choisis une section du dashboard</h3>
-                <p class="mt-3 text-sm leading-7 text-text-secondary md:text-[15px]">
-                  Dpayment est maintenant une page d’accueil simple. Chaque carte t’emmene vers une page dediee avec les donnees et les actions de la section choisie.
-                </p>
+          <!-- Stats principales -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="stat-card">
+              <p class="text-sm text-text-secondary mb-1">Total clients</p>
+              <p class="text-2xl font-semibold" id="totalClients">0</p>
+            </div>
+            <div class="stat-card">
+              <p class="text-sm text-text-secondary mb-1">Commandes total</p>
+              <p class="text-2xl font-semibold" id="totalOrders">0</p>
+            </div>
+            <div class="stat-card">
+              <p class="text-sm text-text-secondary mb-1">Montant total</p>
+              <p class="text-2xl font-semibold" id="totalAmount">0 HTG</p>
+            </div>
+            <div class="stat-card">
+              <p class="text-sm text-text-secondary mb-1">En attente</p>
+              <p class="text-2xl font-semibold text-warning" id="pendingOrders">0</p>
+            </div>
+          </div>
+
+          <!-- Graphique simple -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+            <div class="content-card p-6">
+              <h3 class="font-semibold mb-4">Statuts des commandes</h3>
+              <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                  <span>En attente</span>
+                  <span class="font-semibold" id="chartPending">0</span>
+                </div>
+                <div class="w-full bg-background rounded-full h-2">
+                  <div class="bg-warning h-2 rounded-full" id="pendingBar" style="width: 0%"></div>
+                </div>
+                
+                <div class="flex justify-between items-center mt-2">
+                  <span>En examen</span>
+                  <span class="font-semibold" id="chartReview">0</span>
+                </div>
+                <div class="w-full bg-background rounded-full h-2">
+                  <div class="bg-info h-2 rounded-full" id="reviewBar" style="width: 0%"></div>
+                </div>
+                
+                <div class="flex justify-between items-center mt-2">
+                  <span>Approuvées</span>
+                  <span class="font-semibold" id="chartApproved">0</span>
+                </div>
+                <div class="w-full bg-background rounded-full h-2">
+                  <div class="bg-success h-2 rounded-full" id="approvedBar" style="width: 0%"></div>
+                </div>
+                
+                <div class="flex justify-between items-center mt-2">
+                  <span>Rejetées</span>
+                  <span class="font-semibold" id="chartRejected">0</span>
+                </div>
+                <div class="w-full bg-background rounded-full h-2">
+                  <div class="bg-danger h-2 rounded-full" id="rejectedBar" style="width: 0%"></div>
+                </div>
               </div>
-              <div class="landing-connection">
-                <span class="w-2.5 h-2.5 rounded-full" id="connection-status" style="background: var(--success);"></span>
-                <span id="connection-text">Firebase connecté</span>
+            </div>
+            
+            <div class="content-card p-6">
+              <h3 class="font-semibold mb-4">Dernières commandes</h3>
+              <div id="recentOrders" class="space-y-3">
+                <!-- Injecté par JS -->
               </div>
-            </div>
-
-            <div class="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              <button type="button" class="dashboard-link-card tab-btn text-left" data-tab="clients">
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">Clients</p>
-                    <h4 class="mt-2 text-xl font-semibold text-text-primary">Tous les comptes</h4>
-                  </div>
-                  <span class="inline-flex min-w-[3rem] items-center justify-center rounded-full bg-background px-3 py-1 text-sm font-semibold text-text-primary" id="clients-count">0</span>
-                </div>
-                <p class="mt-3 text-sm leading-6 text-text-secondary">Profils, emails, soldes et historique global des membres.</p>
-              </button>
-
-              <button type="button" class="dashboard-link-card tab-btn text-left" data-tab="orders">
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">Commandes</p>
-                    <h4 class="mt-2 text-xl font-semibold text-text-primary">Depots et validations</h4>
-                  </div>
-                  <span class="inline-flex min-w-[3rem] items-center justify-center rounded-full bg-background px-3 py-1 text-sm font-semibold text-text-primary" id="orders-count">0</span>
-                </div>
-                <p class="mt-3 text-sm leading-6 text-text-secondary">Preuves, approbations, rejets et details de commande.</p>
-              </button>
-
-              <button type="button" class="dashboard-link-card tab-btn text-left" data-tab="withdrawals">
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">Retraits</p>
-                    <h4 class="mt-2 text-xl font-semibold text-text-primary">Demandes en attente</h4>
-                  </div>
-                  <span class="inline-flex min-w-[3rem] items-center justify-center rounded-full bg-background px-3 py-1 text-sm font-semibold text-text-primary" id="withdrawals-count">0</span>
-                </div>
-                <p class="mt-3 text-sm leading-6 text-text-secondary">Traiter les retraits avec approbation ou rejet propre.</p>
-              </button>
-
-              <button type="button" class="dashboard-link-card tab-btn text-left" data-tab="xchanges">
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">Xchanges</p>
-                    <h4 class="mt-2 text-xl font-semibold text-text-primary">Flux Does</h4>
-                  </div>
-                  <span class="inline-flex min-w-[3rem] items-center justify-center rounded-full bg-background px-3 py-1 text-sm font-semibold text-text-primary" id="xchanges-count">0</span>
-                </div>
-                <p class="mt-3 text-sm leading-6 text-text-secondary">Achats, ventes, mises de jeu et gains sur le wallet.</p>
-              </button>
-
-              <button type="button" class="dashboard-link-card tab-btn text-left" data-tab="ambassadors">
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">Ambassadeurs</p>
-                    <h4 class="mt-2 text-xl font-semibold text-text-primary">Reseau et commissions</h4>
-                  </div>
-                  <span class="inline-flex min-w-[3rem] items-center justify-center rounded-full bg-background px-3 py-1 text-sm font-semibold text-text-primary" id="ambassadors-count">0</span>
-                </div>
-                <p class="mt-3 text-sm leading-6 text-text-secondary">Suivre les performances et les comptes lies au reseau.</p>
-              </button>
-
-              <button type="button" class="dashboard-link-card tab-btn text-left" data-tab="methods">
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">Paiement</p>
-                    <h4 class="mt-2 text-xl font-semibold text-text-primary">Methodes et outils</h4>
-                  </div>
-                  <span class="inline-flex min-w-[3rem] items-center justify-center rounded-full bg-background px-3 py-1 text-sm font-semibold text-text-primary">Ouvrir</span>
-                </div>
-                <p class="mt-3 text-sm leading-6 text-text-secondary">Methodes, PDFs, parametres et notifications admin.</p>
-              </button>
-            </div>
-
-            <div class="mt-8 grid grid-cols-1 gap-3 md:grid-cols-3">
-              <button type="button" class="rounded-2xl border border-border bg-background px-4 py-4 text-left transition hover:border-secondary/30 hover:bg-white tab-btn" data-tab="pdf">
-                <p class="text-sm font-semibold text-text-primary">Gestion PDF</p>
-                <p class="mt-1 text-xs leading-5 text-text-secondary">Recus, apercus et documents.</p>
-              </button>
-              <button type="button" class="rounded-2xl border border-border bg-background px-4 py-4 text-left transition hover:border-secondary/30 hover:bg-white tab-btn" data-tab="settings">
-                <p class="text-sm font-semibold text-text-primary">Parametres</p>
-                <p class="mt-1 text-xs leading-5 text-text-secondary">Configuration generale du dashboard.</p>
-              </button>
-              <button type="button" class="rounded-2xl border border-border bg-background px-4 py-4 text-left transition hover:border-secondary/30 hover:bg-white tab-btn" data-tab="notifications">
-                <p class="text-sm font-semibold text-text-primary">Notifications</p>
-                <p class="mt-1 text-xs leading-5 text-text-secondary">Alertes push et envois admin.</p>
-              </button>
-            </div>
-
-            <div class="hidden">
-              <span id="totalClients">0</span>
-              <span id="totalOrders">0</span>
-              <span id="totalAmount">0 HTG</span>
-              <span id="pendingOrders">0</span>
-              <span id="chartPending">0</span>
-              <span id="chartReview">0</span>
-              <span id="chartApproved">0</span>
-              <span id="chartRejected">0</span>
-              <span id="pendingBar"></span>
-              <span id="reviewBar"></span>
-              <span id="approvedBar"></span>
-              <span id="rejectedBar"></span>
-              <div id="recentOrders"></div>
             </div>
           </div>
         </div>
@@ -1262,6 +1165,7 @@
     </div>
   </div>
 
+  <script>window.__INITIAL_ADMIN_TAB = 'ambassadors';</script>
   <script type="module">
     import {
       auth,
@@ -2646,7 +2550,7 @@
 
     // ========== TABS ==========
     const TAB_TITLES = {
-      dashboard: 'Accueil dashboard',
+      dashboard: 'Tableau de bord',
       clients: 'Clients',
       orders: 'Commandes',
       withdrawals: 'Retraits',
