@@ -24,6 +24,11 @@ const chartState = {
   matches: null,
   finance: null,
   depth: null,
+  presenceRecent: null,
+  presenceHourly: null,
+  presenceDaily: null,
+  presenceWeekly: null,
+  presenceMonthly: null,
 };
 
 const state = {
@@ -174,6 +179,29 @@ function parseDateInputMs(rawValue, endOfDay = false) {
   const [year, month, day] = parts;
   if (endOfDay) return new Date(year, month - 1, day, 23, 59, 59, 999).getTime();
   return new Date(year, month - 1, day, 0, 0, 0, 0).getTime();
+}
+
+function parseDayKeyMs(rawValue) {
+  return parseDateInputMs(rawValue, false);
+}
+
+function parseMonthKeyMs(rawValue) {
+  const raw = String(rawValue || "").trim();
+  const parts = raw.split("-").map((item) => Number(item));
+  if (parts.length !== 2 || parts.some((item) => !Number.isFinite(item))) return 0;
+  const [year, month] = parts;
+  return new Date(year, month - 1, 1, 0, 0, 0, 0).getTime();
+}
+
+function averageRollupValue(item, sumField) {
+  const samples = safeInt(item?.samples);
+  if (samples <= 0) return 0;
+  return safeFloat(item?.[sumField]) / samples;
+}
+
+function hourLabelFromKey(rawValue) {
+  const hour = String(rawValue || "00").padStart(2, "0");
+  return `${hour}h`;
 }
 
 function formatInt(value) {
@@ -402,7 +430,127 @@ async function fetchAllAnalyticsData() {
     channelMessages: asArray(raw?.channelMessages),
     supportThreads: asArray(raw?.supportThreads),
     supportMessages: asArray(raw?.supportMessages),
+    presenceAnalytics: raw?.presenceAnalytics && typeof raw.presenceAnalytics === "object"
+      ? raw.presenceAnalytics
+      : {},
     generatedAtMs: safeSignedInt(raw?.generatedAtMs),
+  };
+}
+
+function computePresenceMetrics(rawPresence, range) {
+  const live = rawPresence && typeof rawPresence.live === "object" ? rawPresence.live : {};
+  const snapshots = asArray(rawPresence?.snapshots)
+    .map((item) => ({
+      ...item,
+      bucketMs: safeSignedInt(item.bucketMs || item.createdAtMs || item.sampledAtMs),
+      onlineUsers: safeInt(item.onlineUsers),
+      onlineInGameUsers: safeInt(item.onlineInGameUsers),
+      activeRooms: safeInt(item.activeRooms),
+    }))
+    .filter((item) => item.bucketMs > 0)
+    .sort((left, right) => left.bucketMs - right.bucketMs);
+
+  const recentCutoffMs = Date.now() - (24 * 60 * 60 * 1000);
+  const recentSnapshots = snapshots.filter((item) => item.bucketMs >= recentCutoffMs);
+
+  const daily = asArray(rawPresence?.daily)
+    .map((item) => {
+      const bucketMs = parseDayKeyMs(item.dayKey);
+      return {
+        ...item,
+        bucketMs,
+        avgOnlineUsers: averageRollupValue(item, "onlineUsersSum"),
+        avgInGameUsers: averageRollupValue(item, "onlineInGameUsersSum"),
+        avgActiveRooms: averageRollupValue(item, "activeRoomsSum"),
+        maxOnlineUsers: safeInt(item.onlineUsersMax),
+        maxInGameUsers: safeInt(item.onlineInGameUsersMax),
+      };
+    })
+    .filter((item) => item.bucketMs > 0 && withinRange(item.bucketMs, range))
+    .sort((left, right) => left.bucketMs - right.bucketMs);
+
+  const weeklyMap = new Map();
+  daily.forEach((item) => {
+    const weekMs = startOfWeekMs(item.bucketMs);
+    if (!weekMs) return;
+    if (!weeklyMap.has(weekMs)) {
+      weeklyMap.set(weekMs, {
+        bucketMs: weekMs,
+        samples: 0,
+        onlineUsersSum: 0,
+        activeRoomsSum: 0,
+        maxOnlineUsers: 0,
+      });
+    }
+    const target = weeklyMap.get(weekMs);
+    target.samples += safeInt(item.samples);
+    target.onlineUsersSum += safeFloat(item.onlineUsersSum);
+    target.activeRoomsSum += safeFloat(item.activeRoomsSum);
+    target.maxOnlineUsers = Math.max(target.maxOnlineUsers, safeInt(item.maxOnlineUsers));
+  });
+  const weekly = [...weeklyMap.values()]
+    .map((item) => ({
+      ...item,
+      avgOnlineUsers: item.samples > 0 ? item.onlineUsersSum / item.samples : 0,
+      avgActiveRooms: item.samples > 0 ? item.activeRoomsSum / item.samples : 0,
+    }))
+    .sort((left, right) => left.bucketMs - right.bucketMs);
+
+  const monthly = asArray(rawPresence?.monthly)
+    .map((item) => {
+      const bucketMs = parseMonthKeyMs(item.monthKey);
+      const monthEndMs = bucketMs ? endOfDayMs(new Date(new Date(bucketMs).getFullYear(), new Date(bucketMs).getMonth() + 1, 0)) : 0;
+      return {
+        ...item,
+        bucketMs,
+        monthEndMs,
+        avgOnlineUsers: averageRollupValue(item, "onlineUsersSum"),
+        avgInGameUsers: averageRollupValue(item, "onlineInGameUsersSum"),
+        maxOnlineUsers: safeInt(item.onlineUsersMax),
+      };
+    })
+    .filter((item) => item.bucketMs > 0 && item.bucketMs <= range.toMs && item.monthEndMs >= range.fromMs)
+    .sort((left, right) => left.bucketMs - right.bucketMs);
+
+  const hourly = asArray(rawPresence?.hourOfDay)
+    .map((item) => ({
+      ...item,
+      label: hourLabelFromKey(item.hourKey),
+      avgOnlineUsers: averageRollupValue(item, "onlineUsersSum"),
+      maxOnlineUsers: safeInt(item.onlineUsersMax),
+    }))
+    .sort((left, right) => String(left.hourKey || "").localeCompare(String(right.hourKey || "")));
+
+  const peakHour = [...hourly]
+    .sort((left, right) => right.avgOnlineUsers - left.avgOnlineUsers || right.maxOnlineUsers - left.maxOnlineUsers)[0] || null;
+  const peakDay = [...daily]
+    .sort((left, right) => right.maxOnlineUsers - left.maxOnlineUsers || right.avgOnlineUsers - left.avgOnlineUsers)[0] || null;
+  const peakWeek = [...weekly]
+    .sort((left, right) => right.maxOnlineUsers - left.maxOnlineUsers || right.avgOnlineUsers - left.avgOnlineUsers)[0] || null;
+  const peakMonth = [...monthly]
+    .sort((left, right) => right.maxOnlineUsers - left.maxOnlineUsers || right.avgOnlineUsers - left.avgOnlineUsers)[0] || null;
+
+  return {
+    live: {
+      onlineUsers: safeInt(live.onlineUsers),
+      onlineInGameUsers: safeInt(live.onlineInGameUsers),
+      activeRooms: safeInt(live.activeRooms),
+      playingRooms: safeInt(live.playingRooms),
+      waitingRooms: safeInt(live.waitingRooms),
+      sampledAtMs: safeSignedInt(live.sampledAtMs),
+    },
+    recentSnapshots,
+    daily,
+    weekly,
+    monthly,
+    hourly,
+    peakHour,
+    peakDay,
+    peakWeek,
+    peakMonth,
+    avgDayOnline: daily.length
+      ? daily.reduce((sum, item) => sum + safeFloat(item.avgOnlineUsers), 0) / daily.length
+      : 0,
   };
 }
 
@@ -558,6 +706,7 @@ function computeMetrics(raw, range) {
   const supportThreads = asArray(raw.supportThreads);
   const supportMessages = asArray(raw.supportMessages);
   const ambassadorReferrals = asArray(raw.ambassadorReferrals);
+  const presence = computePresenceMetrics(raw.presenceAnalytics || {}, range);
 
   const referralGraph = computeReferralGraph(clients);
   const clientsById = referralGraph.clientsById;
@@ -1054,6 +1203,7 @@ function computeMetrics(raw, range) {
       topResolutionTag: topCountLabel(resolutionTagCounts, "Aucun tag"),
       retention,
     },
+    presence,
     referrals: {
       userReferredClients,
       approvedReferredClients,
@@ -1125,6 +1275,30 @@ function renderKpis(metrics) {
     "kpiXchangeSellNote",
     `${formatDoes(metrics.totals.xchangeSellDoes)} reconvertis`
   );
+  setText("kpiOnlineNow", formatInt(metrics.presence.live.onlineUsers));
+  setText(
+    "kpiOnlineNowNote",
+    metrics.presence.live.sampledAtMs
+      ? `Instantane ${formatDateLabel(metrics.presence.live.sampledAtMs)}`
+      : "Presence live en attente"
+  );
+  setText("kpiOnlineInGame", formatInt(metrics.presence.live.onlineInGameUsers));
+  setText(
+    "kpiOnlineInGameNote",
+    `${formatInt(metrics.presence.live.activeRooms)} salles actives`
+  );
+  setText("kpiPresencePeakDay", formatInt(metrics.presence.peakDay?.maxOnlineUsers || 0));
+  setText(
+    "kpiPresencePeakDayNote",
+    metrics.presence.peakDay
+      ? `${formatDateLabel(metrics.presence.peakDay.bucketMs)}`
+      : "Aucune donnee"
+  );
+  setText("kpiPresenceAvgDay", formatInt(metrics.presence.avgDayOnline));
+  setText(
+    "kpiPresenceAvgDayNote",
+    `${formatInt(metrics.presence.daily.length)} jours analyses`
+  );
 
   setText("miniBotMatches", formatInt(metrics.game.botMatches));
   setText("miniHumanMatches", formatInt(metrics.game.humanOnlyMatches));
@@ -1136,6 +1310,16 @@ function renderKpis(metrics) {
   setText("miniAvgDeposit", formatCurrencyHtg(metrics.finance.avgDeposit));
   setText("miniPayingPlayers", formatInt(metrics.totals.payingPlayers));
   setText("miniSupportMessages", formatInt(metrics.support.supportMessagesInRange.length));
+  setText("miniPresencePeakHour", metrics.presence.peakHour ? metrics.presence.peakHour.label : "-");
+  setText(
+    "miniPresencePeakWeek",
+    metrics.presence.peakWeek ? formatPeriodLabel(metrics.presence.peakWeek.bucketMs, "week") : "-"
+  );
+  setText(
+    "miniPresencePeakMonth",
+    metrics.presence.peakMonth ? formatPeriodLabel(metrics.presence.peakMonth.bucketMs, "month") : "-"
+  );
+  setText("miniPresenceActiveRooms", formatInt(metrics.presence.live.activeRooms));
 }
 
 function destroyChart(name) {
@@ -1152,10 +1336,20 @@ function renderCharts(metrics) {
   destroyChart("matches");
   destroyChart("finance");
   destroyChart("depth");
+  destroyChart("presenceRecent");
+  destroyChart("presenceHourly");
+  destroyChart("presenceDaily");
+  destroyChart("presenceWeekly");
+  destroyChart("presenceMonthly");
 
   const matchesCtx = document.getElementById("matchesMixChart");
   const financeCtx = document.getElementById("financeMixChart");
   const depthCtx = document.getElementById("referralDepthChart");
+  const presenceRecentCtx = document.getElementById("presenceRecentChart");
+  const presenceHourlyCtx = document.getElementById("presenceHourlyChart");
+  const presenceDailyCtx = document.getElementById("presenceDailyChart");
+  const presenceWeeklyCtx = document.getElementById("presenceWeeklyChart");
+  const presenceMonthlyCtx = document.getElementById("presenceMonthlyChart");
   if (!matchesCtx || !financeCtx || !depthCtx) return;
 
   chartState.matches = new ChartLib(matchesCtx, {
@@ -1281,6 +1475,240 @@ function renderCharts(metrics) {
       },
     },
   });
+
+  if (presenceRecentCtx) {
+    const recentSnapshots = metrics.presence.recentSnapshots;
+    chartState.presenceRecent = new ChartLib(presenceRecentCtx, {
+      type: "line",
+      data: {
+        labels: recentSnapshots.length
+          ? recentSnapshots.map((item) => new Date(item.bucketMs).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }))
+          : ["-"],
+        datasets: [
+          {
+            label: "En ligne",
+            data: recentSnapshots.length ? recentSnapshots.map((item) => item.onlineUsers) : [0],
+            borderColor: "rgba(104, 215, 255, 1)",
+            backgroundColor: "rgba(104, 215, 255, 0.18)",
+            fill: true,
+            tension: 0.28,
+            pointRadius: 0,
+          },
+          {
+            label: "En partie",
+            data: recentSnapshots.length ? recentSnapshots.map((item) => item.onlineInGameUsers) : [0],
+            borderColor: "rgba(255, 191, 105, 1)",
+            backgroundColor: "rgba(255, 191, 105, 0.08)",
+            fill: false,
+            tension: 0.22,
+            pointRadius: 0,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: "#dfe8ff" } },
+        },
+        scales: {
+          x: {
+            ticks: { color: "#dfe8ff", maxTicksLimit: 8 },
+            grid: { color: "rgba(163, 184, 255, 0.08)" },
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: "#dfe8ff" },
+            grid: { color: "rgba(163, 184, 255, 0.08)" },
+          },
+        },
+      },
+    });
+  }
+
+  if (presenceHourlyCtx) {
+    const hourly = metrics.presence.hourly;
+    chartState.presenceHourly = new ChartLib(presenceHourlyCtx, {
+      type: "bar",
+      data: {
+        labels: hourly.length ? hourly.map((item) => item.label) : ["-"],
+        datasets: [
+          {
+            label: "Moyenne",
+            data: hourly.length ? hourly.map((item) => Number(item.avgOnlineUsers.toFixed(2))) : [0],
+            backgroundColor: "rgba(124, 92, 255, 0.62)",
+            borderRadius: 10,
+            borderSkipped: false,
+          },
+          {
+            label: "Pic",
+            data: hourly.length ? hourly.map((item) => item.maxOnlineUsers) : [0],
+            backgroundColor: "rgba(75, 231, 184, 0.42)",
+            borderRadius: 10,
+            borderSkipped: false,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: "#dfe8ff" } },
+        },
+        scales: {
+          x: {
+            ticks: { color: "#dfe8ff", maxTicksLimit: 12 },
+            grid: { color: "rgba(163, 184, 255, 0.08)" },
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: "#dfe8ff" },
+            grid: { color: "rgba(163, 184, 255, 0.08)" },
+          },
+        },
+      },
+    });
+  }
+
+  if (presenceDailyCtx) {
+    const daily = metrics.presence.daily;
+    chartState.presenceDaily = new ChartLib(presenceDailyCtx, {
+      type: "line",
+      data: {
+        labels: daily.length ? daily.map((item) => formatDateLabel(item.bucketMs)) : ["-"],
+        datasets: [
+          {
+            label: "Moyenne",
+            data: daily.length ? daily.map((item) => Number(item.avgOnlineUsers.toFixed(2))) : [0],
+            borderColor: "rgba(104, 215, 255, 1)",
+            backgroundColor: "rgba(104, 215, 255, 0.16)",
+            fill: true,
+            tension: 0.3,
+            pointRadius: 2,
+          },
+          {
+            label: "Pic",
+            data: daily.length ? daily.map((item) => item.maxOnlineUsers) : [0],
+            borderColor: "rgba(255, 125, 141, 1)",
+            backgroundColor: "rgba(255, 125, 141, 0.08)",
+            fill: false,
+            tension: 0.2,
+            pointRadius: 2,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: "#dfe8ff" } },
+        },
+        scales: {
+          x: {
+            ticks: { color: "#dfe8ff", maxTicksLimit: 8 },
+            grid: { color: "rgba(163, 184, 255, 0.08)" },
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: "#dfe8ff" },
+            grid: { color: "rgba(163, 184, 255, 0.08)" },
+          },
+        },
+      },
+    });
+  }
+
+  if (presenceWeeklyCtx) {
+    const weekly = metrics.presence.weekly;
+    chartState.presenceWeekly = new ChartLib(presenceWeeklyCtx, {
+      type: "bar",
+      data: {
+        labels: weekly.length ? weekly.map((item) => formatPeriodLabel(item.bucketMs, "week")) : ["-"],
+        datasets: [
+          {
+            label: "Moyenne",
+            data: weekly.length ? weekly.map((item) => Number(item.avgOnlineUsers.toFixed(2))) : [0],
+            backgroundColor: "rgba(255, 191, 105, 0.72)",
+            borderRadius: 10,
+            borderSkipped: false,
+          },
+          {
+            label: "Pic",
+            data: weekly.length ? weekly.map((item) => item.maxOnlineUsers) : [0],
+            backgroundColor: "rgba(124, 92, 255, 0.34)",
+            borderRadius: 10,
+            borderSkipped: false,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: "#dfe8ff" } },
+        },
+        scales: {
+          x: {
+            ticks: { color: "#dfe8ff", maxTicksLimit: 6 },
+            grid: { color: "rgba(163, 184, 255, 0.08)" },
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: "#dfe8ff" },
+            grid: { color: "rgba(163, 184, 255, 0.08)" },
+          },
+        },
+      },
+    });
+  }
+
+  if (presenceMonthlyCtx) {
+    const monthly = metrics.presence.monthly;
+    chartState.presenceMonthly = new ChartLib(presenceMonthlyCtx, {
+      type: "line",
+      data: {
+        labels: monthly.length ? monthly.map((item) => formatPeriodLabel(item.bucketMs, "month")) : ["-"],
+        datasets: [
+          {
+            label: "Moyenne",
+            data: monthly.length ? monthly.map((item) => Number(item.avgOnlineUsers.toFixed(2))) : [0],
+            borderColor: "rgba(75, 231, 184, 1)",
+            backgroundColor: "rgba(75, 231, 184, 0.15)",
+            fill: true,
+            tension: 0.28,
+            pointRadius: 3,
+          },
+          {
+            label: "Pic",
+            data: monthly.length ? monthly.map((item) => item.maxOnlineUsers) : [0],
+            borderColor: "rgba(255, 191, 105, 1)",
+            backgroundColor: "rgba(255, 191, 105, 0.06)",
+            fill: false,
+            tension: 0.22,
+            pointRadius: 3,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: "#dfe8ff" } },
+        },
+        scales: {
+          x: {
+            ticks: { color: "#dfe8ff", maxTicksLimit: 6 },
+            grid: { color: "rgba(163, 184, 255, 0.08)" },
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: "#dfe8ff" },
+            grid: { color: "rgba(163, 184, 255, 0.08)" },
+          },
+        },
+      },
+    });
+  }
 }
 
 function makeInsight(tone, title, body) {
@@ -1304,6 +1732,20 @@ function renderInsights(metrics) {
   dom.insights.innerHTML = "";
 
   const insights = [];
+
+  if (metrics.presence.daily.length === 0) {
+    insights.push({
+      tone: "warn",
+      title: "Historique presence",
+      body: "Les graphes de presence commencent a se remplir apres le deploiement de la collecte planifiee. Le live reste disponible immediatement.",
+    });
+  } else {
+    insights.push({
+      tone: "good",
+      title: "Presence suivie",
+      body: `Live ${formatInt(metrics.presence.live.onlineUsers)} en ligne, heure forte ${metrics.presence.peakHour ? metrics.presence.peakHour.label : "-"}.`,
+    });
+  }
 
   if (metrics.game.payoutRate >= 90) {
     insights.push({

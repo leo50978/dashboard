@@ -1198,6 +1198,7 @@
     const adminCheckCallable = httpsCallable(functions, 'adminCheck');
     const migrateAmbassadorSecretsCallable = httpsCallable(functions, 'migrateAmbassadorSecrets');
     const bootstrapConfigCallable = httpsCallable(functions, 'getDpaymentBootstrapConfig');
+    const resolveDepositReviewCallable = httpsCallable(functions, 'resolveDepositReviewSecure');
     const dashboardPushController = new DashboardPushSubscriptionController({
       defaultUrl: './Dpayment.html'
     });
@@ -1247,6 +1248,7 @@
     let settings = null;
     let currentOrderId = null;
     let currentClientId = null;
+    let activeOrderStatusUpdateKey = '';
     let orderUnsubscribers = [];
     let ordersReloadTimeout = null;
     let seenOrderIds = new Set();
@@ -3649,10 +3651,30 @@
     }
 
     async function updateOrderStatus(id, clientId, status) {
+      const updateKey = `${clientId}:${id}:${status}`;
+      if (activeOrderStatusUpdateKey === updateKey) {
+        console.warn('[BALANCE_DEBUG][DPAYMENT] updateOrderStatus:duplicate-blocked', {
+          id,
+          clientId,
+          status,
+          updateKey,
+        });
+        return;
+      }
+      activeOrderStatusUpdateKey = updateKey;
+      if (elements.approveOrder) {
+        elements.approveOrder.disabled = true;
+        elements.approveOrder.classList.add('opacity-60', 'cursor-not-allowed');
+      }
+      if (elements.rejectOrder) {
+        elements.rejectOrder.disabled = true;
+        elements.rejectOrder.classList.add('opacity-60', 'cursor-not-allowed');
+      }
       try {
         const existingOrder = orders.find(o => o.id === id && o.clientId === clientId);
         const previousStatus = existingOrder?.status || '';
         const orderRef = doc(db, CLIENTS, clientId, 'orders', id);
+        const clientRef = doc(db, CLIENTS, clientId);
         let approvedAmountHtg = safeInt(getOrderComputedAmount(existingOrder || {}));
         if (!approvedAmountHtg) {
           try {
@@ -3662,10 +3684,50 @@
             }
           } catch (_) {}
         }
-        await updateDoc(orderRef, {
-          status,
-          reviewedAt: new Date().toISOString()
+        console.log('[BALANCE_DEBUG][DPAYMENT] updateOrderStatus:start', {
+          id,
+          clientId,
+          targetStatus: status,
+          previousStatus,
+          approvedAmountHtg,
+          existingOrder: existingOrder || null,
         });
+        if (status === 'approved' || status === 'rejected') {
+          const callablePayload = {
+            orderId: id,
+            clientId,
+            decision: status === 'approved' ? 'approve' : 'reject'
+          };
+          console.log('[BALANCE_DEBUG][DPAYMENT] resolveDepositReview:request', callablePayload);
+          const callableResult = await resolveDepositReviewCallable(callablePayload);
+          console.log('[BALANCE_DEBUG][DPAYMENT] resolveDepositReview:response', callableResult?.data || callableResult || null);
+        } else {
+          await updateDoc(orderRef, {
+            status,
+            reviewedAt: new Date().toISOString()
+          });
+          console.log('[BALANCE_DEBUG][DPAYMENT] updateOrderStatus:directUpdate', {
+            id,
+            clientId,
+            status,
+          });
+        }
+
+        try {
+          const [afterOrderSnap, afterClientSnap] = await Promise.all([
+            getDoc(orderRef),
+            getDoc(clientRef),
+          ]);
+          console.log('[BALANCE_DEBUG][DPAYMENT] updateOrderStatus:afterSnapshots', {
+            id,
+            clientId,
+            status,
+            order: afterOrderSnap.exists() ? afterOrderSnap.data() : null,
+            client: afterClientSnap.exists() ? afterClientSnap.data() : null,
+          });
+        } catch (afterErr) {
+          console.error('[BALANCE_DEBUG][DPAYMENT] updateOrderStatus:afterSnapshots:error', afterErr);
+        }
 
         if (status === 'approved') {
           await setDoc(doc(db, CLIENTS, clientId), {
@@ -3708,10 +3770,25 @@
         
         // Recharger les commandes
         await loadOrders();
+        console.log('[BALANCE_DEBUG][DPAYMENT] updateOrderStatus:done', {
+          id,
+          clientId,
+          status,
+        });
         
       } catch (error) {
         console.error('❌ Erreur mise à jour statut:', error);
-        showToast('Erreur lors de la mise à jour', 'error');
+        showToast(error?.message || 'Erreur lors de la mise à jour', 'error');
+      } finally {
+        activeOrderStatusUpdateKey = '';
+        if (elements.approveOrder) {
+          elements.approveOrder.disabled = false;
+          elements.approveOrder.classList.remove('opacity-60', 'cursor-not-allowed');
+        }
+        if (elements.rejectOrder) {
+          elements.rejectOrder.disabled = false;
+          elements.rejectOrder.classList.remove('opacity-60', 'cursor-not-allowed');
+        }
       }
     }
 

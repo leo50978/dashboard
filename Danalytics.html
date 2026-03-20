@@ -743,6 +743,26 @@
               <p id="kpiXchangeSell" class="kpi-value">0 HTG</p>
               <p id="kpiXchangeSellNote" class="kpi-note">Volume reconverti en HTG</p>
             </article>
+            <article class="kpi glass accent-a">
+              <p class="kpi-label">En ligne maintenant</p>
+              <p id="kpiOnlineNow" class="kpi-value">0</p>
+              <p id="kpiOnlineNowNote" class="kpi-note">Utilisateurs authentifies actifs</p>
+            </article>
+            <article class="kpi glass accent-b">
+              <p class="kpi-label">En partie maintenant</p>
+              <p id="kpiOnlineInGame" class="kpi-value">0</p>
+              <p id="kpiOnlineInGameNote" class="kpi-note">Presence detectee dans les salles</p>
+            </article>
+            <article class="kpi glass accent-c">
+              <p class="kpi-label">Pic journalier</p>
+              <p id="kpiPresencePeakDay" class="kpi-value">0</p>
+              <p id="kpiPresencePeakDayNote" class="kpi-note">Plus haut volume sur la periode</p>
+            </article>
+            <article class="kpi glass accent-d">
+              <p class="kpi-label">Moyenne journaliere</p>
+              <p id="kpiPresenceAvgDay" class="kpi-value">0</p>
+              <p id="kpiPresenceAvgDayNote" class="kpi-note">Moyenne des presences calculees</p>
+            </article>
           </div>
         </section>
 
@@ -798,6 +818,22 @@
                 <span>Messages support</span>
                 <strong id="miniSupportMessages">0</strong>
               </div>
+              <div class="mini-card neo">
+                <span>Heure de pointe</span>
+                <strong id="miniPresencePeakHour">-</strong>
+              </div>
+              <div class="mini-card neo">
+                <span>Semaine pic</span>
+                <strong id="miniPresencePeakWeek">-</strong>
+              </div>
+              <div class="mini-card neo">
+                <span>Mois pic</span>
+                <strong id="miniPresencePeakMonth">-</strong>
+              </div>
+              <div class="mini-card neo">
+                <span>Salles actives live</span>
+                <strong id="miniPresenceActiveRooms">0</strong>
+              </div>
             </div>
           </div>
 
@@ -848,6 +884,66 @@
             </div>
             <div class="chart-frame">
               <canvas id="referralDepthChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card glass">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">Presence recente</h2>
+                <p class="panel-copy">Evolution live des utilisateurs en ligne sur les derniers instantanes.</p>
+              </div>
+            </div>
+            <div class="chart-frame">
+              <canvas id="presenceRecentChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card glass">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">Heures de pointe</h2>
+                <p class="panel-copy">Moyenne et pic des utilisateurs en ligne selon l'heure.</p>
+              </div>
+            </div>
+            <div class="chart-frame">
+              <canvas id="presenceHourlyChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card glass">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">Tendance journaliere</h2>
+                <p class="panel-copy">Presence moyenne et pic par jour sur la periode filtree.</p>
+              </div>
+            </div>
+            <div class="chart-frame">
+              <canvas id="presenceDailyChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card glass">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">Tendance hebdomadaire</h2>
+                <p class="panel-copy">Vue consolidee semaine par semaine.</p>
+              </div>
+            </div>
+            <div class="chart-frame">
+              <canvas id="presenceWeeklyChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card glass">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">Tendance mensuelle</h2>
+                <p class="panel-copy">Lecture agrégée des mois les plus actifs.</p>
+              </div>
+            </div>
+            <div class="chart-frame">
+              <canvas id="presenceMonthlyChart"></canvas>
             </div>
           </div>
         </section>
