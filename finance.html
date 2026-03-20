@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <script src="./runtime-config.js"></script>
+  <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="shortcut icon" href="./favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+  <link rel="manifest" href="./site.webmanifest" />
+  <title>Vitch Studio · Finance réelle</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07120f;
+      --bg-soft: #0c1d18;
+      --panel: rgba(13, 30, 24, 0.88);
+      --line: rgba(148, 163, 184, 0.18);
+      --text: #effcf7;
+      --muted: #a0c2b7;
+      --mint: #34d399;
+      --lime: #bef264;
+      --danger: #fb7185;
+      --amber: #f59e0b;
+      --sky: #38bdf8;
+    }
+
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Manrope", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(52, 211, 153, 0.18), transparent 26%),
+        radial-gradient(circle at top right, rgba(56, 189, 248, 0.14), transparent 24%),
+        linear-gradient(180deg, #04100c 0%, var(--bg) 48%, #040d0a 100%);
+    }
+
+    .shell {
+      width: min(1240px, 100%);
+      margin: 0 auto;
+      padding:
+        calc(16px + env(safe-area-inset-top, 0px))
+        max(14px, env(safe-area-inset-left, 0px))
+        calc(34px + env(safe-area-inset-bottom, 0px))
+        max(14px, env(safe-area-inset-right, 0px));
+    }
+
+    .hero,
+    .panel,
+    .room-card,
+    .mix-card,
+    .metric {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .hero {
+      border-radius: 28px;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    .hero-top {
+      display: grid;
+      gap: 16px;
+    }
+
+    .eyebrow {
+      margin: 0;
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: #8ff5d0;
+      font-weight: 800;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      margin: 0;
+      font-family: "Space Grotesk", "Manrope", sans-serif;
+    }
+
+    h1 {
+      margin-top: 12px;
+      font-size: clamp(2.1rem, 5vw, 4rem);
+      line-height: 0.98;
+      max-width: 12ch;
+    }
+
+    .hero-copy {
+      margin: 14px 0 0;
+      max-width: 64ch;
+      font-size: 0.98rem;
+      line-height: 1.8;
+      color: var(--muted);
+    }
+
+    .admin-chip,
+    .back-link,
+    .room-badge,
+    .player-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05);
+      padding: 10px 14px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .admin-chip { width: fit-content; color: #d8fff2; }
+    .back-link { color: #c6fff0; }
+
+    .metric-grid,
+    .chart-grid,
+    .filters-grid,
+    .mix-grid,
+    .room-grid,
+    .room-stats {
+      display: grid;
+      gap: 14px;
+    }
+
+    .metric-grid {
+      margin-top: 20px;
+      grid-template-columns: 1fr;
+    }
+
+    .metric {
+      border-radius: 22px;
+      padding: 16px;
+      min-width: 0;
+    }
+
+    .metric label,
+    .field label,
+    .section-copy,
+    .empty-copy,
+    .trend-meta span,
+    .day-header span,
+    .room-kicker,
+    .room-stats span {
+      color: var(--muted);
+    }
+
+    .metric label,
+    .field label,
+    .room-kicker {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 10px;
+      font-size: clamp(1.3rem, 4vw, 2rem);
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .metric small {
+      display: block;
+      margin-top: 8px;
+      font-size: 0.86rem;
+      line-height: 1.6;
+    }
+
+    .positive { color: var(--mint) !important; }
+    .negative { color: var(--danger) !important; }
+
+    .panel {
+      margin-top: 18px;
+      border-radius: 24px;
+      padding: 18px;
+    }
+
+    .section-head {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .section-copy,
+    .empty-copy {
+      margin: 0;
+      font-size: 0.94rem;
+      line-height: 1.75;
+    }
+
+    .filters-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      background: rgba(3, 10, 8, 0.55);
+      color: var(--text);
+      padding: 14px 15px;
+      font: inherit;
+      outline: none;
+    }
+
+    .field input::placeholder {
+      color: rgba(160, 194, 183, 0.68);
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: rgba(52, 211, 153, 0.45);
+      box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.1);
+    }
+
+    .hidden { display: none !important; }
+
+    .chart-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .trend-row {
+      display: grid;
+      grid-template-columns: minmax(120px, 1fr) minmax(120px, 2fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .trend-row:last-child { border-bottom: none; }
+    .trend-meta strong { display: block; font-size: 0.96rem; }
+    .trend-meta span { font-size: 0.82rem; }
+
+    .trend-track,
+    .mix-track {
+      position: relative;
+      width: 100%;
+      min-height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      overflow: hidden;
+    }
+
+    .trend-bar,
+    .mix-fill {
+      display: block;
+      height: 10px;
+      border-radius: inherit;
+      background: linear-gradient(135deg, var(--mint), var(--lime));
+    }
+
+    .bar-negative {
+      background: linear-gradient(135deg, #fb7185, #f43f5e);
+    }
+
+    .trend-value {
+      font-weight: 800;
+      text-align: right;
+      min-width: 90px;
+    }
+
+    .mix-card {
+      border-radius: 20px;
+      padding: 16px;
+    }
+
+    .mix-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .mix-grid {
+      margin-top: 12px;
+      grid-template-columns: 1fr;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    .mix-grid-inline,
+    .digest-grid {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+      grid-template-columns: 1fr;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    .digest-card {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 16px;
+      background: rgba(255,255,255,0.04);
+      min-width: 0;
+      text-align: left;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+    }
+
+    .digest-card:hover,
+    .digest-card:focus-visible {
+      border-color: rgba(52, 211, 153, 0.42);
+      background: rgba(52, 211, 153, 0.08);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .digest-card.is-active {
+      border-color: rgba(52, 211, 153, 0.56);
+      background: rgba(52, 211, 153, 0.1);
+      box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.12);
+    }
+
+    .digest-net {
+      display: block;
+      margin-top: 10px;
+      font-size: 1.2rem;
+      font-weight: 900;
+      overflow-wrap: anywhere;
+    }
+
+    .room-section-head {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .day-group { margin-top: 18px; }
+
+    .day-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .day-header h3 { font-size: 1.15rem; }
+
+    .room-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .room-card {
+      border-radius: 22px;
+      padding: 16px;
+      min-width: 0;
+    }
+
+    .room-topline,
+    .room-heading {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .room-heading {
+      margin-top: 14px;
+    }
+
+    .room-heading h4 {
+      margin-top: 6px;
+      font-size: 1.08rem;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+
+    .room-time {
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+
+    .room-net {
+      font-size: 1.15rem;
+      font-weight: 900;
+      overflow-wrap: anywhere;
+    }
+
+    .room-stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 16px;
+    }
+
+    .room-stats div {
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 12px;
+      min-width: 0;
+      background: rgba(0,0,0,0.12);
+    }
+
+    .room-stats strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 0.96rem;
+      overflow-wrap: anywhere;
+    }
+
+    .room-players {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .player-pill {
+      padding: 8px 12px;
+      font-size: 0.8rem;
+    }
+
+    .player-pill.muted {
+      color: var(--muted);
+      border-style: dashed;
+    }
+
+    @media (min-width: 720px) {
+      .hero-top {
+        grid-template-columns: 1.4fr auto;
+        align-items: start;
+      }
+      .metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .filters-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .chart-grid,
+      .mix-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .room-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .room-topline,
+      .room-heading {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: start;
+      }
+    }
+
+    @media (min-width: 1040px) {
+      .metric-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+      .filters-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+      .room-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-top">
+        <div>
+          <p class="eyebrow">Finance réelle</p>
+          <h1>Résultat entreprise par salle</h1>
+          <p class="hero-copy">
+            Cette vue mesure uniquement le résultat jeu réalisé sur les salles terminées: encaisse sur les humains, payout si un humain gagne,
+            et net par salle selon le nombre de bots présents.
+          </p>
+        </div>
+        <div style="display:grid;gap:12px;justify-items:start;">
+          <a class="back-link" href="./Dpayment.html">Retour accueil admin</a>
+          <div class="admin-chip">
+            <span style="width:10px;height:10px;border-radius:999px;background:var(--mint);"></span>
+            <span id="financeAdminEmail">Connexion admin...</span>
+          </div>
+        </div>
+      </div>
+
+      <p id="financeLoadingState" class="hero-copy" style="margin-top:18px;">Chargement de la finance réelle...</p>
+      <p id="financeErrorState" class="hidden" style="margin-top:18px;color:#fecdd3;font-weight:800;"></p>
+
+      <div id="financeContent" class="hidden">
+        <div class="metric-grid">
+          <article class="metric">
+            <label>Net entreprise</label>
+            <strong id="financeTotalNet">0 Does</strong>
+            <small id="financeExposureNote">Synthèse en cours...</small>
+          </article>
+          <article class="metric">
+            <label>Encaisse humaine</label>
+            <strong id="financeTotalCollected">0 Does</strong>
+            <small>Somme des mises effectivement apportées par les joueurs humains.</small>
+          </article>
+          <article class="metric">
+            <label>Payout vers humains</label>
+            <strong id="financeTotalPayout">0 Does</strong>
+            <small>Récompenses payées quand le gagnant final est un joueur humain.</small>
+          </article>
+          <article class="metric">
+            <label>Salles terminées</label>
+            <strong id="financeTotalRooms">0</strong>
+            <small id="financeAverageNet">0 Does</small>
+          </article>
+          <article class="metric">
+            <label>Salles avec bots</label>
+            <strong id="financeBotRooms">0</strong>
+            <small>Répartition entre risque bot et tables 100% humaines.</small>
+          </article>
+          <article class="metric">
+            <label>Victoires bots</label>
+            <strong id="financeBotWinRate">0</strong>
+            <small>Quand un bot gagne, l’entreprise garde toute l’encaisse humaine de la salle.</small>
+          </article>
+        </div>
+        <p id="financeFetchMeta" class="section-copy" style="margin-top:16px;"></p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Filtres</p>
+          <h2>Piloter la période et le risque</h2>
+        </div>
+        <p class="section-copy">Tous les filtres sont côté dashboard uniquement: aucune écriture, aucun impact sur le jeu.</p>
+      </div>
+      <div class="filters-grid">
+        <div class="field">
+          <label for="financeSearchInput">Recherche</label>
+          <input id="financeSearchInput" type="search" placeholder="Salle, UID ou nom du gagnant">
+        </div>
+        <div class="field">
+          <label for="financePeriodFilter">Période</label>
+          <select id="financePeriodFilter">
+            <option value="today" selected>Aujourd'hui</option>
+            <option value="yesterday">Hier</option>
+            <option value="7d">7 derniers jours</option>
+            <option value="30d">30 derniers jours</option>
+            <option value="all">Tout</option>
+            <option value="custom">Période personnalisée</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="financeDayFilter">Jour précis</label>
+          <select id="financeDayFilter">
+            <option value="all">Toutes les journées</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="financeBotFilter">Bots dans la salle</label>
+          <select id="financeBotFilter">
+            <option value="all">Tous les cas</option>
+            <option value="humans">0 bot</option>
+            <option value="1">1 bot</option>
+            <option value="2">2 bots</option>
+            <option value="3">3 bots</option>
+            <option value="bots">Toutes salles avec bots</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="financeWinnerFilter">Type gagnant</label>
+          <select id="financeWinnerFilter">
+            <option value="all">Tous</option>
+            <option value="human">Gagnant humain</option>
+            <option value="bot">Gagnant bot</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="financeStakeFilter">Mise</label>
+          <select id="financeStakeFilter">
+            <option value="all">Toutes les mises</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="financeSortFilter">Tri</label>
+          <select id="financeSortFilter">
+            <option value="recent" selected>Plus récent</option>
+            <option value="net_desc">Net entreprise décroissant</option>
+            <option value="net_asc">Net entreprise croissant</option>
+            <option value="stake_desc">Plus grosse mise</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="financeRoomLimit">Salles affichées</label>
+          <select id="financeRoomLimit">
+            <option value="50" selected>50</option>
+            <option value="100">100</option>
+            <option value="200">200</option>
+          </select>
+        </div>
+        <div id="financeCustomRange" class="hidden" style="display:contents;">
+          <div class="field">
+            <label for="financeDateFrom">Du</label>
+            <input id="financeDateFrom" type="date">
+          </div>
+          <div class="field">
+            <label for="financeDateTo">Au</label>
+            <input id="financeDateTo" type="date">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" style="margin-top:18px;">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Journées</p>
+          <h2>Résumé par jour</h2>
+        </div>
+        <p class="section-copy">Une vue compacte pour repérer les journées les plus fortes sans afficher des milliers de salles d’un coup. Appuie sur une carte pour filtrer immédiatement le ledger sur cette journée.</p>
+      </div>
+      <div id="financeDayDigest" class="mix-grid"></div>
+    </section>
+
+    <section class="chart-grid" style="margin-top:18px;">
+      <article class="panel">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Courbe</p>
+            <h2>Tendance du net</h2>
+          </div>
+          <p class="section-copy">Net quotidien sur la période filtrée.</p>
+        </div>
+        <div id="financeTrendChart"></div>
+      </article>
+
+      <article class="panel">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Bots</p>
+            <h2>Impact des compositions</h2>
+          </div>
+          <p class="section-copy">Compare le net selon 0, 1, 2 ou 3 bots dans la salle.</p>
+        </div>
+        <div id="financeBotMixChart" class="mix-grid"></div>
+      </article>
+    </section>
+
+    <section class="panel" style="margin-top:18px;">
+      <div class="room-section-head">
+        <div>
+          <p class="eyebrow">Ledger</p>
+          <h2>Salles analysées</h2>
+        </div>
+        <p id="financeRoomCount" class="section-copy">0 salle</p>
+      </div>
+      <p id="financeRoomRenderNote" class="section-copy" style="margin-bottom:10px;"></p>
+      <p id="financeEmptyState" class="empty-copy hidden">Aucune salle ne correspond aux filtres actuels.</p>
+      <div id="financeRoomList"></div>
+    </section>
+  </main>
+
+  <script type="module" src="./finance-ui.js"></script>
+</body>
+</html>
