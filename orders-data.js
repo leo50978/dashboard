@@ -80,6 +80,14 @@ function normalizeOrder(docSnap) {
     extractedText: String(data.extractedText || ""),
     extractedTextStatus: String(data.extractedTextStatus || (data.extractedText ? "success" : "empty")).trim().toLowerCase(),
     resolvedAtMs: toMs(data.resolvedAt) || toMs(data.reviewedAt) || 0,
+    bonusEligible: data.bonusEligible === true || ((Number(getOrderAmount(data)) || 0) >= 100),
+    bonusPercent: Number(data.bonusPercent ?? 10) || 0,
+    bonusThresholdHtg: Number(data.bonusThresholdHtg ?? 100) || 0,
+    bonusRateHtgToDoes: Number(data.bonusRateHtgToDoes ?? 20) || 0,
+    bonusHtgBasis: Number(data.bonusHtgBasis ?? getOrderAmount(data)) || 0,
+    bonusHtgRaw: Number(data.bonusHtgRaw ?? 0) || 0,
+    bonusDoesAwarded: Number(data.bonusDoesAwarded ?? 0) || 0,
+    bonusAwardedAtMs: toMs(data.bonusAwardedAt) || Number(data.bonusAwardedAtMs || 0) || 0,
   };
 }
 

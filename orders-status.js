@@ -552,6 +552,14 @@ function renderOrderModal(order, options = {}) {
           <p style="margin:10px 0 0;font-size:1.3rem;font-weight:900;">${formatPrice(order.amount)}</p>
           <p style="margin:8px 0 0;color:#475569;">${escapeHtml(order.methodName || "Methode non definie")}</p>
           <p style="margin:6px 0 0;"><span style="display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:rgba(15,23,42,.06);padding:6px 10px;font-size:12px;font-weight:800;color:#0f172a;">${escapeHtml(getStatusLabel(order.status))}</span></p>
+          ${order.bonusEligible ? `
+            <div style="margin-top:12px;border-radius:14px;background:rgba(217,119,6,.08);padding:12px;">
+              <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:#9a3412;font-weight:800;">Bonus automatique</p>
+              <p style="margin:8px 0 0;color:#7c2d12;font-weight:800;">${order.bonusDoesAwarded > 0 ? `+${escapeHtml(String(order.bonusDoesAwarded))} Does accordes` : `${escapeHtml(String(order.bonusPercent || 10))}% prevu apres approbation`}</p>
+              <p style="margin:6px 0 0;color:#92400e;font-size:13px;">Base: ${formatPrice(order.bonusHtgBasis || order.amount)} · Taux: ${escapeHtml(String(order.bonusRateHtgToDoes || 20))} Does / HTG</p>
+              ${order.bonusAwardedAtMs > 0 ? `<p style="margin:6px 0 0;color:#92400e;font-size:13px;">Accorde le ${escapeHtml(formatDate(order.bonusAwardedAtMs))}</p>` : ""}
+            </div>
+          ` : ""}
         </div>
       </div>
       ${renderHistorySection(history, order.id, historyLoading, historyError)}
