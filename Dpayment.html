@@ -4516,6 +4516,35 @@
 
     // ========== INITIALISATION ==========
     
+    const DASHBOARD_LEGACY_REFRESH_MS = 5 * 60 * 1000;
+    let dashboardLegacyRefreshTimer = null;
+    let dashboardLegacyRefreshBusy = false;
+
+    async function refreshLegacyDashboardCollections() {
+      if (dashboardLegacyRefreshBusy) return;
+      dashboardLegacyRefreshBusy = true;
+      try {
+        await loadClients();
+        await loadOrders();
+        await loadWithdrawals();
+        await loadXchanges();
+        await loadAmbassadors();
+        setupOrdersRealtimeListeners();
+      } finally {
+        dashboardLegacyRefreshBusy = false;
+      }
+    }
+
+    function startLegacyDashboardRefresh() {
+      if (dashboardLegacyRefreshTimer) {
+        clearInterval(dashboardLegacyRefreshTimer);
+      }
+      dashboardLegacyRefreshTimer = setInterval(() => {
+        if (document.visibilityState !== 'visible') return;
+        void refreshLegacyDashboardCollections();
+      }, DASHBOARD_LEGACY_REFRESH_MS);
+    }
+
     async function init() {
       const adminUser = await ensureAdminSession();
       if (!adminUser) return;
@@ -4547,19 +4576,11 @@
       await updateDashboardNotificationStatus();
       document.addEventListener('visibilitychange', () => {
         void updateDashboardNotificationStatus();
+        if (document.visibilityState === 'visible') {
+          void refreshLegacyDashboardCollections();
+        }
       });
-      
-      // Écouter en temps réel les changements
-      onSnapshot(collection(db, CLIENTS), async () => {
-        await loadClients();
-        await loadOrders();
-        await loadWithdrawals();
-        await loadXchanges();
-        setupOrdersRealtimeListeners();
-      });
-      onSnapshot(collection(db, AMBASSADORS), async () => {
-        await loadAmbassadors();
-      });
+      startLegacyDashboardRefresh();
     }
 
     // ========== LANCEMENT ==========
