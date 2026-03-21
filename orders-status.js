@@ -28,6 +28,7 @@ const tableHeadRowEl = document.querySelector("table thead tr");
 let currentRows = [];
 let currentModalOrder = null;
 let currentModalHistory = [];
+let currentHistoryExpanded = false;
 let activeDecisionKey = "";
 let toastTimeout = 0;
 let modalHistoryToken = 0;
@@ -70,6 +71,7 @@ function ensureOrdersStatusUiStyles() {
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      min-height: 0;
       border-radius: 24px;
       background: white;
       border: 1px solid rgba(148,163,184,.24);
@@ -90,9 +92,54 @@ function ensureOrdersStatusUiStyles() {
       -webkit-backdrop-filter: blur(12px);
     }
     .orders-status-modal-content {
+      flex: 1 1 auto;
+      min-height: 0;
       overflow: auto;
+      overflow-x: hidden;
+      scrollbar-gutter: stable;
       -webkit-overflow-scrolling: touch;
       padding: 0 clamp(16px, 3.6vw, 24px) clamp(18px, 3.8vw, 26px);
+    }
+    .orders-status-modal-content::-webkit-scrollbar {
+      width: 10px;
+    }
+    .orders-status-modal-content::-webkit-scrollbar-thumb {
+      background: rgba(100,116,139,.45);
+      border-radius: 999px;
+    }
+    .orders-status-history {
+      margin-top: 16px;
+      border: 1px solid rgba(148,163,184,.2);
+      border-radius: 18px;
+      background: white;
+      overflow: hidden;
+    }
+    .orders-status-history summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      user-select: none;
+    }
+    .orders-status-history summary::-webkit-details-marker {
+      display: none;
+    }
+    .orders-status-history-body {
+      padding: 0 16px 16px;
+      display: grid;
+      gap: 10px;
+    }
+    .orders-status-history-caret {
+      transition: transform .18s ease;
+      color: #64748b;
+      font-size: 14px;
+      flex: 0 0 auto;
+    }
+    .orders-status-history[open] .orders-status-history-caret {
+      transform: rotate(180deg);
     }
     .orders-status-modal-footer {
       position: sticky;
@@ -291,59 +338,54 @@ function renderHistorySection(history = [], currentOrderId = "", loading = false
   const otherHistory = Array.isArray(history)
     ? history.filter((entry) => String(entry?.id || "") !== String(currentOrderId || ""))
     : [];
-
+  let bodyHtml = "";
   if (loading) {
-    return `
-      <div style="margin-top:16px;border:1px solid rgba(148,163,184,.2);border-radius:18px;padding:16px;">
-        <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:#64748b;font-weight:800;">Historique de cette personne</p>
-        <p style="margin:12px 0 0;color:#475569;">Chargement de l'historique...</p>
-      </div>
-    `;
-  }
-
-  if (errorMessage) {
-    return `
-      <div style="margin-top:16px;border:1px solid rgba(248,113,113,.34);border-radius:18px;padding:16px;background:#fff1f2;">
-        <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:#be123c;font-weight:800;">Historique de cette personne</p>
-        <p style="margin:12px 0 0;color:#9f1239;">${escapeHtml(errorMessage)}</p>
-      </div>
-    `;
-  }
-
-  return `
-    <div style="margin-top:16px;border:1px solid rgba(148,163,184,.2);border-radius:18px;padding:16px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-        <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:#64748b;font-weight:800;">Historique de cette personne</p>
-        <span style="display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:rgba(15,23,42,.06);padding:6px 10px;font-size:12px;font-weight:800;color:#0f172a;">${otherHistory.length} demande(s)</span>
-      </div>
-      <div style="margin-top:12px;display:grid;gap:10px;">
-        ${otherHistory.length ? otherHistory.map((entry, index) => {
-          const ocrPreview = String(entry.extractedText || '').replace(/\s+/g, ' ').trim();
-          const isPending = String(entry.status || '').trim().toLowerCase() === 'pending';
-          return `
-          <div style="border:1px solid ${entry.id === currentOrderId ? 'rgba(37,99,235,.28)' : 'rgba(148,163,184,.18)'};border-radius:16px;padding:14px;background:${entry.id === currentOrderId ? 'rgba(219,234,254,.45)' : '#fafafa'};">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
-              <div>
-                <p style="margin:0;font-weight:800;">${escapeHtml(entry.uniqueCode || `Demande ${index + 1}`)}</p>
-                <p style="margin:8px 0 0;color:#475569;font-size:14px;">${formatDate(entry.createdAtMs)} · ${formatPrice(entry.amount)} · ${escapeHtml(entry.methodName || 'Methode non definie')}</p>
-                <p style="margin:8px 0 0;color:#334155;font-size:13px;"><strong>OCR:</strong> ${escapeHtml(ocrPreview || '-')}</p>
-              </div>
-              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
-                <span style="display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:rgba(15,23,42,.06);padding:6px 10px;font-size:12px;font-weight:800;color:#0f172a;">${escapeHtml(getStatusLabel(entry.status))}</span>
-                <div style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;">
-                  <button type="button" data-history-action="view" data-order-id="${escapeHtml(entry.id)}" data-client-id="${escapeHtml(entry.clientId)}" style="border:1px solid rgba(148,163,184,.26);background:white;color:#0f172a;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;">Consulter</button>
-                  ${isPending ? `
-                    <button type="button" data-history-action="approve" data-order-id="${escapeHtml(entry.id)}" data-client-id="${escapeHtml(entry.clientId)}" style="border:none;background:#059669;color:white;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;">Approuver</button>
-                    <button type="button" data-history-action="reject" data-order-id="${escapeHtml(entry.id)}" data-client-id="${escapeHtml(entry.clientId)}" style="border:none;background:#dc2626;color:white;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;">Rejeter</button>
-                  ` : ''}
-                </div>
+    bodyHtml = `<p style="margin:0;color:#475569;">Chargement de l'historique...</p>`;
+  } else if (errorMessage) {
+    bodyHtml = `<p style="margin:0;color:#9f1239;">${escapeHtml(errorMessage)}</p>`;
+  } else if (otherHistory.length) {
+    bodyHtml = otherHistory.map((entry, index) => {
+      const ocrPreview = String(entry.extractedText || '').replace(/\s+/g, ' ').trim();
+      const isPending = String(entry.status || '').trim().toLowerCase() === 'pending';
+      return `
+        <div style="border:1px solid ${entry.id === currentOrderId ? 'rgba(37,99,235,.28)' : 'rgba(148,163,184,.18)'};border-radius:16px;padding:14px;background:${entry.id === currentOrderId ? 'rgba(219,234,254,.45)' : '#fafafa'};">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+            <div>
+              <p style="margin:0;font-weight:800;">${escapeHtml(entry.uniqueCode || `Demande ${index + 1}`)}</p>
+              <p style="margin:8px 0 0;color:#475569;font-size:14px;">${formatDate(entry.createdAtMs)} · ${formatPrice(entry.amount)} · ${escapeHtml(entry.methodName || 'Methode non definie')}</p>
+              <p style="margin:8px 0 0;color:#334155;font-size:13px;"><strong>OCR:</strong> ${escapeHtml(ocrPreview || '-')}</p>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+              <span style="display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:rgba(15,23,42,.06);padding:6px 10px;font-size:12px;font-weight:800;color:#0f172a;">${escapeHtml(getStatusLabel(entry.status))}</span>
+              <div style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;">
+                <button type="button" data-history-action="view" data-order-id="${escapeHtml(entry.id)}" data-client-id="${escapeHtml(entry.clientId)}" style="border:1px solid rgba(148,163,184,.26);background:white;color:#0f172a;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;">Consulter</button>
+                ${isPending ? `
+                  <button type="button" data-history-action="approve" data-order-id="${escapeHtml(entry.id)}" data-client-id="${escapeHtml(entry.clientId)}" style="border:none;background:#059669;color:white;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;">Approuver</button>
+                  <button type="button" data-history-action="reject" data-order-id="${escapeHtml(entry.id)}" data-client-id="${escapeHtml(entry.clientId)}" style="border:none;background:#dc2626;color:white;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;">Rejeter</button>
+                ` : ''}
               </div>
             </div>
           </div>
-        `;
-        }).join('') : '<p style="margin:0;color:#64748b;">Aucune autre demande trouvee pour ce client.</p>'}
+        </div>
+      `;
+    }).join("");
+  } else {
+    bodyHtml = '<p style="margin:0;color:#64748b;">Aucune autre demande trouvee pour ce client.</p>';
+  }
+
+  return `
+    <details id="ordersStatusHistoryDetails" class="orders-status-history"${currentHistoryExpanded ? " open" : ""}>
+      <summary>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;flex:1 1 auto;min-width:0;">
+          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:#64748b;font-weight:800;">Historique de cette personne</p>
+          <span style="display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:rgba(15,23,42,.06);padding:6px 10px;font-size:12px;font-weight:800;color:#0f172a;">${otherHistory.length} demande(s)</span>
+        </div>
+        <span class="orders-status-history-caret">▾</span>
+      </summary>
+      <div class="orders-status-history-body">
+        ${bodyHtml}
       </div>
-    </div>
+    </details>
   `;
 }
 
@@ -411,6 +453,7 @@ function ensureModal() {
     modal.classList.add("hidden");
     currentModalOrder = null;
     currentModalHistory = [];
+    currentHistoryExpanded = false;
     modalHistoryToken += 1;
   };
   modal.querySelector("[data-modal-overlay='true']")?.addEventListener("click", (event) => {
@@ -440,6 +483,12 @@ function ensureModal() {
       void handleDecision(targetOrder, action);
     }
   });
+  modal.querySelector("#ordersStatusModalContent")?.addEventListener("toggle", (event) => {
+    const details = event.target;
+    if (!(details instanceof HTMLElement)) return;
+    if (details.id !== "ordersStatusHistoryDetails") return;
+    currentHistoryExpanded = details.hasAttribute("open");
+  }, true);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !modal.classList.contains("hidden")) {
       close();
@@ -561,6 +610,7 @@ function renderOrderModal(order, options = {}) {
 }
 
 async function openOrderModal(order, preloadedHistory = null) {
+  currentHistoryExpanded = false;
   const initialHistory = Array.isArray(preloadedHistory) && preloadedHistory.length ? preloadedHistory : [];
   currentModalHistory = initialHistory;
   renderOrderModal(order, { history: initialHistory, historyLoading: !initialHistory.length });

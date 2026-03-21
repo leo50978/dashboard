@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <script src="./runtime-config.js"></script>
+  <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="shortcut icon" href="./favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+  <title>Vitch Studio · Retraits en attente</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root { --page-accent: #d97706; --bg:#fff7ed; --text:#7c2d12; --muted:#9a3412; --line:rgba(217,119,6,.22); }
+    * { box-sizing:border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin:0;
+      min-height:100dvh;
+      min-height:100vh;
+      overflow-x:hidden;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      font-family: Inter, system-ui, sans-serif;
+      color:var(--text);
+      background:linear-gradient(180deg,var(--bg),#fffbeb);
+    }
+    .shell {
+      width:min(100%,1180px);
+      margin:0 auto;
+      padding:
+        calc(12px + env(safe-area-inset-top, 0px))
+        max(14px, env(safe-area-inset-left, 0px))
+        calc(34px + env(safe-area-inset-bottom, 0px))
+        max(14px, env(safe-area-inset-right, 0px));
+    }
+    .panel {
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.94);
+      border-radius:22px;
+      box-shadow:0 18px 38px rgba(15,23,42,.08);
+      padding:16px;
+      overflow:hidden;
+    }
+    .topbar {
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      gap:16px;
+    }
+    .stats {
+      display:grid;
+      grid-template-columns:1fr;
+      gap:12px;
+      margin-top:18px;
+    }
+    .chip,.stat,.search-box {
+      border:1px solid var(--line);
+      background:white;
+      border-radius:16px;
+      padding:14px 16px;
+      min-width:0;
+    }
+    .chip {
+      width:100%;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      border-radius:18px;
+      color:var(--muted);
+      font-size:14px;
+      font-weight:700;
+      overflow-wrap:anywhere;
+    }
+    .actions {
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+      margin-top:18px;
+    }
+    .btn {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      width:100%;
+      min-height:48px;
+      border-radius:14px;
+      padding:12px 16px;
+      text-decoration:none;
+      font-weight:800;
+      text-align:center;
+    }
+    .btn-primary { background:var(--page-accent); color:white; }
+    .btn-secondary { border:1px solid var(--line); background:white; color:var(--text); }
+    .table-shell { margin-top:20px; overflow:visible; }
+    .search-input {
+      width:100%;
+      border:none;
+      outline:none;
+      background:transparent;
+      font:inherit;
+      color:#0f172a;
+    }
+    table { width:100%; border-collapse:separate; border-spacing:0; }
+    th,td {
+      padding:14px 12px;
+      text-align:left;
+      border-bottom:1px solid rgba(148,163,184,.18);
+      font-size:14px;
+      vertical-align:top;
+    }
+    th {
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.12em;
+      color:var(--muted);
+    }
+    .status-pill {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:999px;
+      background:rgba(217,119,6,.1);
+      color:var(--page-accent);
+      padding:6px 10px;
+      font-size:12px;
+      font-weight:800;
+      max-width:100%;
+    }
+    .hidden { display:none !important; }
+    @media (max-width: 899px) {
+      thead { display:none; }
+      table, tbody { display:block; width:100%; }
+      tbody { display:grid; gap:12px; }
+      tr {
+        display:block;
+        border:1px solid rgba(148,163,184,.16);
+        border-radius:16px;
+        padding:12px 14px;
+        background:white;
+        box-shadow:0 8px 20px rgba(15,23,42,.05);
+      }
+      tr.day-group-row {
+        padding:0;
+        border:none;
+        background:transparent;
+        box-shadow:none;
+        border-radius:0;
+      }
+      td {
+        display:flex;
+        flex-direction:column;
+        align-items:flex-start;
+        justify-content:flex-start;
+        gap:6px;
+        width:100%;
+        padding:8px 0;
+        border-bottom:1px solid rgba(148,163,184,.12);
+        overflow-wrap:anywhere;
+        word-break:break-word;
+      }
+      td:last-child { border-bottom:none; padding-bottom:0; }
+      td::before {
+        content: attr(data-label);
+        font-size:11px;
+        line-height:1.4;
+        text-transform:uppercase;
+        letter-spacing:.12em;
+        color:var(--muted);
+        font-weight:800;
+      }
+      .day-group-row td,
+      .day-group-cell {
+        display:block;
+        padding:10px 2px 2px;
+        border-bottom:none;
+      }
+      .day-group-row td::before,
+      .day-group-cell::before { content:none; }
+      .row-actions {
+        display:flex;
+        flex-wrap:wrap;
+        justify-content:flex-start;
+        gap:8px;
+        width:100%;
+      }
+      .row-actions button {
+        flex:1 1 120px;
+        min-height:42px;
+        border-radius:14px;
+        font-size:12px;
+        font-weight:800;
+      }
+      td.actions-cell { display:block; }
+      td.actions-cell::before {
+        content: attr(data-label);
+        display:block;
+        margin-bottom:10px;
+        font-size:11px;
+        line-height:1.4;
+        text-transform:uppercase;
+        letter-spacing:.12em;
+        color:var(--muted);
+        font-weight:800;
+      }
+    }
+    @media (min-width: 640px) {
+      .panel { padding:22px; }
+      .stats { grid-template-columns:repeat(3,minmax(0,1fr)); }
+      .actions { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .chip { width:auto; border-radius:999px; }
+    }
+    @media (min-width: 900px) {
+      .shell {
+        padding:
+          calc(28px + env(safe-area-inset-top, 0px))
+          max(18px, env(safe-area-inset-left, 0px))
+          calc(56px + env(safe-area-inset-bottom, 0px))
+          max(18px, env(safe-area-inset-right, 0px));
+      }
+      .panel { border-radius:30px; padding:26px; }
+      .topbar { flex-direction:row; justify-content:space-between; align-items:center; gap:14px; }
+      .actions { display:flex; flex-wrap:wrap; gap:12px; }
+      .btn { width:auto; }
+      .table-shell { overflow:auto; -webkit-overflow-scrolling:touch; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="panel">
+      <div class="topbar">
+        <div>
+          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.18em;color:var(--muted);font-weight:800;">Retraits</p>
+          <h1 id="withdrawalsStatusTitle" style="margin:10px 0 0;font-size:clamp(2rem,4vw,3.2rem);line-height:1.05;">Retraits en attente</h1>
+          <p id="withdrawalsStatusSubtitle" style="margin:14px 0 0;max-width:740px;color:var(--muted);line-height:1.8;">Traite uniquement les retraits qui attendent encore une validation.</p>
+        </div>
+        <div class="chip"><span style="width:10px;height:10px;border-radius:999px;background:var(--page-accent);"></span><span id="withdrawalsStatusAdminEmail">Connexion admin...</span></div>
+      </div>
+      <div class="actions">
+        <a class="btn btn-secondary" href="./Dwithdrawals.html"><i class="fas fa-arrow-left"></i>Retour retraits</a>
+        <a class="btn btn-primary" href="./Dpayment.html"><i class="fas fa-house"></i>Accueil admin</a>
+      </div>
+      <p id="withdrawalsStatusLoading" style="margin:22px 0 0;color:var(--muted);">Chargement des retraits...</p>
+      <p id="withdrawalsStatusError" class="hidden" style="margin:22px 0 0;color:#b91c1c;font-weight:800;"></p>
+      <div id="withdrawalsStatusContent" class="hidden">
+        <div class="stats" style="margin:22px 0 0;">
+          <div class="stat"><p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);font-weight:800;">Liste</p><p id="withdrawalsStatusBadge" class="status-pill" style="margin:10px 0 0;">En attente</p></div>
+          <div class="stat"><p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);font-weight:800;">Total</p><p id="withdrawalsStatusCount" style="margin:10px 0 0;font-size:2rem;font-weight:900;">0</p></div>
+          <div class="stat"><p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);font-weight:800;">Montant</p><p id="withdrawalsStatusAmount" style="margin:10px 0 0;font-size:2rem;font-weight:900;">0 HTG</p></div>
+        </div>
+        <div class="search-box" style="margin-top:18px;">
+          <input id="withdrawalsStatusSearch" class="search-input" type="search" placeholder="Chercher un client, email, telephone, methode ou ID retrait">
+        </div>
+        <div class="table-shell">
+          <table>
+            <thead><tr><th>Date</th><th>Client</th><th>Email</th><th>Montant</th><th>Methode</th><th>Statut</th><th>Telephone</th></tr></thead>
+            <tbody id="withdrawalsStatusTableBody"></tbody>
+          </table>
+        </div>
+        <div id="withdrawalsStatusEmpty" class="hidden" style="margin-top:24px;border:1px dashed var(--line);border-radius:20px;padding:28px;text-align:center;color:var(--muted);font-weight:700;">Aucun retrait en attente trouve.</div>
+      </div>
+    </section>
+  </main>
+  <script>window.__WITHDRAWALS_STATUS = 'pending';</script>
+  <script type="module" src="./withdrawals-status.js"></script>
+</body>
+</html>
