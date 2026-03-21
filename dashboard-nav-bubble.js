@@ -11,6 +11,7 @@
   const items = [
     { href: "./index.html", label: "Accueil", key: "index.html" },
     { href: "./Dpayment.html", label: "Paiements", key: "dpayment.html" },
+    { href: "./pilotagebot.html", label: "Pilotage bots", key: "pilotagebot.html" },
     { href: "./sondage.html", label: "Sondages", key: "sondage.html" },
     { href: "./Danalytics.html", label: "Analytics", key: "danalytics.html" },
     { href: "./Ddiscussion.html", label: "Discussion", key: "ddiscussion.html" },

@@ -140,6 +140,14 @@ export async function setBotDifficultySecure(payload = {}) {
   return invokeCallable("setBotDifficulty", payload, "Impossible de changer le niveau des bots.");
 }
 
+export async function getBotPilotSnapshotSecure(payload = {}) {
+  return invokeCallable("getBotPilotSnapshot", payload, "Impossible de charger le pilotage des bots.");
+}
+
+export async function setBotPilotControlSecure(payload = {}) {
+  return invokeCallable("setBotPilotControl", payload, "Impossible de mettre a jour le pilotage des bots.");
+}
+
 export async function resolveDepositReviewSecure(payload = {}) {
   return invokeCallable("resolveDepositReviewSecure", payload, "Impossible de traiter la commande.");
 }
