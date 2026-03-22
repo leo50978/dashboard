@@ -57,6 +57,11 @@ function safeInt(value) {
   return Number.isFinite(num) ? Math.trunc(num) : 0;
 }
 
+function safeSignedInt(value) {
+  const num = Number(value);
+  return Number.isFinite(num) ? Math.trunc(num) : 0;
+}
+
 function safeFloat(value) {
   const num = Number(value);
   return Number.isFinite(num) ? num : 0;
