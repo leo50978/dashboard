@@ -325,6 +325,127 @@
       padding: 16px;
     }
 
+    .equity-card {
+      margin-bottom: 18px;
+    }
+
+    .equity-meta-grid {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .equity-mini {
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .equity-mini label {
+      display: block;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .equity-mini strong {
+      display: block;
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--text);
+    }
+
+    .equity-mini small {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+    }
+
+    .equity-shell {
+      margin-top: 16px;
+      border-radius: 24px;
+      padding: 14px;
+      min-height: 260px;
+      background:
+        radial-gradient(circle at top, rgba(52, 211, 153, 0.10), transparent 48%),
+        linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+
+    .equity-svg {
+      width: 100%;
+      height: 240px;
+      display: block;
+    }
+
+    .equity-grid-line {
+      stroke: rgba(255,255,255,0.08);
+      stroke-width: 1;
+    }
+
+    .equity-zero-line {
+      stroke: rgba(255,255,255,0.18);
+      stroke-width: 1.2;
+      stroke-dasharray: 6 6;
+    }
+
+    .equity-peak-line {
+      stroke: rgba(190, 242, 100, 0.28);
+      stroke-width: 1.2;
+      stroke-dasharray: 4 6;
+    }
+
+    .equity-area {
+      fill: url(#pilotageEquityAreaGradient);
+      opacity: 0.34;
+    }
+
+    .equity-line {
+      fill: none;
+      stroke: #34d399;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 10px rgba(52, 211, 153, 0.32));
+    }
+
+    .equity-dot {
+      fill: #d9fff0;
+      stroke: rgba(52, 211, 153, 0.42);
+      stroke-width: 2;
+    }
+
+    .equity-axis-row {
+      margin-top: 14px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .equity-axis-row span {
+      flex: 1;
+    }
+
+    .equity-axis-row span:nth-child(2) {
+      text-align: center;
+    }
+
+    .equity-axis-row span:last-child {
+      text-align: right;
+    }
+
+    .equity-recovery-copy {
+      margin: 14px 0 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
     .trend-list,
     .mix-grid {
       margin-top: 14px;
@@ -411,6 +532,9 @@
       }
       .mix-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .equity-meta-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
     }
 
@@ -541,13 +665,52 @@
       <div class="section-head">
         <h2>Evolution du profit</h2>
         <p class="section-copy">
-          La courbe montre comment le net entreprise a evolue sur la fenetre choisie, pour t'aider a comprendre pourquoi le niveau des bots monte ou descend.
+          La courbe cumulative suit le profit comme une equity curve de trading: elle peut respirer, corriger, puis viser un nouveau plus haut. Le pilotage automatique s'appuie dessus pour proteger les creux et relancer la reprise.
         </p>
       </div>
 
+      <article class="chart-card equity-card">
+        <h3>Courbe cumulative live</h3>
+        <div class="equity-meta-grid">
+          <article class="equity-mini">
+            <label>Niveau actuel</label>
+            <strong id="pilotageEquityValue">-</strong>
+            <small id="pilotageEquityCopy">La courbe part de zero au debut de la fenetre.</small>
+          </article>
+          <article class="equity-mini">
+            <label>Dernier sommet</label>
+            <strong id="pilotagePeakValue">-</strong>
+            <small id="pilotagePeakCopy">Le plus haut niveau atteint sur la fenetre active.</small>
+          </article>
+          <article class="equity-mini">
+            <label>Drawdown</label>
+            <strong id="pilotageDrawdownValue">-</strong>
+            <small id="pilotageDrawdownCopy">Distance actuelle sous le dernier sommet.</small>
+          </article>
+        </div>
+        <div class="equity-shell">
+          <svg class="equity-svg" id="pilotageEquitySvg" viewBox="0 0 720 240" role="img" aria-label="Courbe cumulative du profit entreprise">
+            <defs>
+              <linearGradient id="pilotageEquityAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#34d399" stop-opacity="0.38"></stop>
+                <stop offset="100%" stop-color="#34d399" stop-opacity="0"></stop>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="equity-axis-row" id="pilotageEquityAxis">
+            <span>-</span>
+            <span>-</span>
+            <span>-</span>
+          </div>
+        </div>
+        <p class="equity-recovery-copy" id="pilotageRecoveryCopy">
+          Le systeme analysera ici la distance au dernier pic et la capacite a repartir au-dessus.
+        </p>
+      </article>
+
       <div class="chart-grid">
         <article class="chart-card">
-          <h3>Tendance recente</h3>
+          <h3>Variation par tranche</h3>
           <div class="trend-list" id="pilotageTrendList">
             <p class="empty-copy">Chargement de la courbe...</p>
           </div>

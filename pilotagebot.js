@@ -2,6 +2,7 @@ import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js";
 import { getBotPilotSnapshotSecure, setBotPilotControlSecure } from "./secure-functions.js";
 
 const DEFAULT_LEVEL = "expert";
+const LIVE_REFRESH_INTERVAL_MS = 45 * 1000;
 
 const dom = {
   adminEmail: document.getElementById("pilotageAdminEmail"),
@@ -24,6 +25,15 @@ const dom = {
   fetchMeta: document.getElementById("pilotageFetchMeta"),
   collectedValue: document.getElementById("pilotageCollectedValue"),
   payoutValue: document.getElementById("pilotagePayoutValue"),
+  equityValue: document.getElementById("pilotageEquityValue"),
+  equityCopy: document.getElementById("pilotageEquityCopy"),
+  peakValue: document.getElementById("pilotagePeakValue"),
+  peakCopy: document.getElementById("pilotagePeakCopy"),
+  drawdownValue: document.getElementById("pilotageDrawdownValue"),
+  drawdownCopy: document.getElementById("pilotageDrawdownCopy"),
+  equitySvg: document.getElementById("pilotageEquitySvg"),
+  equityAxis: document.getElementById("pilotageEquityAxis"),
+  recoveryCopy: document.getElementById("pilotageRecoveryCopy"),
   trendList: document.getElementById("pilotageTrendList"),
   mixGrid: document.getElementById("pilotageMixGrid"),
 };
@@ -37,7 +47,10 @@ const state = {
   appliedBotDifficulty: DEFAULT_LEVEL,
   snapshot: null,
   loading: false,
+  refreshing: false,
 };
+
+let liveRefreshTimer = 0;
 
 function safeInt(value) {
   const num = Number(value);
@@ -82,14 +95,18 @@ function bandMeta(band = "") {
   if (normalized === "danger") return { label: "Danger", tone: "danger" };
   if (normalized === "defense") return { label: "Defense", tone: "defense" };
   if (normalized === "comfort") return { label: "Confort", tone: "comfort" };
+  if (normalized === "neutral") return { label: "Neutre", tone: "equilibrium" };
   return { label: "Equilibre", tone: "equilibrium" };
 }
 
 function reasonLabel(reason = "") {
   const normalized = String(reason || "").trim().toLowerCase();
+  if (normalized === "drawdown_critical") return "La courbe est trop loin sous son dernier sommet: le systeme durcit fort les bots pour stopper la glissade et reconstruire plus haut.";
+  if (normalized === "drawdown_high") return "La courbe reste sous pression sous le dernier pic, le systeme reste en defense jusqu'au retour vers la zone haute.";
+  if (normalized === "recovery_guard") return "Le profit remonte mais n'a pas encore repris son dernier sommet: le systeme garde une pression intermediaire pour favoriser une reprise propre.";
   if (normalized === "margin_too_low") return "La marge est trop basse ou negative, le systeme renforce les bots pour proteger la journee.";
   if (normalized === "margin_low") return "La marge reste fragile, le systeme reste en defense pour garder le profit positif.";
-  if (normalized === "margin_high") return "La marge est confortable, le systeme peut adoucir les bots sans te faire basculer en perte.";
+  if (normalized === "new_high_comfort" || normalized === "margin_high") return "La courbe tient un nouveau plus haut avec une marge confortable, le systeme peut adoucir les bots sans te faire replonger.";
   if (normalized === "no_volume") return "Pas assez de volume pour piloter automatiquement, le systeme garde un niveau neutre.";
   return "La marge reste dans la zone d'equilibre, le systeme maintient un niveau intermediaire.";
 }
@@ -109,6 +126,11 @@ function formatSignedDoes(value) {
 
 function formatPercent(value) {
   return `${(safeFloat(value) * 100).toFixed(1)}%`;
+}
+
+function formatDrawdown(doesValue, pctValue) {
+  const drawdown = Math.max(0, safeInt(doesValue));
+  return `${drawdown > 0 ? "-" : ""}${formatInt(drawdown)} Does · ${formatPercent(pctValue)}`;
 }
 
 function formatDateTime(ms = 0) {
@@ -148,6 +170,101 @@ function updateControls() {
   dom.modeCopy.textContent = isAuto
     ? `Le niveau applique suit la recommandation calculee sur ${state.window === "today" ? "la journee" : state.window}.`
     : `Le niveau applique reste fixe sur ${levelLabel(state.manualBotDifficulty)} tant que tu restes en manuel.`;
+}
+
+function renderEquityCurve(snapshot = null) {
+  const points = Array.isArray(snapshot?.equityCurve) ? snapshot.equityCurve : [];
+  if (!dom.equitySvg || !dom.equityAxis || !dom.recoveryCopy) return;
+
+  if (points.length < 2) {
+    dom.equitySvg.innerHTML = `
+      <defs>
+        <linearGradient id="pilotageEquityAreaGradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#34d399" stop-opacity="0.38"></stop>
+          <stop offset="100%" stop-color="#34d399" stop-opacity="0"></stop>
+        </linearGradient>
+      </defs>
+      <text x="50%" y="50%" text-anchor="middle" fill="rgba(226,232,240,0.75)" font-size="16">
+        Pas encore assez de salles archivees pour tracer une equity curve.
+      </text>
+    `;
+    dom.equityAxis.innerHTML = `<span>-</span><span>-</span><span>-</span>`;
+    dom.recoveryCopy.textContent = "Le moteur affichera ici le sommet precedent, le drawdown et la vitesse de reprise quand le volume sera suffisant.";
+    return;
+  }
+
+  const width = 720;
+  const height = 240;
+  const padLeft = 16;
+  const padRight = 16;
+  const padTop = 18;
+  const padBottom = 20;
+  const chartWidth = width - padLeft - padRight;
+  const chartHeight = height - padTop - padBottom;
+  const values = points.map((item) => safeSignedInt(item.equityDoes));
+  const allValues = [...values, 0, safeSignedInt(snapshot?.highWaterMarkDoes)];
+  let minValue = Math.min(...allValues);
+  let maxValue = Math.max(...allValues);
+  if (minValue === maxValue) {
+    maxValue += 1;
+    minValue -= 1;
+  }
+
+  const toX = (index) => padLeft + ((chartWidth * index) / Math.max(points.length - 1, 1));
+  const toY = (value) => {
+    const normalized = (safeFloat(value) - minValue) / Math.max(maxValue - minValue, 1);
+    return padTop + (chartHeight - (normalized * chartHeight));
+  };
+
+  const zeroY = toY(0);
+  const peakY = toY(snapshot?.highWaterMarkDoes || 0);
+  const plotted = points.map((item, index) => ({
+    ...item,
+    x: toX(index),
+    y: toY(item.equityDoes),
+  }));
+  const linePoints = plotted.map((item) => `${item.x.toFixed(1)},${item.y.toFixed(1)}`).join(" ");
+  const firstPoint = plotted[0];
+  const lastPoint = plotted[plotted.length - 1];
+  const areaPath = [
+    `M ${firstPoint.x.toFixed(1)} ${zeroY.toFixed(1)}`,
+    ...plotted.map((item) => `L ${item.x.toFixed(1)} ${item.y.toFixed(1)}`),
+    `L ${lastPoint.x.toFixed(1)} ${zeroY.toFixed(1)}`,
+    "Z",
+  ].join(" ");
+  const gridLines = [0.25, 0.5, 0.75].map((ratio) => {
+    const y = padTop + (chartHeight * ratio);
+    return `<line class="equity-grid-line" x1="${padLeft}" y1="${y.toFixed(1)}" x2="${width - padRight}" y2="${y.toFixed(1)}"></line>`;
+  }).join("");
+
+  dom.equitySvg.innerHTML = `
+    <defs>
+      <linearGradient id="pilotageEquityAreaGradient" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#34d399" stop-opacity="0.38"></stop>
+        <stop offset="100%" stop-color="#34d399" stop-opacity="0"></stop>
+      </linearGradient>
+    </defs>
+    ${gridLines}
+    <line class="equity-zero-line" x1="${padLeft}" y1="${zeroY.toFixed(1)}" x2="${width - padRight}" y2="${zeroY.toFixed(1)}"></line>
+    <line class="equity-peak-line" x1="${padLeft}" y1="${peakY.toFixed(1)}" x2="${width - padRight}" y2="${peakY.toFixed(1)}"></line>
+    <path class="equity-area" d="${areaPath}"></path>
+    <polyline class="equity-line" points="${linePoints}"></polyline>
+    <circle class="equity-dot" cx="${lastPoint.x.toFixed(1)}" cy="${lastPoint.y.toFixed(1)}" r="6"></circle>
+  `;
+
+  const middlePoint = points[Math.floor(points.length / 2)] || points[0];
+  dom.equityAxis.innerHTML = `
+    <span>${escapeHtml(points[0]?.label || "Debut")}</span>
+    <span>${escapeHtml(middlePoint?.label || "-")}</span>
+    <span>${escapeHtml(points[points.length - 1]?.label || "Maintenant")}</span>
+  `;
+
+  const drawdownDoes = Math.max(0, safeInt(snapshot?.drawdownDoes));
+  if (drawdownDoes <= 0) {
+    dom.recoveryCopy.textContent = `La courbe tient actuellement son sommet sur la fenetre ${state.window}. Le systeme peut se permettre d'assouplir les bots si la marge reste saine.`;
+    return;
+  }
+  dom.recoveryCopy.textContent = `La courbe reste sous son dernier sommet de ${formatDrawdown(snapshot?.drawdownDoes, snapshot?.drawdownPct)}. Dernier pic atteint le ${formatDateTime(snapshot?.lastPeakAtMs)}. Tant que ce drawdown reste ouvert, le pilotage automatique conserve plus de pression pour tenter un nouveau plus haut propre.`;
 }
 
 function renderTrend(snapshot = null) {
@@ -211,6 +328,7 @@ function renderSnapshot() {
   const snapshot = state.snapshot || {};
   const band = bandMeta(snapshot.recommendedBand);
   const appliedLevel = state.mode === "auto" ? state.autoBotDifficulty : state.manualBotDifficulty;
+  const drawdownDoes = Math.max(0, safeInt(snapshot.drawdownDoes));
 
   dom.netValue.textContent = formatSignedDoes(snapshot.netDoes);
   dom.netValue.classList.toggle("positive", safeInt(snapshot.netDoes) > 0);
@@ -227,6 +345,18 @@ function renderSnapshot() {
 
   dom.collectedValue.textContent = formatDoes(snapshot.collectedDoes);
   dom.payoutValue.textContent = formatDoes(snapshot.payoutDoes);
+  dom.equityValue.textContent = formatSignedDoes(snapshot.currentEquityDoes);
+  dom.equityValue.classList.toggle("positive", safeInt(snapshot.currentEquityDoes) > 0);
+  dom.equityValue.classList.toggle("negative", safeInt(snapshot.currentEquityDoes) < 0);
+  dom.equityCopy.textContent = `Depart a zero le ${formatDateTime(snapshot.startMs)} · dernier point ${formatDateTime(snapshot.endMs)}.`;
+  dom.peakValue.textContent = formatDoes(snapshot.highWaterMarkDoes);
+  dom.peakCopy.textContent = `Dernier sommet observe le ${formatDateTime(snapshot.lastPeakAtMs)}.`;
+  dom.drawdownValue.textContent = formatDrawdown(snapshot.drawdownDoes, snapshot.drawdownPct);
+  dom.drawdownValue.classList.toggle("negative", drawdownDoes > 0);
+  dom.drawdownValue.classList.toggle("positive", drawdownDoes <= 0);
+  dom.drawdownCopy.textContent = drawdownDoes > 0
+    ? "Le pilotage doit reconstruire au-dessus de ce pic."
+    : "Aucun drawdown ouvert sur la fenetre active.";
 
   dom.bandBadge.textContent = `Bande ${band.label}`;
   dom.bandBadge.dataset.tone = band.tone;
@@ -234,9 +364,10 @@ function renderSnapshot() {
   dom.appliedBadge.dataset.tone = state.mode === "auto" ? band.tone : "equilibrium";
 
   dom.reasonCopy.textContent = `${reasonLabel(snapshot.recommendedReason)} Dernier calcul: ${formatDateTime(snapshot.computedAtMs)}.`;
-  dom.fetchMeta.textContent = `Mode ${modeLabel(state.mode)} · niveau manuel ${levelLabel(state.manualBotDifficulty)} · niveau auto recommande ${levelLabel(state.autoBotDifficulty)}. Source: roomResults.`;
+  dom.fetchMeta.textContent = `Mode ${modeLabel(state.mode)} · niveau manuel ${levelLabel(state.manualBotDifficulty)} · niveau auto recommande ${levelLabel(state.autoBotDifficulty)}. Source: roomResults · refresh ${Math.round(LIVE_REFRESH_INTERVAL_MS / 1000)}s.`;
 
   updateControls();
+  renderEquityCurve(snapshot);
   renderTrend(snapshot);
   renderBotMix(snapshot);
 }
@@ -251,14 +382,20 @@ function hydrateFromResponse(response = {}) {
   renderSnapshot();
 }
 
-async function loadSnapshot() {
-  setLoading(true);
+async function loadSnapshot(options = {}) {
+  const silent = options && options.silent === true;
+  if (state.refreshing) return;
+  state.refreshing = true;
+  if (!silent) setLoading(true);
   try {
     const response = await getBotPilotSnapshotSecure({ window: state.window });
     hydrateFromResponse(response || {});
   } finally {
-    setLoading(false);
-    updateControls();
+    state.refreshing = false;
+    if (!silent) {
+      setLoading(false);
+      updateControls();
+    }
   }
 }
 
@@ -314,6 +451,19 @@ function bindEvents() {
   });
 }
 
+function startLiveRefresh() {
+  window.clearInterval(liveRefreshTimer);
+  liveRefreshTimer = window.setInterval(() => {
+    if (document.hidden || state.loading) return;
+    void loadSnapshot({ silent: true });
+  }, LIVE_REFRESH_INTERVAL_MS);
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden || state.loading) return;
+    void loadSnapshot({ silent: true });
+  });
+}
+
 async function bootstrap() {
   const user = await ensureFinanceDashboardSession({
     title: "Pilotage bots",
@@ -327,6 +477,7 @@ async function bootstrap() {
   }
 
   bindEvents();
+  startLiveRefresh();
   updateControls();
   await loadSnapshot();
 }
