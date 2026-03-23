@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <script src="./runtime-config.js"></script>
+  <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="shortcut icon" href="./favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+  <link rel="manifest" href="./site.webmanifest" />
+  <title>Vitch Studio · Acquisition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #08111f;
+      --bg-soft: #101a2d;
+      --panel: rgba(13, 24, 46, 0.86);
+      --panel-strong: rgba(15, 29, 55, 0.96);
+      --line: rgba(148, 163, 184, 0.16);
+      --text: #eef5ff;
+      --muted: #9fb2d9;
+      --sky: #38bdf8;
+      --cyan: #67e8f9;
+      --emerald: #34d399;
+      --amber: #f59e0b;
+      --violet: #a78bfa;
+      --danger: #fb7185;
+    }
+
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Sora", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(167, 139, 250, 0.14), transparent 24%),
+        linear-gradient(180deg, #060d17 0%, var(--bg) 54%, #050914 100%);
+    }
+
+    .shell {
+      width: min(1260px, 100%);
+      margin: 0 auto;
+      padding:
+        calc(16px + env(safe-area-inset-top, 0px))
+        max(14px, env(safe-area-inset-left, 0px))
+        calc(36px + env(safe-area-inset-bottom, 0px))
+        max(14px, env(safe-area-inset-right, 0px));
+    }
+
+    .hero,
+    .panel,
+    .metric,
+    .mini-panel {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .hero {
+      border-radius: 28px;
+      padding: 22px;
+      overflow: hidden;
+    }
+
+    .hero-head,
+    .section-head,
+    .control-grid,
+    .chart-grid,
+    .metric-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero-head {
+      align-items: start;
+    }
+
+    .eyebrow {
+      margin: 0;
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: #97dcff;
+      font-weight: 800;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      font-family: "Space Grotesk", "Sora", sans-serif;
+    }
+
+    h1 {
+      margin-top: 12px;
+      font-size: clamp(2rem, 4.6vw, 4rem);
+      line-height: 0.98;
+      max-width: 10ch;
+    }
+
+    .hero-copy,
+    .section-copy,
+    .helper-copy,
+    .status-copy,
+    .metric small,
+    .mini-panel p,
+    .table-note,
+    .field label,
+    .axis span {
+      color: var(--muted);
+    }
+
+    .hero-copy,
+    .section-copy,
+    .helper-copy,
+    .status-copy,
+    .mini-panel p {
+      margin: 0;
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .hero-copy {
+      margin-top: 14px;
+      max-width: 64ch;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .admin-chip,
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      width: fit-content;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05);
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .admin-chip { color: #d6f3ff; }
+
+    .metric-grid {
+      margin-top: 20px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .metric {
+      border-radius: 22px;
+      padding: 16px;
+      min-width: 0;
+    }
+
+    .metric label,
+    .field label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 10px;
+      font-size: clamp(1.2rem, 4vw, 2rem);
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .metric small {
+      display: block;
+      margin-top: 8px;
+      font-size: 0.86rem;
+      line-height: 1.55;
+    }
+
+    .panel {
+      margin-top: 18px;
+      border-radius: 24px;
+      padding: 18px;
+    }
+
+    .control-grid {
+      grid-template-columns: 1.1fr 0.9fr 0.7fr auto;
+      align-items: end;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .field input,
+    .field select,
+    .action-btn {
+      min-height: 50px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(4, 11, 20, 0.6);
+      color: var(--text);
+      padding: 14px 15px;
+      font: inherit;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      outline: none;
+      border-color: rgba(56, 189, 248, 0.46);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
+    }
+
+    .action-btn {
+      cursor: pointer;
+      font-weight: 800;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(167, 139, 250, 0.2));
+    }
+
+    .action-btn:disabled {
+      cursor: default;
+      opacity: 0.7;
+    }
+
+    .status-copy {
+      margin-top: 14px;
+    }
+
+    .chart-grid {
+      grid-template-columns: 1.4fr 0.8fr;
+      align-items: stretch;
+    }
+
+    .mini-panel {
+      border-radius: 22px;
+      padding: 16px;
+    }
+
+    .chart-card {
+      display: grid;
+      gap: 14px;
+      padding: 16px;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(5, 12, 22, 0.38);
+    }
+
+    .chart-wrap {
+      position: relative;
+      min-height: 260px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(2, 8, 16, 0.72);
+      overflow: hidden;
+      padding: 12px;
+    }
+
+    svg {
+      width: 100%;
+      height: 260px;
+      display: block;
+    }
+
+    .grid-line {
+      stroke: rgba(148, 163, 184, 0.16);
+      stroke-width: 1;
+    }
+
+    .baseline {
+      stroke: rgba(148, 163, 184, 0.32);
+      stroke-width: 1;
+      stroke-dasharray: 6 6;
+    }
+
+    .chart-line {
+      fill: none;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .chart-line.signups { stroke: var(--sky); }
+    .chart-line.cumulative { stroke: var(--emerald); }
+
+    .chart-area {
+      fill-opacity: 0.28;
+    }
+
+    .chart-area.signups { fill: url(#acquisitionSignupsGradient); }
+    .chart-area.cumulative { fill: url(#acquisitionCumulativeGradient); }
+
+    .chart-dot {
+      fill: #ffffff;
+      stroke-width: 4;
+    }
+
+    .chart-dot.signups { stroke: var(--sky); }
+    .chart-dot.cumulative { stroke: var(--emerald); }
+
+    .axis {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.82rem;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend i {
+      display: inline-block;
+      width: 18px;
+      height: 4px;
+      border-radius: 999px;
+    }
+
+    .legend .sky { background: var(--sky); }
+    .legend .emerald { background: var(--emerald); }
+
+    .side-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .side-item {
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .side-item strong {
+      display: block;
+      font-size: 1.12rem;
+      margin-top: 6px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(3, 10, 18, 0.68);
+    }
+
+    table {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+
+    th,
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+    }
+
+    tbody tr:hover {
+      background: rgba(255,255,255,0.03);
+    }
+
+    .empty-copy {
+      margin: 0;
+      padding: 18px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .table-note {
+      margin: 12px 0 0;
+      font-size: 0.84rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 980px) {
+      .metric-grid,
+      .chart-grid,
+      .control-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-head">
+        <div>
+          <p class="eyebrow">Acquisition</p>
+          <h1>Courbe des inscrits et vrais clients</h1>
+          <p class="hero-copy">
+            Cette page suit l’entrée de nouveaux comptes, leur activation réelle, leur passage au dépôt et un premier signal de
+            fidélisation, pour t’aider à voir quand tes publicités montent, s’essoufflent ou reconvertissent moins bien.
+          </p>
+        </div>
+        <div class="chip-row">
+          <span class="admin-chip" id="acquisitionAdminEmail">Session admin</span>
+          <span class="badge-pill" id="acquisitionWindowBadge">Fenêtre 30 jours</span>
+          <span class="badge-pill" id="acquisitionScanBadge">Source: clients</span>
+        </div>
+      </div>
+
+      <div class="metric-grid">
+        <article class="metric">
+          <label>Comptes totaux</label>
+          <strong id="acquisitionTotalAccounts">-</strong>
+          <small id="acquisitionTotalAccountsCopy">Population globale connue à l’instant du snapshot.</small>
+        </article>
+        <article class="metric">
+          <label>Inscrits sur la période</label>
+          <strong id="acquisitionSignupsValue">-</strong>
+          <small id="acquisitionSignupsCopy">Nouveaux comptes créés dans la fenêtre affichée.</small>
+        </article>
+        <article class="metric">
+          <label>Vrais clients</label>
+          <strong id="acquisitionRealClientsValue">-</strong>
+          <small id="acquisitionRealClientsCopy">Comptes avec au moins un vrai dépôt approuvé.</small>
+        </article>
+        <article class="metric">
+          <label>Comptes actifs</label>
+          <strong id="acquisitionActiveValue">-</strong>
+          <small id="acquisitionActiveCopy">Comptes vus sur les 7 derniers jours glissants.</small>
+        </article>
+        <article class="metric">
+          <label>Conversion dépôt</label>
+          <strong id="acquisitionDepositRateValue">-</strong>
+          <small id="acquisitionDepositRateCopy">Parmi les inscrits de la période, combien ont déjà déposé.</small>
+        </article>
+        <article class="metric">
+          <label>Fidélisation V1</label>
+          <strong id="acquisitionFidelizedRateValue">-</strong>
+          <small id="acquisitionFidelizedRateCopy">Vrai dépôt + retour observé au moins 3 jours après l’inscription.</small>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <div>
+          <h2>Fenêtre d’analyse</h2>
+          <p class="section-copy">Charge seulement la période utile. La granularité horaire est limitée aux 7 derniers jours pour rester légère.</p>
+        </div>
+      </div>
+      <div class="control-grid">
+        <div class="field">
+          <label for="acquisitionDateFrom">Début</label>
+          <input id="acquisitionDateFrom" type="date" />
+        </div>
+        <div class="field">
+          <label for="acquisitionDateTo">Fin</label>
+          <input id="acquisitionDateTo" type="date" />
+        </div>
+        <div class="field">
+          <label for="acquisitionGranularity">Granularité</label>
+          <select id="acquisitionGranularity">
+            <option value="day">Jour</option>
+            <option value="hour">Heure</option>
+          </select>
+        </div>
+        <button id="acquisitionRefreshBtn" class="action-btn" type="button">Rafraîchir</button>
+      </div>
+      <p id="acquisitionStatus" class="status-copy">Chargement de la courbe d’acquisition…</p>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <div>
+          <h2>Flux des inscriptions</h2>
+          <p class="section-copy">La première courbe montre les nouvelles inscriptions par bucket. La seconde te donne la trajectoire cumulative de la base comptes.</p>
+        </div>
+      </div>
+
+      <div class="chart-grid">
+        <article class="chart-card">
+          <h3>Inscriptions par période</h3>
+          <div class="legend">
+            <span><i class="sky"></i>Inscrits</span>
+          </div>
+          <div class="chart-wrap">
+            <svg id="acquisitionSignupsSvg" viewBox="0 0 760 260" preserveAspectRatio="none"></svg>
+            <div id="acquisitionSignupsAxis" class="axis"></div>
+          </div>
+        </article>
+
+        <aside class="mini-panel">
+          <h3>Lecture rapide</h3>
+          <p id="acquisitionHighlightsCopy">Le snapshot résume ici la qualité de la cohorte chargée.</p>
+          <div class="side-list">
+            <div class="side-item">
+              <span>Taux actif</span>
+              <strong id="acquisitionActiveRateValue">-</strong>
+            </div>
+            <div class="side-item">
+              <span>Bonus bienvenue pris</span>
+              <strong id="acquisitionWelcomeValue">-</strong>
+            </div>
+            <div class="side-item">
+              <span>Comptes gelés</span>
+              <strong id="acquisitionFrozenValue">-</strong>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <div class="chart-grid" style="margin-top:14px;">
+        <article class="chart-card">
+          <h3>Base comptes cumulée</h3>
+          <div class="legend">
+            <span><i class="emerald"></i>Comptes cumulés</span>
+          </div>
+          <div class="chart-wrap">
+            <svg id="acquisitionCumulativeSvg" viewBox="0 0 760 260" preserveAspectRatio="none"></svg>
+            <div id="acquisitionCumulativeAxis" class="axis"></div>
+          </div>
+        </article>
+
+        <aside class="mini-panel">
+          <h3>Définitions</h3>
+          <p id="acquisitionDefinitionsCopy">Les ratios affichés portent sur la cohorte d’inscription visible dans la fenêtre sélectionnée.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <div>
+          <h2>Qualité par bucket</h2>
+          <p class="section-copy">Chaque ligne te montre combien d’inscrits d’un bucket ont ensuite activé, déposé ou montré un premier signal de fidélisation.</p>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Période</th>
+              <th>Inscrits</th>
+              <th>Actifs</th>
+              <th>Déposants</th>
+              <th>Fidélisés</th>
+              <th>Taux dépôt</th>
+              <th>Cumul comptes</th>
+            </tr>
+          </thead>
+          <tbody id="acquisitionTableBody">
+            <tr>
+              <td colspan="7" class="empty-copy">Chargement…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p id="acquisitionTableNote" class="table-note">La table affichera aussi si le snapshot a été tronqué pour rester dans le plafond de lecture prévu.</p>
+    </section>
+  </main>
+
+  <script src="./dashboard-nav-bubble.js"></script>
+  <script type="module" src="./Dacquisition.js"></script>
+</body>
+</html>
