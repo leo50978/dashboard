@@ -1,5 +1,6 @@
 import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js";
-import { getClientAcquisitionSnapshotSecure } from "./secure-functions.js";
+import { functions as firebaseFunctions, httpsCallable } from "./firebase-init.js";
+import * as secureFunctions from "./secure-functions.js";
 
 const DEFAULT_RANGE_DAYS = 30;
 
@@ -54,6 +55,14 @@ const state = {
   snapshot: null,
   loading: false,
 };
+
+const getClientAcquisitionSnapshotSecure = typeof secureFunctions.getClientAcquisitionSnapshotSecure === "function"
+  ? secureFunctions.getClientAcquisitionSnapshotSecure
+  : async (payload = {}) => {
+      const callable = httpsCallable(firebaseFunctions, "getClientAcquisitionSnapshot");
+      const response = await callable(payload);
+      return response?.data || null;
+    };
 
 function safeInt(value) {
   const num = Number(value);
