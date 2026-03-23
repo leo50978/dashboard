@@ -262,6 +262,44 @@
       background: rgba(5, 12, 22, 0.38);
     }
 
+    .chart-kpis {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .chart-kpi {
+      border-radius: 16px;
+      padding: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      min-width: 0;
+    }
+
+    .chart-kpi span {
+      display: block;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .chart-kpi strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 1.08rem;
+      overflow-wrap: anywhere;
+    }
+
+    .chart-kpi small {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 0.8rem;
+    }
+
     .chart-wrap {
       position: relative;
       min-height: 260px;
@@ -345,6 +383,10 @@
     .legend .sky { background: var(--sky); }
     .legend .emerald { background: var(--emerald); }
 
+    .tone-positive { color: #90f6cf; }
+    .tone-negative { color: #ff9cab; }
+    .tone-neutral { color: #dce8ff; }
+
     .side-list {
       display: grid;
       gap: 10px;
@@ -413,7 +455,8 @@
     @media (max-width: 980px) {
       .metric-grid,
       .chart-grid,
-      .control-grid {
+      .control-grid,
+      .chart-kpis {
         grid-template-columns: 1fr;
       }
     }
@@ -514,6 +557,23 @@
           <div class="legend">
             <span><i class="sky"></i>Inscrits</span>
           </div>
+          <div class="chart-kpis">
+            <div class="chart-kpi">
+              <span>Dernier bucket</span>
+              <strong id="acquisitionSignupsLastValue">-</strong>
+              <small id="acquisitionSignupsLastCopy">Dernière valeur visible.</small>
+            </div>
+            <div class="chart-kpi">
+              <span>Variation</span>
+              <strong id="acquisitionSignupsDeltaValue">-</strong>
+              <small id="acquisitionSignupsDeltaCopy">Comparée au bucket précédent.</small>
+            </div>
+            <div class="chart-kpi">
+              <span>Pic récent</span>
+              <strong id="acquisitionSignupsPeakValue">-</strong>
+              <small id="acquisitionSignupsPeakCopy">Plus haut de la fenêtre affichée.</small>
+            </div>
+          </div>
           <div class="chart-wrap">
             <svg id="acquisitionSignupsSvg" viewBox="0 0 760 260" preserveAspectRatio="none"></svg>
             <div id="acquisitionSignupsAxis" class="axis"></div>
@@ -545,6 +605,23 @@
           <h3>Base comptes cumulée</h3>
           <div class="legend">
             <span><i class="emerald"></i>Comptes cumulés</span>
+          </div>
+          <div class="chart-kpis">
+            <div class="chart-kpi">
+              <span>Niveau actuel</span>
+              <strong id="acquisitionCumulativeLastValue">-</strong>
+              <small id="acquisitionCumulativeLastCopy">Dernier niveau de base visible.</small>
+            </div>
+            <div class="chart-kpi">
+              <span>Dernière poussée</span>
+              <strong id="acquisitionCumulativeDeltaValue">-</strong>
+              <small id="acquisitionCumulativeDeltaCopy">Croissance du dernier bucket.</small>
+            </div>
+            <div class="chart-kpi">
+              <span>Sommet fenêtre</span>
+              <strong id="acquisitionCumulativePeakValue">-</strong>
+              <small id="acquisitionCumulativePeakCopy">Point haut de la courbe cumulée.</small>
+            </div>
           </div>
           <div class="chart-wrap">
             <svg id="acquisitionCumulativeSvg" viewBox="0 0 760 260" preserveAspectRatio="none"></svg>

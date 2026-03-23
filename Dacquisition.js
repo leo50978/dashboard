@@ -31,8 +31,20 @@ const dom = {
   definitionsCopy: document.getElementById("acquisitionDefinitionsCopy"),
   signupsSvg: document.getElementById("acquisitionSignupsSvg"),
   signupsAxis: document.getElementById("acquisitionSignupsAxis"),
+  signupsLastValue: document.getElementById("acquisitionSignupsLastValue"),
+  signupsLastCopy: document.getElementById("acquisitionSignupsLastCopy"),
+  signupsDeltaValue: document.getElementById("acquisitionSignupsDeltaValue"),
+  signupsDeltaCopy: document.getElementById("acquisitionSignupsDeltaCopy"),
+  signupsPeakValue: document.getElementById("acquisitionSignupsPeakValue"),
+  signupsPeakCopy: document.getElementById("acquisitionSignupsPeakCopy"),
   cumulativeSvg: document.getElementById("acquisitionCumulativeSvg"),
   cumulativeAxis: document.getElementById("acquisitionCumulativeAxis"),
+  cumulativeLastValue: document.getElementById("acquisitionCumulativeLastValue"),
+  cumulativeLastCopy: document.getElementById("acquisitionCumulativeLastCopy"),
+  cumulativeDeltaValue: document.getElementById("acquisitionCumulativeDeltaValue"),
+  cumulativeDeltaCopy: document.getElementById("acquisitionCumulativeDeltaCopy"),
+  cumulativePeakValue: document.getElementById("acquisitionCumulativePeakValue"),
+  cumulativePeakCopy: document.getElementById("acquisitionCumulativePeakCopy"),
   tableBody: document.getElementById("acquisitionTableBody"),
   tableNote: document.getElementById("acquisitionTableNote"),
 };
@@ -72,6 +84,11 @@ function formatInt(value) {
 
 function formatPercent(value) {
   return `${clampPercent(value).toFixed(1)}%`;
+}
+
+function formatSignedInt(value) {
+  const num = safeInt(value);
+  return `${num > 0 ? "+" : ""}${formatInt(num)}`;
 }
 
 function formatDateInput(ms = 0) {
@@ -168,6 +185,57 @@ function renderSummary(snapshot = null) {
   } else {
     dom.scanBadge.textContent = `Source: clients · ${formatInt(snapshot.scannedSignupDocs)} inscrits lus`;
   }
+}
+
+function renderChartInsights(config = {}) {
+  const points = Array.isArray(config.points) ? config.points : [];
+  const valueNode = config.valueNode;
+  const valueCopyNode = config.valueCopyNode;
+  const deltaNode = config.deltaNode;
+  const deltaCopyNode = config.deltaCopyNode;
+  const peakNode = config.peakNode;
+  const peakCopyNode = config.peakCopyNode;
+  const suffix = String(config.suffix || "");
+
+  if (!valueNode || !valueCopyNode || !deltaNode || !deltaCopyNode || !peakNode || !peakCopyNode) return;
+
+  if (!points.length) {
+    valueNode.textContent = "-";
+    valueCopyNode.textContent = "Aucune donnée visible sur cette fenêtre.";
+    deltaNode.textContent = "-";
+    deltaNode.className = "";
+    deltaCopyNode.textContent = "Pas encore de momentum mesurable.";
+    peakNode.textContent = "-";
+    peakCopyNode.textContent = "Pas de point haut détecté.";
+    return;
+  }
+
+  const lastPoint = points[points.length - 1] || null;
+  const previousPoint = points.length > 1 ? points[points.length - 2] : null;
+  const peakPoint = points.reduce((best, item) => {
+    if (!best) return item;
+    return safeFloat(item.value) > safeFloat(best.value) ? item : best;
+  }, null);
+  const delta = lastPoint ? (safeFloat(lastPoint.value) - safeFloat(previousPoint?.value || 0)) : 0;
+  const deltaPct = previousPoint && safeFloat(previousPoint.value) > 0
+    ? ((delta / safeFloat(previousPoint.value)) * 100)
+    : 0;
+
+  valueNode.textContent = `${formatInt(lastPoint?.value || 0)}${suffix}`;
+  valueCopyNode.textContent = `Dernière lecture: ${String(lastPoint?.label || "-")}.`;
+
+  if (!previousPoint) {
+    deltaNode.textContent = `${formatSignedInt(delta)}${suffix}`;
+    deltaNode.className = "tone-neutral";
+    deltaCopyNode.textContent = "Pas assez de recul pour comparer au bucket précédent.";
+  } else {
+    deltaNode.textContent = `${formatSignedInt(delta)}${suffix}`;
+    deltaNode.className = delta > 0 ? "tone-positive" : delta < 0 ? "tone-negative" : "tone-neutral";
+    deltaCopyNode.textContent = `Variation vs ${String(previousPoint.label || "-")}: ${previousPoint ? formatPercent(Math.abs(deltaPct)) : "-"}.`;
+  }
+
+  peakNode.textContent = `${formatInt(peakPoint?.value || 0)}${suffix}`;
+  peakCopyNode.textContent = `Sommet visible atteint sur ${String(peakPoint?.label || "-")}.`;
 }
 
 function renderLineChart(options = {}) {
@@ -289,12 +357,30 @@ function renderSnapshot(snapshot = null) {
     tone: "signups",
     emptyLabel: "Pas encore assez d'inscriptions sur cette période pour tracer une courbe utile.",
   });
+  renderChartInsights({
+    points: snapshot?.series?.signups || [],
+    valueNode: dom.signupsLastValue,
+    valueCopyNode: dom.signupsLastCopy,
+    deltaNode: dom.signupsDeltaValue,
+    deltaCopyNode: dom.signupsDeltaCopy,
+    peakNode: dom.signupsPeakValue,
+    peakCopyNode: dom.signupsPeakCopy,
+  });
   renderLineChart({
     points: snapshot?.series?.cumulativeAccounts || [],
     svg: dom.cumulativeSvg,
     axis: dom.cumulativeAxis,
     tone: "cumulative",
     emptyLabel: "La base cumulée apparaîtra ici quand la période contiendra des inscriptions.",
+  });
+  renderChartInsights({
+    points: snapshot?.series?.cumulativeAccounts || [],
+    valueNode: dom.cumulativeLastValue,
+    valueCopyNode: dom.cumulativeLastCopy,
+    deltaNode: dom.cumulativeDeltaValue,
+    deltaCopyNode: dom.cumulativeDeltaCopy,
+    peakNode: dom.cumulativePeakValue,
+    peakCopyNode: dom.cumulativePeakCopy,
   });
   renderBuckets(snapshot);
 }
