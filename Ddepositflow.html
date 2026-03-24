@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <script src="./runtime-config.js"></script>
+  <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="shortcut icon" href="./favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+  <link rel="manifest" href="./site.webmanifest" />
+  <title>Vitch Studio · Flux dépôts</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07111d;
+      --bg-soft: #0f1a2f;
+      --panel: rgba(11, 20, 38, 0.88);
+      --line: rgba(148, 163, 184, 0.16);
+      --text: #eef5ff;
+      --muted: #9fb2d9;
+      --sky: #3abff8;
+      --emerald: #39d98a;
+      --amber: #f59e0b;
+      --danger: #fb7185;
+      --violet: #a78bfa;
+      --cyan: #67e8f9;
+    }
+
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Sora", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 30%),
+        radial-gradient(circle at top right, rgba(167, 139, 250, 0.16), transparent 26%),
+        linear-gradient(180deg, #050a12 0%, var(--bg) 54%, #050914 100%);
+    }
+
+    .shell {
+      width: min(1280px, 100%);
+      margin: 0 auto;
+      padding:
+        calc(16px + env(safe-area-inset-top, 0px))
+        max(14px, env(safe-area-inset-left, 0px))
+        calc(36px + env(safe-area-inset-bottom, 0px))
+        max(14px, env(safe-area-inset-right, 0px));
+    }
+
+    .hero, .panel, .metric, .mini-panel {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .hero {
+      border-radius: 28px;
+      padding: 22px;
+      overflow: hidden;
+    }
+
+    .hero-head, .section-head, .control-grid, .chart-grid, .metric-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .eyebrow {
+      margin: 0;
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: #97dcff;
+      font-weight: 800;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      font-family: "Space Grotesk", "Sora", sans-serif;
+    }
+
+    h1 {
+      margin-top: 12px;
+      font-size: clamp(2rem, 4.7vw, 4rem);
+      line-height: 0.98;
+      max-width: 11ch;
+    }
+
+    .hero-copy, .section-copy, .helper-copy, .status-copy, .metric small, .mini-panel p, .table-note, .field label, .axis span {
+      color: var(--muted);
+    }
+
+    .hero-copy, .section-copy, .helper-copy, .status-copy, .mini-panel p {
+      margin: 0;
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .hero-copy { margin-top: 14px; max-width: 68ch; }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .admin-chip, .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      width: fit-content;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05);
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .admin-chip { color: #d6f3ff; }
+
+    .metric-grid {
+      margin-top: 20px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .metric {
+      border-radius: 22px;
+      padding: 16px;
+      min-width: 0;
+    }
+
+    .metric label, .field label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 10px;
+      font-size: clamp(1.2rem, 4vw, 2rem);
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .metric small {
+      display: block;
+      margin-top: 8px;
+      font-size: 0.86rem;
+      line-height: 1.55;
+    }
+
+    .panel {
+      margin-top: 18px;
+      border-radius: 24px;
+      padding: 18px;
+    }
+
+    .control-grid {
+      grid-template-columns: 1.1fr 0.9fr 0.8fr auto;
+      align-items: end;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .field input, .field select, .action-btn {
+      min-height: 50px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(4, 11, 20, 0.6);
+      color: var(--text);
+      padding: 14px 15px;
+      font: inherit;
+    }
+
+    .field input:focus, .field select:focus {
+      outline: none;
+      border-color: rgba(56, 189, 248, 0.46);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
+    }
+
+    .action-btn {
+      cursor: pointer;
+      font-weight: 800;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(167, 139, 250, 0.2));
+    }
+
+    .action-btn:disabled { cursor: default; opacity: 0.7; }
+
+    .chart-grid {
+      grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.75fr);
+      align-items: start;
+    }
+
+    .chart-card, .mini-panel {
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(8, 16, 30, 0.8);
+      padding: 18px;
+      min-width: 0;
+    }
+
+    .legend, .chart-kpis, .side-list {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .legend {
+      margin-top: 10px;
+      font-size: 0.83rem;
+      color: var(--muted);
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .legend i {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .legend .sky { background: var(--sky); }
+    .legend .emerald { background: var(--emerald); }
+    .legend .amber { background: var(--amber); }
+    .legend .danger { background: var(--danger); }
+    .legend .violet { background: var(--violet); }
+
+    .chart-kpis {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .chart-kpi, .side-item {
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.04);
+      padding: 12px 14px;
+      min-width: 0;
+    }
+
+    .chart-kpi span, .side-item span {
+      display: block;
+      font-size: 0.73rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .chart-kpi strong, .side-item strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 1.25rem;
+      font-weight: 800;
+    }
+
+    .chart-kpi small {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .chart-wrap {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.03);
+    }
+
+    svg { width: 100%; height: 260px; display: block; }
+
+    .axis {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.78rem;
+    }
+
+    .grid-line {
+      stroke: rgba(148, 163, 184, 0.13);
+      stroke-width: 1;
+    }
+
+    .baseline {
+      stroke: rgba(255,255,255,0.18);
+      stroke-dasharray: 5 7;
+      stroke-width: 1.2;
+    }
+
+    .chart-line {
+      fill: none;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .chart-line.sky { stroke: var(--sky); }
+    .chart-line.emerald { stroke: var(--emerald); }
+    .chart-line.amber { stroke: var(--amber); }
+    .chart-line.danger { stroke: var(--danger); }
+    .chart-line.violet { stroke: var(--violet); }
+
+    .chart-area { stroke: none; }
+
+    .chart-dot {
+      fill: #fff;
+      stroke-width: 3;
+    }
+
+    .chart-dot.sky { stroke: var(--sky); }
+    .chart-dot.emerald { stroke: var(--emerald); }
+    .chart-dot.amber { stroke: var(--amber); }
+    .chart-dot.danger { stroke: var(--danger); }
+    .chart-dot.violet { stroke: var(--violet); }
+
+    .tone-positive { color: #90f6cf; }
+    .tone-negative { color: #ff9bab; }
+    .tone-neutral { color: #dce8ff; }
+
+    .table-wrap {
+      margin-top: 16px;
+      overflow: auto;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(3, 10, 20, 0.45);
+    }
+
+    table {
+      width: 100%;
+      min-width: 860px;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-size: 0.92rem;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: rgba(10, 18, 33, 0.96);
+      z-index: 1;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+    }
+
+    .table-note {
+      margin: 12px 0 0;
+      font-size: 0.86rem;
+      line-height: 1.6;
+    }
+
+    .empty-copy {
+      text-align: center;
+      color: var(--muted);
+    }
+
+    @media (max-width: 960px) {
+      .metric-grid,
+      .chart-grid,
+      .chart-kpis,
+      .control-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body class="dlk-dashboard-shell">
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-head">
+        <div>
+          <p class="eyebrow">Flux dépôts</p>
+          <h1>MonCash, NatCash et entrées HTG</h1>
+          <p class="hero-copy">Cette page te montre comment l’argent entre réellement dans l’entreprise via les dépôts. Tu peux comparer `MonCash` et `NatCash`, suivre les montants approuvés ou rejetés, et lire une vraie courbe cumulative comme une desk view de trading.</p>
+          <div class="chip-row">
+            <span class="admin-chip" id="depositFlowAdminEmail">Session admin</span>
+            <span class="badge-pill" id="depositFlowWindowBadge">Fenêtre 30 jours · journalière</span>
+            <span class="badge-pill" id="depositFlowScanBadge">Source: orders</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="metric-grid">
+        <article class="metric">
+          <label>Total demandé</label>
+          <strong id="depositFlowRequestedValue">-</strong>
+          <small id="depositFlowRequestedCopy">Montant HTG demandé sur la fenêtre, hors bonus bienvenue.</small>
+        </article>
+        <article class="metric">
+          <label>Total approuvé</label>
+          <strong id="depositFlowApprovedValue">-</strong>
+          <small id="depositFlowApprovedCopy">C’est l’entrée HTG validée pour l’entreprise sur la période.</small>
+        </article>
+        <article class="metric">
+          <label>Total rejeté</label>
+          <strong id="depositFlowRejectedValue">-</strong>
+          <small id="depositFlowRejectedCopy">Montants demandés mais refusés sur la période.</small>
+        </article>
+        <article class="metric">
+          <label>Taux d’approbation</label>
+          <strong id="depositFlowApprovalRateValue">-</strong>
+          <small id="depositFlowApprovalRateCopy">Part des montants demandés qui ont été effectivement approuvés.</small>
+        </article>
+        <article class="metric">
+          <label>MonCash approuvé</label>
+          <strong id="depositFlowMoncashValue">-</strong>
+          <small id="depositFlowMoncashCopy">Part MonCash du flux validé.</small>
+        </article>
+        <article class="metric">
+          <label>NatCash approuvé</label>
+          <strong id="depositFlowNatcashValue">-</strong>
+          <small id="depositFlowNatcashCopy">Part NatCash du flux validé.</small>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <div>
+          <h2>Fenêtre d’analyse</h2>
+          <p class="section-copy">Charge seulement la période utile. La granularité horaire est réservée aux fenêtres très courtes, puis la vue bascule en journalier ou hebdomadaire pour protéger les lectures.</p>
+        </div>
+      </div>
+      <div class="control-grid">
+        <div class="field">
+          <label for="depositFlowDateFrom">Début</label>
+          <input id="depositFlowDateFrom" type="date" />
+        </div>
+        <div class="field">
+          <label for="depositFlowDateTo">Fin</label>
+          <input id="depositFlowDateTo" type="date" />
+        </div>
+        <div class="field">
+          <label for="depositFlowGranularity">Granularité</label>
+          <select id="depositFlowGranularity">
+            <option value="day">Jour</option>
+            <option value="hour">Heure</option>
+            <option value="week">Semaine</option>
+          </select>
+        </div>
+        <button id="depositFlowRefreshBtn" class="action-btn" type="button">Rafraîchir</button>
+      </div>
+      <p id="depositFlowStatus" class="status-copy">Chargement des flux dépôts…</p>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <div>
+          <h2>Courbes d’évolution</h2>
+          <p class="section-copy">La première ligne montre les HTG approuvés par bucket. La seconde représente la courbe cumulative des entrées validées. Les panneaux latéraux servent de lecture rapide pour la prise de décision.</p>
+        </div>
+      </div>
+
+      <div class="chart-grid">
+        <article class="chart-card">
+          <h3>HTG approuvés par période</h3>
+          <div class="legend">
+            <span><i class="emerald"></i>Approuvés</span>
+          </div>
+          <div class="chart-kpis">
+            <div class="chart-kpi">
+              <span>Dernier bucket</span>
+              <strong id="depositFlowApprovedLastValue">-</strong>
+              <small id="depositFlowApprovedLastCopy">Dernière lecture visible.</small>
+            </div>
+            <div class="chart-kpi">
+              <span>Variation</span>
+              <strong id="depositFlowApprovedDeltaValue">-</strong>
+              <small id="depositFlowApprovedDeltaCopy">Comparée au bucket précédent.</small>
+            </div>
+            <div class="chart-kpi">
+              <span>Pic récent</span>
+              <strong id="depositFlowApprovedPeakValue">-</strong>
+              <small id="depositFlowApprovedPeakCopy">Plus haut de la fenêtre.</small>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <svg id="depositFlowApprovedSvg" viewBox="0 0 760 260" preserveAspectRatio="none"></svg>
+            <div id="depositFlowApprovedAxis" class="axis"></div>
+          </div>
+        </article>
+
+        <aside class="mini-panel">
+          <h3>Lecture rapide</h3>
+          <p id="depositFlowHighlightsCopy">Le dashboard résume ici le momentum du flux dépôt et la répartition dominante des montants approuvés.</p>
+          <div class="side-list">
+            <div class="side-item">
+              <span>Demandes en attente</span>
+              <strong id="depositFlowPendingValue">-</strong>
+            </div>
+            <div class="side-item">
+              <span>Part MonCash</span>
+              <strong id="depositFlowMoncashShareValue">-</strong>
+            </div>
+            <div class="side-item">
+              <span>Part NatCash</span>
+              <strong id="depositFlowNatcashShareValue">-</strong>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <div class="chart-grid" style="margin-top:14px;">
+        <article class="chart-card">
+          <h3>Cumul HTG approuvés</h3>
+          <div class="legend">
+            <span><i class="sky"></i>Cumul approuvé</span>
+          </div>
+          <div class="chart-kpis">
+            <div class="chart-kpi">
+              <span>Niveau actuel</span>
+              <strong id="depositFlowCumulativeLastValue">-</strong>
+              <small id="depositFlowCumulativeLastCopy">Dernier niveau de la courbe cumulée.</small>
+            </div>
+            <div class="chart-kpi">
+              <span>Dernière poussée</span>
+              <strong id="depositFlowCumulativeDeltaValue">-</strong>
+              <small id="depositFlowCumulativeDeltaCopy">Croissance du dernier bucket.</small>
+            </div>
+            <div class="chart-kpi">
+              <span>Sommet fenêtre</span>
+              <strong id="depositFlowCumulativePeakValue">-</strong>
+              <small id="depositFlowCumulativePeakCopy">Point haut visible.</small>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <svg id="depositFlowCumulativeSvg" viewBox="0 0 760 260" preserveAspectRatio="none"></svg>
+            <div id="depositFlowCumulativeAxis" class="axis"></div>
+          </div>
+        </article>
+
+        <aside class="mini-panel">
+          <h3>Définitions</h3>
+          <p id="depositFlowDefinitionsCopy">Les entrées HTG correspondent aux vrais dépôts approuvés, bonus exclus.</p>
+        </aside>
+      </div>
+
+      <div class="chart-grid" style="margin-top:14px;">
+        <article class="chart-card">
+          <h3>MonCash vs NatCash</h3>
+          <div class="legend">
+            <span><i class="amber"></i>MonCash approuvé</span>
+            <span><i class="violet"></i>NatCash approuvé</span>
+          </div>
+          <div class="chart-wrap">
+            <svg id="depositFlowMethodsSvg" viewBox="0 0 760 260" preserveAspectRatio="none"></svg>
+            <div id="depositFlowMethodsAxis" class="axis"></div>
+          </div>
+        </article>
+
+        <article class="chart-card">
+          <h3>Demandé vs rejeté</h3>
+          <div class="legend">
+            <span><i class="sky"></i>Demandé</span>
+            <span><i class="danger"></i>Rejeté</span>
+          </div>
+          <div class="chart-wrap">
+            <svg id="depositFlowRejectsSvg" viewBox="0 0 760 260" preserveAspectRatio="none"></svg>
+            <div id="depositFlowRejectsAxis" class="axis"></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <div>
+          <h2>Lecture par bucket</h2>
+          <p class="section-copy">Chaque ligne te permet de comparer le demandé, l’approuvé et le rejeté par période, avec un zoom sur la part approuvée MonCash et NatCash.</p>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Période</th>
+              <th>Demandé</th>
+              <th>Approuvé</th>
+              <th>Rejeté</th>
+              <th>Taux approuvé</th>
+              <th>MonCash approuvé</th>
+              <th>NatCash approuvé</th>
+              <th>Cumul approuvé</th>
+            </tr>
+          </thead>
+          <tbody id="depositFlowTableBody">
+            <tr>
+              <td colspan="8" class="empty-copy">Chargement…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p id="depositFlowTableNote" class="table-note">Le snapshot mentionnera ici s’il a été tronqué pour rester dans le plafond de lecture prévu.</p>
+    </section>
+  </main>
+
+  <script src="./dashboard-nav-bubble.js"></script>
+  <script type="module" src="./Ddepositflow.js"></script>
+</body>
+</html>
