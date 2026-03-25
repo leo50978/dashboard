@@ -24,7 +24,13 @@ function toMs(value) {
 
 function normalizeStatus(value = "pending") {
   const normalized = String(value || "pending").trim().toLowerCase();
-  if (normalized === "approved" || normalized === "rejected" || normalized === "review") return normalized;
+  if (
+    normalized === "approved"
+    || normalized === "rejected"
+    || normalized === "review"
+    || normalized === "cancelled"
+    || normalized === "canceled"
+  ) return normalized;
   return "pending";
 }
 
@@ -70,6 +76,7 @@ export function getStatusText(status = "pending") {
   if (normalized === "approved") return "Approuve";
   if (normalized === "rejected") return "Rejete";
   if (normalized === "review") return "En examen";
+  if (normalized === "cancelled" || normalized === "canceled") return "Annule";
   return "En attente";
 }
 
@@ -123,6 +130,7 @@ export function computeWithdrawalStats(withdrawals = []) {
     else if (item.status === "approved") stats.approved += 1;
     else if (item.status === "rejected") stats.rejected += 1;
     else if (item.status === "review") stats.review += 1;
+    else if (item.status === "cancelled" || item.status === "canceled") stats.cancelled = (stats.cancelled || 0) + 1;
   });
 
   return stats;
