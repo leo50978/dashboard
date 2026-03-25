@@ -112,6 +112,18 @@ export async function getDepositMethodAnalyticsSnapshotSecure(payload = {}) {
   return invokeCallable("getDepositMethodAnalyticsSnapshot", payload, "Impossible de charger les analytics des depots.");
 }
 
+export async function searchAgentDepositClientsSecure(payload = {}) {
+  return invokeCallable("searchAgentDepositClientsSecure", payload, "Impossible de rechercher le client.");
+}
+
+export async function getAgentDepositClientContextSecure(payload = {}) {
+  return invokeCallable("getAgentDepositClientContextSecure", payload, "Impossible de charger le contexte client.");
+}
+
+export async function creditAgentDepositSecure(payload = {}) {
+  return invokeCallable("creditAgentDepositSecure", payload, "Impossible de crediter le compte client.");
+}
+
 export async function markChatSeenSecure(payload = {}) {
   return invokeCallable("markChatSeenSecure", payload, "Impossible de marquer la discussion comme lue.");
 }

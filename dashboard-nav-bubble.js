@@ -11,6 +11,7 @@
   const items = [
     { href: "./index.html", label: "Accueil", key: "index.html" },
     { href: "./Dpayment.html", label: "Paiements", key: "dpayment.html" },
+    { href: "./Dagentdeposit.html", label: "Depot agent", key: "dagentdeposit.html" },
     { href: "./Ddepositflow.html", label: "Flux depots", key: "ddepositflow.html" },
     { href: "./pilotagebot.html", label: "Pilotage bots", key: "pilotagebot.html" },
     { href: "./Dacquisition.html", label: "Acquisition", key: "dacquisition.html" },
