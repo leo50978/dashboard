@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="shortcut icon" href="./favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <link rel="manifest" href="./site.webmanifest" />
+    <script src="./runtime-config.js"></script>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://cdn.jsdelivr.net https://www.google.com https://www.recaptcha.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://www.gstatic.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https: blob:; media-src 'self' data: https: blob:; connect-src 'self' data: blob: https://*.googleapis.com https://apis.google.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseinstallations.googleapis.com https://content-firebaseappcheck.googleapis.com https://www.gstatic.com https://www.google.com https://accounts.google.com https://does-2c234.firebaseapp.com https://does-2c234.web.app https://www.recaptcha.net https://us-central1-does-2c234.cloudfunctions.net https://*.cloudfunctions.net https://firebasestorage.googleapis.com https://storage.googleapis.com https://cdn.jsdelivr.net; frame-src https://www.google.com https://accounts.google.com https://apis.google.com https://www.gstatic.com https://does-2c234.firebaseapp.com https://does-2c234.web.app https://www.recaptcha.net; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; block-all-mixed-content;"
+    />
+    <title>Dominoes Lakay - Dashboard Recrutement</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Sora:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-0: #050816;
+        --bg-1: #0a1024;
+        --bg-2: #121a33;
+        --panel: rgba(13, 22, 44, 0.68);
+        --panel-strong: rgba(10, 18, 38, 0.84);
+        --panel-soft: rgba(255, 255, 255, 0.04);
+        --line: rgba(163, 184, 255, 0.14);
+        --line-strong: rgba(163, 184, 255, 0.24);
+        --text: #edf2ff;
+        --muted: #95a4cb;
+        --accent: #68d7ff;
+        --accent-2: #7c5cff;
+        --accent-3: #ff9c5f;
+        --good: #4be7b8;
+        --warn: #ffbf69;
+        --bad: #ff7d8d;
+        --shadow-hard: 16px 16px 40px rgba(2, 7, 22, 0.78);
+        --shadow-soft: -12px -12px 28px rgba(49, 67, 122, 0.14);
+        --shadow-inset: inset 7px 7px 18px rgba(4, 9, 23, 0.76), inset -8px -8px 20px rgba(36, 48, 92, 0.24);
+      }
+
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        background:
+          radial-gradient(circle at top right, rgba(124, 92, 255, 0.14), transparent 28%),
+          radial-gradient(circle at 15% 20%, rgba(104, 215, 255, 0.12), transparent 32%),
+          radial-gradient(circle at bottom left, rgba(255, 156, 95, 0.12), transparent 30%),
+          linear-gradient(160deg, var(--bg-0) 0%, var(--bg-1) 46%, var(--bg-2) 100%);
+        color: var(--text);
+        font-family: "Space Grotesk", sans-serif;
+      }
+      .page {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        padding: 20px;
+      }
+      .shell {
+        max-width: 1480px;
+        margin: 0 auto;
+      }
+      .glass,
+      .neo {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        box-shadow: var(--shadow-hard), var(--shadow-soft);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+      }
+      .neo {
+        background: linear-gradient(180deg, rgba(18, 28, 57, 0.82), rgba(8, 15, 34, 0.82));
+        box-shadow: var(--shadow-hard), var(--shadow-soft), var(--shadow-inset);
+      }
+      .topbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 16px;
+        align-items: center;
+        padding: 20px 22px;
+        border-radius: 28px;
+      }
+      .eyebrow {
+        margin: 0;
+        font-size: 0.72rem;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--accent);
+        font-weight: 700;
+      }
+      .hero-title {
+        margin: 10px 0 0;
+        font-family: "Sora", sans-serif;
+        font-size: clamp(1.8rem, 3vw, 3rem);
+        line-height: 1.02;
+        font-weight: 800;
+      }
+      .hero-copy {
+        margin: 10px 0 0;
+        max-width: 74ch;
+        color: var(--muted);
+        line-height: 1.55;
+        font-size: 0.98rem;
+      }
+      .top-actions {
+        display: grid;
+        gap: 10px;
+        justify-items: end;
+      }
+      .nav-links {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .link-chip,
+      .action-btn {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        text-decoration: none;
+        color: var(--text);
+        background: var(--panel-soft);
+        padding: 11px 14px;
+        font: inherit;
+        cursor: pointer;
+      }
+      .action-btn.primary {
+        background: linear-gradient(135deg, rgba(104, 215, 255, 0.2), rgba(124, 92, 255, 0.22));
+      }
+      .status-pill {
+        min-height: 1.2rem;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .status-pill[data-tone="error"] { color: var(--bad); }
+      .status-pill[data-tone="success"] { color: var(--good); }
+      .section {
+        margin-top: 18px;
+        border-radius: 26px;
+        padding: 18px;
+      }
+      .runtime-strip {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 14px;
+        align-items: center;
+        padding: 14px 16px;
+        border-radius: 20px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .runtime-title {
+        margin: 0;
+        font-size: 0.84rem;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .runtime-note {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.45;
+      }
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+      }
+      .kpi {
+        border-radius: 22px;
+        padding: 18px;
+      }
+      .kpi-label {
+        margin: 0;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .kpi-value {
+        margin: 10px 0 0;
+        font-family: "Sora", sans-serif;
+        font-size: clamp(1.6rem, 2.6vw, 2.7rem);
+        font-weight: 800;
+        line-height: 1;
+      }
+      .kpi-note {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+      .accent-a .kpi-value { color: var(--accent); }
+      .accent-b .kpi-value { color: var(--accent-3); }
+      .accent-c .kpi-value { color: var(--good); }
+      .accent-d .kpi-value { color: var(--warn); }
+      .content-grid {
+        display: grid;
+        grid-template-columns: 0.92fr 1.08fr;
+        gap: 18px;
+        align-items: start;
+      }
+      .panel {
+        border-radius: 24px;
+        padding: 18px;
+      }
+      .panel-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+        margin-bottom: 14px;
+      }
+      .panel-title {
+        margin: 0;
+        font-family: "Sora", sans-serif;
+        font-size: 1rem;
+        font-weight: 700;
+      }
+      .panel-copy {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+        line-height: 1.5;
+      }
+      .detail-grid {
+        display: grid;
+        gap: 12px;
+      }
+      .detail-card {
+        border-radius: 18px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.035);
+      }
+      .detail-card span {
+        display: block;
+        font-size: 0.78rem;
+        color: var(--muted);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+      .detail-card strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 1.25rem;
+        font-family: "Sora", sans-serif;
+      }
+      .detail-card p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+        line-height: 1.5;
+      }
+      .applications-list {
+        display: grid;
+        gap: 10px;
+      }
+      .application-row {
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .application-row__top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .application-name {
+        margin: 0;
+        font-weight: 700;
+      }
+      .application-meta {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 0.84rem;
+        line-height: 1.45;
+      }
+      .application-badge {
+        border-radius: 999px;
+        padding: 7px 10px;
+        border: 1px solid rgba(75, 231, 184, 0.22);
+        background: rgba(75, 231, 184, 0.1);
+        color: #c5fff0;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 700;
+      }
+      .application-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .application-grid div {
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        padding: 10px 12px;
+      }
+      .application-grid span {
+        display: block;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .application-grid strong {
+        display: block;
+        margin-top: 6px;
+        font-size: 0.92rem;
+      }
+      .application-letter {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.55;
+      }
+      .empty-state {
+        border-radius: 20px;
+        border: 1px dashed var(--line);
+        padding: 18px;
+        color: var(--muted);
+        text-align: center;
+      }
+      @media (max-width: 1120px) {
+        .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .content-grid { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 720px) {
+        .topbar { grid-template-columns: 1fr; }
+        .top-actions { justify-items: stretch; }
+        .nav-links { justify-content: flex-start; }
+        .kpi-grid { grid-template-columns: 1fr; }
+        .application-grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="shell">
+        <section class="topbar glass">
+          <div>
+            <p class="eyebrow">Recrutement</p>
+            <h1 class="hero-title">Dashboard Candidatures Ambassadeurs</h1>
+            <p class="hero-copy">
+              Suivi des visites sur la page de recrutement, du volume de candidatures et lecture rapide des derniers dossiers soumis.
+            </p>
+          </div>
+          <div class="top-actions">
+            <div class="nav-links">
+              <a class="link-chip" href="./index.html">Hub</a>
+              <a class="link-chip" href="./Danalytics.html">Analytics global</a>
+              <a class="link-chip" href="./ambassader.html">Ambassadeurs</a>
+            </div>
+            <button id="recruitmentRefreshBtn" class="action-btn primary" type="button">Rafraichir</button>
+            <div id="recruitmentStatus" class="status-pill" data-tone="neutral"></div>
+          </div>
+        </section>
+
+        <section class="section neo">
+          <div class="runtime-strip">
+            <div>
+              <p class="runtime-title">Couverture</p>
+              <p id="recruitmentCoverage" class="runtime-note">Chargement...</p>
+            </div>
+            <div>
+              <p class="runtime-title">Snapshot</p>
+              <p id="recruitmentGeneratedAt" class="runtime-note">-</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="kpi-grid">
+            <article class="kpi neo accent-a">
+              <p class="kpi-label">Visites page</p>
+              <p id="recruitmentVisits" class="kpi-value">-</p>
+              <p class="kpi-note">Visites enregistrées sur la page recrutement.</p>
+            </article>
+            <article class="kpi neo accent-b">
+              <p class="kpi-label">Candidatures</p>
+              <p id="recruitmentApplications" class="kpi-value">-</p>
+              <p class="kpi-note">Dossiers ambassadeurs déjà reçus.</p>
+            </article>
+            <article class="kpi neo accent-c">
+              <p class="kpi-label">Conversion</p>
+              <p id="recruitmentConversion" class="kpi-value">-</p>
+              <p class="kpi-note">Rapport simple visites / candidatures.</p>
+            </article>
+            <article class="kpi neo accent-d">
+              <p class="kpi-label">Cloture</p>
+              <p id="recruitmentDeadline" class="kpi-value">-</p>
+              <p class="kpi-note">Temps restant avant la fin de la campagne.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section content-grid">
+          <article class="panel neo">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">Vue campagne</h2>
+                <p class="panel-copy">Lecture rapide du volume, du niveau de pression et de la capacité restante.</p>
+              </div>
+            </div>
+            <div class="detail-grid">
+              <div class="detail-card">
+                <span>Objectif campagne</span>
+                <strong id="recruitmentTarget">-</strong>
+                <p>Volume cible utilisé pour calibrer la campagne recrutement.</p>
+              </div>
+              <div class="detail-card">
+                <span>Capacité restante</span>
+                <strong id="recruitmentRemainingSlots">-</strong>
+                <p>Places estimées restantes avant saturation de l'objectif.</p>
+              </div>
+              <div class="detail-card">
+                <span>Statut</span>
+                <strong id="recruitmentCampaignState">-</strong>
+                <p id="recruitmentCampaignNote">-</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel neo">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">Dernières candidatures</h2>
+                <p class="panel-copy">Les derniers dossiers envoyés avec les informations utiles à la lecture rapide.</p>
+              </div>
+            </div>
+            <div id="recruitmentApplicationsList" class="applications-list">
+              <div class="empty-state">Chargement des candidatures...</div>
+            </div>
+          </article>
+        </section>
+      </div>
+    </div>
+
+    <script src="./dashboard-nav-bubble.js"></script>
+    <script type="module" src="./Drecrutement.js"></script>
+  </body>
+</html>

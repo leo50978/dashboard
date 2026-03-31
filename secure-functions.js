@@ -108,6 +108,10 @@ export async function getDuelAnalyticsSnapshotSecure(payload = {}) {
   return invokeCallable("getDuelAnalyticsSnapshot", payload, "Impossible de charger les analytics duel.");
 }
 
+export async function getRecruitmentAnalyticsSnapshotSecure(payload = {}) {
+  return invokeCallable("getRecruitmentAnalyticsSnapshot", payload, "Impossible de charger les analytics recrutement.");
+}
+
 export async function getClientAcquisitionSnapshotSecure(payload = {}) {
   return invokeCallable("getClientAcquisitionSnapshot", payload, "Impossible de charger les analytics d'acquisition.");
 }
