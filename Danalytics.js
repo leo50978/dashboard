@@ -1,2216 +1,397 @@
 import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js";
-import { getGlobalAnalyticsSnapshotSecure, setBotDifficultySecure } from "./secure-functions.js";
-
-const CLIENTS_COLLECTION = "clients";
-const AMBASSADORS_COLLECTION = "ambassadors";
-const ROOMS_COLLECTION = "rooms";
-const ORDERS_SUBCOLLECTION = "orders";
-const WITHDRAWALS_SUBCOLLECTION = "withdrawals";
-const XCHANGES_SUBCOLLECTION = "xchanges";
-const REFERRAL_REWARDS_SUBCOLLECTION = "referralRewards";
-const REFERRALS_SUBCOLLECTION = "referrals";
-const CHANNEL_COLLECTION = "globalChannelMessages";
-const SUPPORT_THREADS_COLLECTION = "supportThreads";
-const SUPPORT_MESSAGES_SUBCOLLECTION = "messages";
-const DEFAULT_BOT_DIFFICULTY = "expert";
-
-const RATE_HTG_TO_DOES = 20;
-const DEFAULT_STAKE_REWARD_MULTIPLIER = 3;
-const USER_REFERRAL_DEPOSIT_REWARD = 100;
-const MAX_TREE_ROOTS = 6;
-const MAX_TOP_ROWS = 8;
+import { getPresenceAnalyticsSnapshotSecure } from "./secure-functions.js";
 
 const chartState = {
-  matches: null,
-  finance: null,
-  depth: null,
-  presenceRecent: null,
-  presenceHourly: null,
-  presenceDaily: null,
-  presenceWeekly: null,
-  presenceMonthly: null,
-};
-
-const state = {
-  raw: null,
-  computed: null,
-  botDifficulty: DEFAULT_BOT_DIFFICULTY,
+  daily: null,
+  snapshots: null,
+  hour: null,
+  weekday: null,
 };
 
 const dom = {
   status: document.getElementById("analyticsStatus"),
   refreshBtn: document.getElementById("analyticsRefreshBtn"),
   applyBtn: document.getElementById("analyticsApplyBtn"),
+  windowSelect: document.getElementById("analyticsWindow"),
   dateFrom: document.getElementById("analyticsDateFrom"),
   dateTo: document.getElementById("analyticsDateTo"),
-  treeDepth: document.getElementById("analyticsTreeDepth"),
-  insights: document.getElementById("analyticsInsights"),
-  topPlayers: document.getElementById("topPlayersList"),
-  topReferrers: document.getElementById("topReferrersList"),
-  topAmbassadors: document.getElementById("topAmbassadorsList"),
-  referralRewards: document.getElementById("referralRewardsList"),
-  gainLossRecords: document.getElementById("gainLossRecordsList"),
-  financeRecords: document.getElementById("financeRecordsList"),
-  treeWrap: document.getElementById("referralTreeWrap"),
-  recommendedMetrics: document.getElementById("recommendedMetrics"),
-  botDifficultyStatus: document.getElementById("botDifficultyStatus"),
-  botDifficultyButtons: Array.from(document.querySelectorAll("[data-bot-level]")),
+  coverage: document.getElementById("analyticsCoverage"),
+  generatedAt: document.getElementById("analyticsGeneratedAt"),
+  snapshotsNote: document.getElementById("analyticsSnapshotsNote"),
+  currentOnline: document.getElementById("analyticsCurrentOnline"),
+  currentPlayers: document.getElementById("analyticsCurrentPlayers"),
+  currentRooms: document.getElementById("analyticsCurrentRooms"),
+  peakVisitors: document.getElementById("analyticsPeakVisitors"),
+  peakPlayers: document.getElementById("analyticsPeakPlayers"),
+  avgVisitors: document.getElementById("analyticsAvgVisitors"),
+  avgPlayers: document.getElementById("analyticsAvgPlayers"),
+  peakRooms: document.getElementById("analyticsPeakRooms"),
+  peakDay: document.getElementById("analyticsPeakDay"),
+  peakList: document.getElementById("analyticsPeakList"),
 };
 
-function setStatus(text, tone = "neutral") {
-  if (!dom.status) return;
-  dom.status.textContent = String(text || "");
-  dom.status.style.color = tone === "error"
-    ? "#ff9bab"
-    : tone === "success"
-      ? "#7ff1c7"
-      : tone === "warn"
-        ? "#ffc476"
-        : "";
-}
-
-function botDifficultyLabel(level) {
-  const normalized = normalizeBotDifficulty(level);
-  if (normalized === "amateur") return "Amateur";
-  if (normalized === "userpro") return "UserPro";
-  if (normalized === "ultra") return "Ultra";
-  return "Expert";
-}
-
-function renderBotDifficultyControls(level = DEFAULT_BOT_DIFFICULTY) {
-  const normalized = normalizeBotDifficulty(level);
-  state.botDifficulty = normalized;
-
-  dom.botDifficultyButtons.forEach((button) => {
-    const buttonLevel = normalizeBotDifficulty(button.dataset.botLevel);
-    button.classList.toggle("active", buttonLevel === normalized);
-    button.setAttribute("aria-pressed", buttonLevel === normalized ? "true" : "false");
-  });
-
-  if (dom.botDifficultyStatus) {
-    dom.botDifficultyStatus.textContent = `Niveau actuel: ${botDifficultyLabel(normalized)}. Seul l'admin finance peut le modifier depuis ce dashboard.`;
-  }
-}
-
 function safeInt(value) {
-  const num = Number(value);
-  return Number.isFinite(num) ? Math.max(0, Math.floor(num)) : 0;
-}
-
-function resolveRoomRewardDoes(room = {}) {
-  const explicit = safeInt(room.rewardAmountDoes);
-  if (explicit > 0) return explicit;
-  return safeInt(room.entryCostDoes || room.stakeDoes) * DEFAULT_STAKE_REWARD_MULTIPLIER;
-}
-
-function safeSignedInt(value) {
   const num = Number(value);
   return Number.isFinite(num) ? Math.trunc(num) : 0;
 }
 
-function normalizeBotDifficulty(value) {
-  const level = String(value || "").trim().toLowerCase();
-  return level === "amateur" || level === "expert" || level === "ultra" || level === "userpro"
-    ? level
-    : DEFAULT_BOT_DIFFICULTY;
+function formatInt(value) {
+  return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Math.max(0, safeInt(value)));
 }
 
-function safeFloat(value) {
-  const num = Number(value);
-  return Number.isFinite(num) ? num : 0;
+function formatDateTime(ms) {
+  const safeMs = safeInt(ms);
+  if (!safeMs) return "-";
+  return new Date(safeMs).toLocaleString("fr-FR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
 }
 
-function clampPercent(value) {
-  return Math.max(0, Math.min(100, safeFloat(value)));
+function formatDateInput(ms) {
+  const safeMs = safeInt(ms);
+  if (!safeMs) return "";
+  const date = new Date(safeMs);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
-function tsToMs(value) {
-  if (!value) return 0;
-  if (value instanceof Date) return value.getTime();
-  if (typeof value.toMillis === "function") return value.toMillis();
-  if (typeof value.toDate === "function") return value.toDate().getTime();
-  if (typeof value.seconds === "number") return value.seconds * 1000;
-  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
-  const parsed = Date.parse(String(value));
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function startOfDayMs(value) {
-  const ms = tsToMs(value);
-  if (!ms) return 0;
-  const date = new Date(ms);
-  date.setHours(0, 0, 0, 0);
-  return date.getTime();
-}
-
-function endOfDayMs(value) {
-  const ms = tsToMs(value);
-  if (!ms) return 0;
-  const date = new Date(ms);
-  date.setHours(23, 59, 59, 999);
-  return date.getTime();
-}
-
-function startOfWeekMs(value) {
-  const ms = tsToMs(value);
-  if (!ms) return 0;
-  const date = new Date(ms);
-  const day = date.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  date.setDate(date.getDate() + diff);
-  date.setHours(0, 0, 0, 0);
-  return date.getTime();
-}
-
-function startOfMonthMs(value) {
-  const ms = tsToMs(value);
-  if (!ms) return 0;
-  const date = new Date(ms);
-  date.setDate(1);
-  date.setHours(0, 0, 0, 0);
-  return date.getTime();
-}
-
-function parseDateInputMs(rawValue, endOfDay = false) {
+function parseDateInput(rawValue, endOfDay = false) {
   const raw = String(rawValue || "").trim();
   if (!raw) return 0;
   const parts = raw.split("-").map((item) => Number(item));
   if (parts.length !== 3 || parts.some((item) => !Number.isFinite(item))) return 0;
   const [year, month, day] = parts;
-  if (endOfDay) return new Date(year, month - 1, day, 23, 59, 59, 999).getTime();
-  return new Date(year, month - 1, day, 0, 0, 0, 0).getTime();
+  return endOfDay
+    ? new Date(year, month - 1, day, 23, 59, 59, 999).getTime()
+    : new Date(year, month - 1, day, 0, 0, 0, 0).getTime();
 }
 
-function parseDayKeyMs(rawValue) {
-  return parseDateInputMs(rawValue, false);
+function setStatus(text, tone = "neutral") {
+  if (!dom.status) return;
+  dom.status.textContent = String(text || "");
+  dom.status.dataset.tone = tone;
 }
 
-function parseMonthKeyMs(rawValue) {
-  const raw = String(rawValue || "").trim();
-  const parts = raw.split("-").map((item) => Number(item));
-  if (parts.length !== 2 || parts.some((item) => !Number.isFinite(item))) return 0;
-  const [year, month] = parts;
-  return new Date(year, month - 1, 1, 0, 0, 0, 0).getTime();
-}
-
-function averageRollupValue(item, sumField) {
-  const samples = safeInt(item?.samples);
-  if (samples <= 0) return 0;
-  return safeFloat(item?.[sumField]) / samples;
-}
-
-function hourLabelFromKey(rawValue) {
-  const hour = String(rawValue || "00").padStart(2, "0");
-  return `${hour}h`;
-}
-
-function formatInt(value) {
-  return new Intl.NumberFormat("fr-FR", {
-    maximumFractionDigits: 0,
-  }).format(safeFloat(value));
-}
-
-function formatCurrencyHtg(value) {
-  return `${formatInt(value)} HTG`;
-}
-
-function formatDoes(value) {
-  return `${formatInt(value)} Does`;
-}
-
-function formatSignedDoes(value) {
-  const num = safeSignedInt(value);
-  return `${num > 0 ? "+" : ""}${formatInt(num)} Does`;
-}
-
-function formatPercent(value) {
-  return `${clampPercent(value).toFixed(1)}%`;
-}
-
-function formatDateLabel(ms) {
-  if (!ms) return "-";
-  return new Date(ms).toLocaleDateString("fr-FR");
-}
-
-function formatDuration(ms) {
-  const safeMs = safeSignedInt(ms);
-  if (!safeMs) return "-";
-  const minutes = safeMs / 60000;
-  if (minutes < 60) return `${minutes.toFixed(minutes < 10 ? 1 : 0)} min`;
-  const hours = minutes / 60;
-  if (hours < 24) return `${hours.toFixed(hours < 10 ? 1 : 0)} h`;
-  const days = hours / 24;
-  return `${days.toFixed(days < 10 ? 1 : 0)} j`;
-}
-
-function sourceLabel(rawSource) {
-  const source = String(rawSource || "").toLowerCase();
-  if (source === "game_reward") return "Gain de match";
-  if (source === "game_entry" || source === "game_cost" || source === "entry") return "Mise de match";
-  if (source === "xchange_buy" || source === "exchange_htg_to_does" || source === "buy") return "Achat Does";
-  if (source === "xchange_sell" || source === "exchange_does_to_htg" || source === "sell") return "Vente Does";
-  if (source === "referral_reward" || source.includes("referral")) return "Prime parrainage";
-  if (source === "reward") return "Credit reward";
-  return source ? source.replaceAll("_", " ") : "Operation";
-}
-
-function countValues(items, mapper) {
-  const counts = new Map();
-  (items || []).forEach((item) => {
-    const key = String(mapper(item) || "").trim();
-    if (!key) return;
-    counts.set(key, safeInt(counts.get(key)) + 1);
-  });
-  return counts;
-}
-
-function topCountLabel(counts, fallback = "Aucune donnée") {
-  if (!(counts instanceof Map) || counts.size === 0) return fallback;
-  const top = [...counts.entries()].sort((left, right) => right[1] - left[1])[0];
-  return `${top[0]} (${formatInt(top[1])})`;
-}
-
-function formatPeriodLabel(ms, granularity = "day") {
-  const safeMs = safeSignedInt(ms);
-  if (!safeMs) return "-";
-  const date = new Date(safeMs);
-  if (granularity === "week") {
-    const end = new Date(safeMs);
-    end.setDate(end.getDate() + 6);
-    return `${date.toLocaleDateString("fr-FR")} -> ${end.toLocaleDateString("fr-FR")}`;
+function destroyChart(key) {
+  if (chartState[key]) {
+    chartState[key].destroy();
+    chartState[key] = null;
   }
-  if (granularity === "month") {
-    return date.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
-  }
-  return date.toLocaleDateString("fr-FR");
 }
 
-function getCreatedMs(item) {
-  return tsToMs(item.createdAt) || safeSignedInt(item.createdAtMs) || tsToMs(item.updatedAt);
-}
-
-function getRoomPeriodMs(room) {
-  if (String(room.status || "") === "ended") {
-    return tsToMs(room.endedAt) || safeSignedInt(room.endedAtMs) || tsToMs(room.updatedAt) || tsToMs(room.createdAt);
-  }
-  return tsToMs(room.startedAt) || safeSignedInt(room.startedAtMs) || tsToMs(room.createdAt) || tsToMs(room.updatedAt);
-}
-
-function asArray(value) {
-  return Array.isArray(value) ? value : [];
-}
-
-function uniqueStrings(values) {
-  return [...new Set((values || []).map((item) => String(item || "").trim()).filter(Boolean))];
-}
-
-function withinRange(ms, range) {
-  if (!ms) return false;
-  return ms >= range.fromMs && ms <= range.toMs;
-}
-
-function getDateInputValue(date) {
-  return new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
-}
-
-function readDateRangeFromInputs() {
-  const fromRaw = dom.dateFrom?.value || "";
-  const toRaw = dom.dateTo?.value || "";
+function syncDatesForWindow(windowKey) {
   const now = new Date();
-  const fallbackFrom = new Date(now.getTime() - (29 * 24 * 60 * 60 * 1000));
-  const fromMs = parseDateInputMs(fromRaw, false) || startOfDayMs(fallbackFrom);
-  const toMs = parseDateInputMs(toRaw, true) || endOfDayMs(now);
-  return {
-    fromMs,
-    toMs,
-  };
-}
-
-function snapshotRecord(docSnap) {
-  return {
-    id: docSnap.id,
-    path: docSnap.ref.path,
-    ...docSnap.data(),
-  };
-}
-
-function subcollectionRecord(docSnap) {
-  const base = snapshotRecord(docSnap);
-  const ownerDoc = docSnap.ref.parent?.parent || null;
-  return {
-    ...base,
-    clientId: String(base.clientId || base.uid || ownerDoc?.id || "").trim(),
-  };
-}
-
-function referralRecord(docSnap) {
-  const base = snapshotRecord(docSnap);
-  const ownerDoc = docSnap.ref.parent?.parent || null;
-  const ownerCollection = String(ownerDoc?.parent?.id || "").trim();
-  return {
-    ...base,
-    ownerId: String(ownerDoc?.id || "").trim(),
-    ownerCollection,
-  };
-}
-
-function supportMessageRecord(docSnap) {
-  const base = snapshotRecord(docSnap);
-  return {
-    ...base,
-    threadId: String(docSnap.ref.parent?.parent?.id || base.threadId || "").trim(),
-  };
-}
-
-function getLedgerDeltaDoes(item) {
-  const explicit = Number(item.deltaDoes);
-  if (Number.isFinite(explicit) && explicit !== 0) return Math.trunc(explicit);
-
-  const amountDoes = safeInt(item.amountDoes || item.rewardDoes || 0);
-  const type = classifyXchange(item);
-  if (type === "buy" || type === "reward" || type === "referral") return amountDoes;
-  if (type === "sell" || type === "entry") return -amountDoes;
-  return 0;
-}
-
-function getBucketStartMs(ms, granularity) {
-  if (!ms) return 0;
-  if (granularity === "week") return startOfWeekMs(ms);
-  if (granularity === "month") return startOfMonthMs(ms);
-  return startOfDayMs(ms);
-}
-
-function buildPeriodExtremes(entries, granularity) {
-  const buckets = new Map();
-
-  (entries || []).forEach((entry) => {
-    const bucketMs = getBucketStartMs(entry.createdMs, granularity);
-    if (!bucketMs) return;
-    if (!buckets.has(bucketMs)) {
-      buckets.set(bucketMs, {
-        bucketMs,
-        positiveDoes: 0,
-        negativeDoes: 0,
-        netDoes: 0,
-        events: 0,
-      });
-    }
-    const bucket = buckets.get(bucketMs);
-    const delta = safeSignedInt(entry.deltaDoes);
-    if (delta > 0) bucket.positiveDoes += delta;
-    if (delta < 0) bucket.negativeDoes += Math.abs(delta);
-    bucket.netDoes += delta;
-    bucket.events += 1;
-  });
-
-  const all = [...buckets.values()];
-  const bestGain = all
-    .filter((item) => item.positiveDoes > 0)
-    .sort((left, right) => right.positiveDoes - left.positiveDoes)[0] || null;
-  const worstLoss = all
-    .filter((item) => item.negativeDoes > 0)
-    .sort((left, right) => right.negativeDoes - left.negativeDoes)[0] || null;
-
-  return { bestGain, worstLoss };
-}
-
-async function fetchAllAnalyticsData() {
-  const raw = await getGlobalAnalyticsSnapshotSecure();
-  return {
-    botDifficulty: normalizeBotDifficulty(raw?.botDifficulty),
-    clients: asArray(raw?.clients),
-    ambassadors: asArray(raw?.ambassadors),
-    rooms: asArray(raw?.rooms),
-    orders: asArray(raw?.orders),
-    withdrawals: asArray(raw?.withdrawals),
-    xchanges: asArray(raw?.xchanges),
-    referralRewards: asArray(raw?.referralRewards),
-    clientReferrals: asArray(raw?.clientReferrals),
-    ambassadorReferrals: asArray(raw?.ambassadorReferrals),
-    channelMessages: asArray(raw?.channelMessages),
-    supportThreads: asArray(raw?.supportThreads),
-    supportMessages: asArray(raw?.supportMessages),
-    presenceAnalytics: raw?.presenceAnalytics && typeof raw.presenceAnalytics === "object"
-      ? raw.presenceAnalytics
-      : {},
-    generatedAtMs: safeSignedInt(raw?.generatedAtMs),
-  };
-}
-
-function computePresenceMetrics(rawPresence, range) {
-  const live = rawPresence && typeof rawPresence.live === "object" ? rawPresence.live : {};
-  const snapshots = asArray(rawPresence?.snapshots)
-    .map((item) => ({
-      ...item,
-      bucketMs: safeSignedInt(item.bucketMs || item.createdAtMs || item.sampledAtMs),
-      onlineUsers: safeInt(item.onlineUsers),
-      onlineInGameUsers: safeInt(item.onlineInGameUsers),
-      activeRooms: safeInt(item.activeRooms),
-    }))
-    .filter((item) => item.bucketMs > 0)
-    .sort((left, right) => left.bucketMs - right.bucketMs);
-
-  const recentCutoffMs = Date.now() - (24 * 60 * 60 * 1000);
-  const recentSnapshots = snapshots.filter((item) => item.bucketMs >= recentCutoffMs);
-
-  const daily = asArray(rawPresence?.daily)
-    .map((item) => {
-      const bucketMs = parseDayKeyMs(item.dayKey);
-      return {
-        ...item,
-        bucketMs,
-        avgOnlineUsers: averageRollupValue(item, "onlineUsersSum"),
-        avgInGameUsers: averageRollupValue(item, "onlineInGameUsersSum"),
-        avgActiveRooms: averageRollupValue(item, "activeRoomsSum"),
-        maxOnlineUsers: safeInt(item.onlineUsersMax),
-        maxInGameUsers: safeInt(item.onlineInGameUsersMax),
-      };
-    })
-    .filter((item) => item.bucketMs > 0 && withinRange(item.bucketMs, range))
-    .sort((left, right) => left.bucketMs - right.bucketMs);
-
-  const weeklyMap = new Map();
-  daily.forEach((item) => {
-    const weekMs = startOfWeekMs(item.bucketMs);
-    if (!weekMs) return;
-    if (!weeklyMap.has(weekMs)) {
-      weeklyMap.set(weekMs, {
-        bucketMs: weekMs,
-        samples: 0,
-        onlineUsersSum: 0,
-        activeRoomsSum: 0,
-        maxOnlineUsers: 0,
-      });
-    }
-    const target = weeklyMap.get(weekMs);
-    target.samples += safeInt(item.samples);
-    target.onlineUsersSum += safeFloat(item.onlineUsersSum);
-    target.activeRoomsSum += safeFloat(item.activeRoomsSum);
-    target.maxOnlineUsers = Math.max(target.maxOnlineUsers, safeInt(item.maxOnlineUsers));
-  });
-  const weekly = [...weeklyMap.values()]
-    .map((item) => ({
-      ...item,
-      avgOnlineUsers: item.samples > 0 ? item.onlineUsersSum / item.samples : 0,
-      avgActiveRooms: item.samples > 0 ? item.activeRoomsSum / item.samples : 0,
-    }))
-    .sort((left, right) => left.bucketMs - right.bucketMs);
-
-  const monthly = asArray(rawPresence?.monthly)
-    .map((item) => {
-      const bucketMs = parseMonthKeyMs(item.monthKey);
-      const monthEndMs = bucketMs ? endOfDayMs(new Date(new Date(bucketMs).getFullYear(), new Date(bucketMs).getMonth() + 1, 0)) : 0;
-      return {
-        ...item,
-        bucketMs,
-        monthEndMs,
-        avgOnlineUsers: averageRollupValue(item, "onlineUsersSum"),
-        avgInGameUsers: averageRollupValue(item, "onlineInGameUsersSum"),
-        maxOnlineUsers: safeInt(item.onlineUsersMax),
-      };
-    })
-    .filter((item) => item.bucketMs > 0 && item.bucketMs <= range.toMs && item.monthEndMs >= range.fromMs)
-    .sort((left, right) => left.bucketMs - right.bucketMs);
-
-  const hourly = asArray(rawPresence?.hourOfDay)
-    .map((item) => ({
-      ...item,
-      label: hourLabelFromKey(item.hourKey),
-      avgOnlineUsers: averageRollupValue(item, "onlineUsersSum"),
-      maxOnlineUsers: safeInt(item.onlineUsersMax),
-    }))
-    .sort((left, right) => String(left.hourKey || "").localeCompare(String(right.hourKey || "")));
-
-  const peakHour = [...hourly]
-    .sort((left, right) => right.avgOnlineUsers - left.avgOnlineUsers || right.maxOnlineUsers - left.maxOnlineUsers)[0] || null;
-  const peakDay = [...daily]
-    .sort((left, right) => right.maxOnlineUsers - left.maxOnlineUsers || right.avgOnlineUsers - left.avgOnlineUsers)[0] || null;
-  const peakWeek = [...weekly]
-    .sort((left, right) => right.maxOnlineUsers - left.maxOnlineUsers || right.avgOnlineUsers - left.avgOnlineUsers)[0] || null;
-  const peakMonth = [...monthly]
-    .sort((left, right) => right.maxOnlineUsers - left.maxOnlineUsers || right.avgOnlineUsers - left.avgOnlineUsers)[0] || null;
-
-  return {
-    live: {
-      onlineUsers: safeInt(live.onlineUsers),
-      onlineInGameUsers: safeInt(live.onlineInGameUsers),
-      activeRooms: safeInt(live.activeRooms),
-      playingRooms: safeInt(live.playingRooms),
-      waitingRooms: safeInt(live.waitingRooms),
-      sampledAtMs: safeSignedInt(live.sampledAtMs),
-    },
-    recentSnapshots,
-    daily,
-    weekly,
-    monthly,
-    hourly,
-    peakHour,
-    peakDay,
-    peakWeek,
-    peakMonth,
-    avgDayOnline: daily.length
-      ? daily.reduce((sum, item) => sum + safeFloat(item.avgOnlineUsers), 0) / daily.length
-      : 0,
-  };
-}
-
-function orderAmountHtg(order) {
-  return safeInt(order.amount || order.amountHtg);
-}
-
-function withdrawalAmountHtg(item) {
-  return safeInt(item.requestedAmount ?? item.amount ?? item.amountHtg);
-}
-
-function xchangeAmountHtg(item) {
-  return safeInt(item.amountGourdes || item.amountHtg);
-}
-
-function xchangeAmountDoes(item) {
-  return safeInt(item.amountDoes || 0);
-}
-
-function classifyXchange(item) {
-  const type = String(item.type || "").toLowerCase();
-  if (type === "xchange_buy" || type === "exchange_htg_to_does") return "buy";
-  if (type === "xchange_sell" || type === "exchange_does_to_htg") return "sell";
-  if (type === "game_entry" || type === "game_cost") return "entry";
-  if (type === "game_reward") return "reward";
-  if (type.includes("referral")) return "referral";
-  return "other";
-}
-
-function computeReferralGraph(clients) {
-  const clientsById = new Map();
-  const childrenByParent = new Map();
-  const hasChildren = new Set();
-  const activeParentIds = new Set();
-
-  clients.forEach((client) => {
-    clientsById.set(String(client.id), client);
-  });
-
-  clients.forEach((client) => {
-    const clientId = String(client.id || "").trim();
-    const parentId = String(client.referredByUserId || "").trim();
-    if (!clientId || !parentId || clientId === parentId) return;
-    activeParentIds.add(parentId);
-    hasChildren.add(parentId);
-    if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, []);
-    childrenByParent.get(parentId).push(clientId);
-  });
-
-  const depthMemo = new Map();
-  const depthCounts = {};
-
-  function computeDepth(clientId, trail = new Set()) {
-    if (depthMemo.has(clientId)) return depthMemo.get(clientId);
-    if (trail.has(clientId)) return 0;
-
-    const client = clientsById.get(clientId);
-    const parentId = String(client?.referredByUserId || "").trim();
-    if (!parentId || !clientsById.has(parentId) || parentId === clientId) {
-      depthMemo.set(clientId, 1);
-      return 1;
-    }
-
-    trail.add(clientId);
-    const depth = computeDepth(parentId, trail) + 1;
-    trail.delete(clientId);
-    depthMemo.set(clientId, depth);
-    return depth;
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let start = new Date(todayStart);
+  if (windowKey === "7d") {
+    start.setDate(start.getDate() - 6);
+  } else if (windowKey === "30d") {
+    start.setDate(start.getDate() - 29);
   }
-
-  clients.forEach((client) => {
-    const clientId = String(client.id || "").trim();
-    if (!String(client.referredByUserId || "").trim()) return;
-    const depth = Math.max(1, computeDepth(clientId) - 1);
-    depthCounts[depth] = safeInt(depthCounts[depth]) + 1;
-  });
-
-  const descendantsMemo = new Map();
-
-  function collectDescendants(parentId, trail = new Set()) {
-    if (descendantsMemo.has(parentId)) return descendantsMemo.get(parentId);
-    if (trail.has(parentId)) return [];
-
-    trail.add(parentId);
-    const direct = asArray(childrenByParent.get(parentId));
-    const nested = [];
-    direct.forEach((childId) => {
-      nested.push(childId);
-      collectDescendants(childId, trail).forEach((nestedId) => nested.push(nestedId));
-    });
-    trail.delete(parentId);
-    descendantsMemo.set(parentId, nested);
-    return nested;
+  if (windowKey === "global") {
+    dom.dateFrom.value = "";
+    dom.dateTo.value = "";
+    return;
   }
+  if (windowKey === "custom") return;
+  dom.dateFrom.value = formatDateInput(start.getTime());
+  dom.dateTo.value = formatDateInput(now.getTime());
+}
 
-  const roots = [...hasChildren]
-    .filter((id) => {
-      const client = clientsById.get(id);
-      const parentId = String(client?.referredByUserId || "").trim();
-      return !parentId || !clientsById.has(parentId);
-    })
-    .sort((left, right) => collectDescendants(right).length - collectDescendants(left).length);
-
-  const parentStats = [...hasChildren].map((parentId) => {
-    const directCount = asArray(childrenByParent.get(parentId)).length;
-    const descendants = collectDescendants(parentId);
+function buildPayload() {
+  const windowKey = String(dom.windowSelect?.value || "today").trim().toLowerCase();
+  if (windowKey === "custom") {
     return {
-      parentId,
-      directCount,
-      descendantCount: descendants.length,
+      window: "custom",
+      startMs: parseDateInput(dom.dateFrom?.value || "", false),
+      endMs: parseDateInput(dom.dateTo?.value || "", true),
     };
-  }).sort((left, right) => {
-    if (right.descendantCount !== left.descendantCount) return right.descendantCount - left.descendantCount;
-    return right.directCount - left.directCount;
-  });
-
-  return {
-    clientsById,
-    childrenByParent,
-    roots,
-    depthCounts,
-    parentStats,
-    activeReferrerIds: activeParentIds,
-  };
+  }
+  return { window: windowKey };
 }
 
-function buildLevelNodes(rootId, graph, depthLimit) {
-  const levels = [];
-  let current = [rootId];
+function renderSummary(snapshot = {}, result = {}) {
+  const summary = snapshot.summary || {};
+  const range = result.range || {};
 
-  for (let depth = 1; depth <= depthLimit; depth += 1) {
-    const next = [];
-    current.forEach((parentId) => {
-      asArray(graph.childrenByParent.get(parentId)).forEach((childId) => next.push(childId));
-    });
-    if (!next.length) break;
-    levels.push(next);
-    current = next;
+  if (dom.currentOnline) dom.currentOnline.textContent = formatInt(summary.currentOnlineUsers);
+  if (dom.currentPlayers) dom.currentPlayers.textContent = formatInt(summary.currentInGameUsers);
+  if (dom.currentRooms) dom.currentRooms.textContent = formatInt(summary.currentPlayingRooms);
+  if (dom.peakVisitors) dom.peakVisitors.textContent = formatInt(summary.peakVisitors);
+  if (dom.peakPlayers) dom.peakPlayers.textContent = formatInt(summary.peakPlayers);
+  if (dom.avgVisitors) dom.avgVisitors.textContent = formatInt(summary.avgDailyPeakVisitors);
+  if (dom.avgPlayers) dom.avgPlayers.textContent = formatInt(summary.avgDailyPeakPlayers);
+  if (dom.peakRooms) dom.peakRooms.textContent = formatInt(summary.peakPlayingRooms);
+  if (dom.peakDay) dom.peakDay.textContent = summary.peakDayLabel || "--";
+
+  if (dom.coverage) {
+    const startText = range?.startMs ? formatDateTime(range.startMs) : "Historique";
+    dom.coverage.textContent = `Couverture: ${startText} -> ${formatDateTime(range.endMs)}`;
+  }
+  if (dom.generatedAt) {
+    dom.generatedAt.textContent = `Derniere actualisation: ${formatDateTime(result.generatedAtMs)}`;
   }
 
-  return levels;
-}
-
-function computeMetrics(raw, range) {
-  const clients = asArray(raw.clients);
-  const ambassadors = asArray(raw.ambassadors);
-  const rooms = asArray(raw.rooms);
-  const orders = asArray(raw.orders);
-  const withdrawals = asArray(raw.withdrawals);
-  const xchanges = asArray(raw.xchanges);
-  const referralRewards = asArray(raw.referralRewards);
-  const channelMessages = asArray(raw.channelMessages);
-  const supportThreads = asArray(raw.supportThreads);
-  const supportMessages = asArray(raw.supportMessages);
-  const ambassadorReferrals = asArray(raw.ambassadorReferrals);
-  const presence = computePresenceMetrics(raw.presenceAnalytics || {}, range);
-
-  const referralGraph = computeReferralGraph(clients);
-  const clientsById = referralGraph.clientsById;
-
-  const newPlayersInRange = clients.filter((item) => withinRange(getCreatedMs(item), range));
-  const periodRooms = rooms.filter((room) => withinRange(getRoomPeriodMs(room), range));
-  const completedRooms = periodRooms.filter((room) => String(room.status || "") === "ended");
-
-  const matchesByBots = {
-    0: 0,
-    1: 0,
-    2: 0,
-    3: 0,
-  };
-
-  let totalStakeDoes = 0;
-  let totalRewardDoes = 0;
-  let totalHumans = 0;
-  let totalBots = 0;
-
-  completedRooms.forEach((room) => {
-    const humans = Math.max(
-      1,
-      safeInt(
-        Number.isFinite(Number(room.startedHumanCount))
-          ? Number(room.startedHumanCount)
-          : (room.humanCount || asArray(room.playerUids).filter(Boolean).length || 1)
-      )
-    );
-    const bots = Math.max(
-      0,
-      Math.min(
-        3,
-        safeInt(
-          Number.isFinite(Number(room.startedBotCount))
-            ? Number(room.startedBotCount)
-            : (room.botCount || 0)
-        )
-      )
-    );
-    const entryCostDoes = Math.max(0, safeInt(room.entryCostDoes || room.stakeDoes || 100));
-    const winnerSeat = typeof room.winnerSeat === "number" ? Math.trunc(room.winnerSeat) : -1;
-    const hasWinner = Boolean(String(room.winnerUid || "").trim()) || winnerSeat >= 0;
-
-    matchesByBots[bots] = safeInt(matchesByBots[bots]) + 1;
-    totalHumans += humans;
-    totalBots += bots;
-    totalStakeDoes += humans * entryCostDoes;
-    if (hasWinner) totalRewardDoes += resolveRoomRewardDoes(room);
-  });
-
-  const ordersInRange = orders.filter((item) => withinRange(getCreatedMs(item), range));
-  const approvedOrders = ordersInRange.filter((item) => String(item.status || "") === "approved");
-  const pendingOrders = ordersInRange.filter((item) => String(item.status || "") === "pending");
-  const reviewOrders = ordersInRange.filter((item) => String(item.status || "") === "review");
-  const rejectedOrders = ordersInRange.filter((item) => String(item.status || "") === "rejected");
-  const approvedDepositsHtg = approvedOrders.reduce((sum, item) => sum + orderAmountHtg(item), 0);
-  const allDepositsHtg = ordersInRange.reduce((sum, item) => sum + orderAmountHtg(item), 0);
-
-  const withdrawalsInRange = withdrawals.filter((item) => withinRange(getCreatedMs(item), range));
-  const approvedWithdrawals = withdrawalsInRange.filter((item) => String(item.status || "") === "approved");
-  const approvedWithdrawalsHtg = approvedWithdrawals.reduce((sum, item) => sum + withdrawalAmountHtg(item), 0);
-
-  const xchangesInRange = xchanges.filter((item) => withinRange(getCreatedMs(item), range));
-  const referralRewardsInRange = referralRewards.filter((item) => withinRange(getCreatedMs(item), range));
-  const xchangeMix = {
-    buyHtg: 0,
-    buyDoes: 0,
-    sellHtg: 0,
-    sellDoes: 0,
-    entryDoes: 0,
-    rewardDoes: 0,
-    referralDoes: 0,
-  };
-
-  xchangesInRange.forEach((item) => {
-    const type = classifyXchange(item);
-    if (type === "buy") {
-      xchangeMix.buyHtg += xchangeAmountHtg(item);
-      xchangeMix.buyDoes += xchangeAmountDoes(item);
-    } else if (type === "sell") {
-      xchangeMix.sellHtg += xchangeAmountHtg(item);
-      xchangeMix.sellDoes += xchangeAmountDoes(item);
-    } else if (type === "entry") {
-      xchangeMix.entryDoes += xchangeAmountDoes(item);
-    } else if (type === "reward") {
-      xchangeMix.rewardDoes += xchangeAmountDoes(item);
-    } else if (type === "referral") {
-      xchangeMix.referralDoes += xchangeAmountDoes(item);
-    }
-  });
-
-  const referralRewardEvents = referralRewardsInRange
-    .map((item) => ({
-      ...item,
-      rewardDoes: safeInt(item.rewardDoes || item.amountDoes || USER_REFERRAL_DEPOSIT_REWARD),
-      createdMs: getCreatedMs(item),
-      playerId: String(item.clientId || item.referrerUid || "").trim(),
-      source: "referral_reward",
-    }))
-    .filter((item) => item.rewardDoes > 0);
-
-  const walletLedger = xchangesInRange
-    .map((item) => ({
-      id: String(item.id || ""),
-      playerId: String(item.clientId || item.uid || "").trim(),
-      createdMs: getCreatedMs(item),
-      deltaDoes: getLedgerDeltaDoes(item),
-      source: String(item.type || "wallet"),
-      raw: item,
-    }))
-    .filter((item) => item.createdMs > 0 && item.deltaDoes !== 0);
-
-  const rewardLedger = referralRewardEvents.map((item) => ({
-    id: String(item.id || ""),
-    playerId: String(item.playerId || ""),
-    createdMs: item.createdMs,
-    deltaDoes: safeInt(item.rewardDoes),
-    source: "referral_reward",
-    raw: item,
-  }));
-
-  const fullLedger = [...walletLedger, ...rewardLedger];
-
-  const userReferredClients = clients.filter((item) => String(item.referredByUserId || "").trim());
-  const approvedReferredClients = userReferredClients.filter((item) => item.hasApprovedDeposit === true);
-  const payingPlayerIds = new Set(approvedOrders.map((item) => String(item.clientId || item.uid || "").trim()).filter(Boolean));
-  const playerParticipation = new Map();
-
-  completedRooms.forEach((room) => {
-    uniqueStrings(room.playerUids).forEach((uid) => {
-      playerParticipation.set(uid, safeInt(playerParticipation.get(uid)) + 1);
-    });
-  });
-
-  const topPlayers = [...playerParticipation.entries()]
-    .map(([uid, matches]) => {
-      const client = clientsById.get(uid) || {};
-      return {
-        id: uid,
-        name: String(client.name || client.email || uid),
-        email: String(client.email || ""),
-        matches,
-        doesBalance: safeInt(client.doesBalance),
-      };
-    })
-    .sort((left, right) => right.matches - left.matches || right.doesBalance - left.doesBalance)
-    .slice(0, MAX_TOP_ROWS);
-
-  const topReferrers = referralGraph.parentStats
-    .slice(0, MAX_TOP_ROWS)
-    .map((item) => {
-      const client = clientsById.get(item.parentId) || {};
-      const rewardTotalDoes = referralRewardEvents
-        .filter((reward) => reward.playerId === item.parentId)
-        .reduce((sum, reward) => sum + safeInt(reward.rewardDoes), 0);
-      return {
-        id: item.parentId,
-        name: String(client.name || client.email || item.parentId),
-        email: String(client.email || ""),
-        directCount: item.directCount,
-        descendantCount: item.descendantCount,
-        depositCount: clients.filter((candidate) => String(candidate.referredByUserId || "").trim() === item.parentId && candidate.hasApprovedDeposit === true).length,
-        rewardTotalDoes,
-      };
-    });
-
-  const ambassadorNetwork = new Map();
-  ambassadorReferrals.forEach((item) => {
-    const ambassadorId = String(item.ownerId || "").trim();
-    if (!ambassadorId) return;
-    const depth = Math.max(1, safeInt(item.depth || 1));
-    if (depth > 3) return;
-    if (!ambassadorNetwork.has(ambassadorId)) {
-      ambassadorNetwork.set(ambassadorId, {
-        visibleNetwork: 0,
-        deltaDoes: 0,
-        depth1: 0,
-        depth2: 0,
-        depth3: 0,
-      });
-    }
-    const target = ambassadorNetwork.get(ambassadorId);
-    target.visibleNetwork += 1;
-    target.deltaDoes += safeSignedInt(item.ambassadorDoesDelta);
-    target[`depth${depth}`] = safeInt(target[`depth${depth}`]) + 1;
-  });
-
-  const topAmbassadors = ambassadors
-    .map((item) => {
-      const network = ambassadorNetwork.get(String(item.id)) || {
-        visibleNetwork: 0,
-        deltaDoes: 0,
-        depth1: 0,
-        depth2: 0,
-        depth3: 0,
-      };
-      return {
-        id: String(item.id),
-        name: String(item.name || item.promoCode || item.id),
-        promoCode: String(item.promoCode || ""),
-        doesBalance: safeSignedInt(item.doesBalance),
-        totalGames: safeInt(item.totalGames),
-        totalDeposits: safeInt(item.totalDeposits),
-        visibleNetwork: network.visibleNetwork,
-        deltaDoes: network.deltaDoes,
-        depth1: network.depth1,
-        depth2: network.depth2,
-        depth3: network.depth3,
-      };
-    })
-    .sort((left, right) => {
-      if (right.visibleNetwork !== left.visibleNetwork) return right.visibleNetwork - left.visibleNetwork;
-      return right.totalGames - left.totalGames;
-    })
-    .slice(0, MAX_TOP_ROWS);
-
-  const supportMessagesInRange = supportMessages.filter((item) => withinRange(getCreatedMs(item), range));
-  const channelMessagesInRange = channelMessages.filter((item) => withinRange(getCreatedMs(item), range));
-  const backlogThreads = supportThreads.filter((item) => item.unreadForAgent === true).length;
-
-  const approvalRate = ordersInRange.length
-    ? (approvedOrders.length / ordersInRange.length) * 100
-    : 0;
-  const avgDeposit = approvedOrders.length
-    ? approvedDepositsHtg / approvedOrders.length
-    : 0;
-  const referralDepositConversion = userReferredClients.length
-    ? (approvedReferredClients.length / userReferredClients.length) * 100
-    : 0;
-  const payoutRate = totalStakeDoes > 0
-    ? (totalRewardDoes / totalStakeDoes) * 100
-    : 0;
-  const botRate = completedRooms.length
-    ? ((completedRooms.length - matchesByBots[0]) / completedRooms.length) * 100
-    : 0;
-
-  const referralRewardDoesTotal = referralRewardEvents.reduce((sum, item) => sum + safeInt(item.rewardDoes), 0);
-  const rewardByPlayer = new Map();
-  referralRewardEvents.forEach((item) => {
-    const playerId = String(item.playerId || "").trim();
-    if (!playerId) return;
-    rewardByPlayer.set(playerId, safeInt(rewardByPlayer.get(playerId)) + safeInt(item.rewardDoes));
-  });
-
-  const topReferralRewardPlayers = [...rewardByPlayer.entries()]
-    .map(([playerId, amount]) => {
-      const client = clientsById.get(playerId) || {};
-      return {
-        id: playerId,
-        name: String(client.name || client.email || playerId),
-        amount,
-      };
-    })
-    .sort((left, right) => right.amount - left.amount)
-    .slice(0, 5);
-
-  const largestGainEntry = [...fullLedger]
-    .filter((item) => safeSignedInt(item.deltaDoes) > 0)
-    .sort((left, right) => safeSignedInt(right.deltaDoes) - safeSignedInt(left.deltaDoes))[0] || null;
-  const largestLossEntry = [...fullLedger]
-    .filter((item) => safeSignedInt(item.deltaDoes) < 0)
-    .sort((left, right) => Math.abs(safeSignedInt(right.deltaDoes)) - Math.abs(safeSignedInt(left.deltaDoes)))[0] || null;
-
-  const gainByPlayer = new Map();
-  const lossByPlayer = new Map();
-  fullLedger.forEach((entry) => {
-    const playerId = String(entry.playerId || "").trim();
-    if (!playerId) return;
-    const delta = safeSignedInt(entry.deltaDoes);
-    if (delta > 0) {
-      gainByPlayer.set(playerId, safeInt(gainByPlayer.get(playerId)) + delta);
-    } else if (delta < 0) {
-      lossByPlayer.set(playerId, safeInt(lossByPlayer.get(playerId)) + Math.abs(delta));
-    }
-  });
-
-  const topGainPlayers = [...gainByPlayer.entries()]
-    .map(([playerId, amount]) => {
-      const client = clientsById.get(playerId) || {};
-      return {
-        id: playerId,
-        name: String(client.name || client.email || playerId),
-        amount,
-      };
-    })
-    .sort((left, right) => right.amount - left.amount)
-    .slice(0, 4);
-
-  const topLossPlayers = [...lossByPlayer.entries()]
-    .map(([playerId, amount]) => {
-      const client = clientsById.get(playerId) || {};
-      return {
-        id: playerId,
-        name: String(client.name || client.email || playerId),
-        amount,
-      };
-    })
-    .sort((left, right) => right.amount - left.amount)
-    .slice(0, 4);
-
-  const dayExtremes = buildPeriodExtremes(fullLedger, "day");
-  const weekExtremes = buildPeriodExtremes(fullLedger, "week");
-  const monthExtremes = buildPeriodExtremes(fullLedger, "month");
-
-  const approvedDepositsSorted = approvedOrders
-    .map((item) => ({
-      ...item,
-      amountHtg: orderAmountHtg(item),
-      playerId: String(item.clientId || item.uid || "").trim(),
-    }))
-    .filter((item) => item.amountHtg > 0)
-    .sort((left, right) => right.amountHtg - left.amountHtg);
-
-  const approvedWithdrawalsSorted = approvedWithdrawals
-    .map((item) => ({
-      ...item,
-      amountHtg: withdrawalAmountHtg(item),
-      playerId: String(item.clientId || item.uid || "").trim(),
-    }))
-    .filter((item) => item.amountHtg > 0)
-    .sort((left, right) => right.amountHtg - left.amountHtg);
-
-  const maxDepositByPlayer = new Map();
-  approvedDepositsSorted.forEach((item) => {
-    const playerId = item.playerId;
-    if (!playerId || maxDepositByPlayer.has(playerId)) return;
-    maxDepositByPlayer.set(playerId, item);
-  });
-
-  const maxWithdrawalByPlayer = new Map();
-  approvedWithdrawalsSorted.forEach((item) => {
-    const playerId = item.playerId;
-    if (!playerId || maxWithdrawalByPlayer.has(playerId)) return;
-    maxWithdrawalByPlayer.set(playerId, item);
-  });
-
-  const topDepositPlayers = [...maxDepositByPlayer.entries()]
-    .map(([playerId, item]) => {
-      const client = clientsById.get(playerId) || {};
-      return {
-        id: playerId,
-        name: String(client.name || client.email || playerId),
-        amountHtg: safeInt(item.amountHtg),
-      };
-    })
-    .sort((left, right) => right.amountHtg - left.amountHtg)
-    .slice(0, 3);
-
-  const topWithdrawalPlayers = [...maxWithdrawalByPlayer.entries()]
-    .map(([playerId, item]) => {
-      const client = clientsById.get(playerId) || {};
-      return {
-        id: playerId,
-        name: String(client.name || client.email || playerId),
-        amountHtg: safeInt(item.amountHtg),
-      };
-    })
-    .sort((left, right) => right.amountHtg - left.amountHtg)
-    .slice(0, 3);
-
-  const completedMatchDurations = completedRooms
-    .map((room) => {
-      const startedMs = tsToMs(room.startedAt) || safeSignedInt(room.startedAtMs);
-      const endedMs = tsToMs(room.endedAt) || safeSignedInt(room.endedAtMs) || tsToMs(room.updatedAt);
-      if (!startedMs || !endedMs || endedMs < startedMs) return 0;
-      return endedMs - startedMs;
-    })
-    .filter((value) => value > 0);
-
-  const queueWaitDurations = periodRooms
-    .map((room) => {
-      const createdMs = getCreatedMs(room);
-      const startedMs = tsToMs(room.startedAt) || safeSignedInt(room.startedAtMs);
-      if (!createdMs || !startedMs || startedMs < createdMs) return 0;
-      return startedMs - createdMs;
-    })
-    .filter((value) => value > 0);
-
-  const firstDepositDelays = clients
-    .map((item) => safeSignedInt(item.firstDepositDelayMs))
-    .filter((value) => value > 0);
-
-  const supportFirstReplyDurations = supportThreads
-    .map((item) => {
-      const createdMs = getCreatedMs(item);
-      const replyMs = tsToMs(item.firstAgentReplyAt) || safeSignedInt(item.firstAgentReplyAtMs);
-      if (!createdMs || !replyMs || replyMs < createdMs) return 0;
-      return replyMs - createdMs;
-    })
-    .filter((value) => value > 0);
-
-  const supportResolutionDurations = supportThreads
-    .map((item) => {
-      const createdMs = getCreatedMs(item);
-      const resolvedMs = tsToMs(item.resolvedAt) || safeSignedInt(item.resolvedAtMs);
-      if (!createdMs || !resolvedMs || resolvedMs < createdMs) return 0;
-      return resolvedMs - createdMs;
-    })
-    .filter((value) => value > 0);
-
-  const browserCounts = countValues(clients, (item) => item.browser);
-  const countryCounts = countValues(clients, (item) => item.country);
-  const marketingSourceCounts = countValues(clients, (item) => item.utmSource);
-  const resolutionTagCounts = countValues(supportThreads, (item) => item.resolutionTag);
-
-  const nowMs = Date.now();
-  const retention = {
-    seen1d: clients.filter((item) => {
-      const lastSeenMs = tsToMs(item.lastSeenAt) || safeSignedInt(item.lastSeenAtMs);
-      return lastSeenMs > 0 && lastSeenMs >= nowMs - (24 * 60 * 60 * 1000);
-    }).length,
-    seen7d: clients.filter((item) => {
-      const lastSeenMs = tsToMs(item.lastSeenAt) || safeSignedInt(item.lastSeenAtMs);
-      return lastSeenMs > 0 && lastSeenMs >= nowMs - (7 * 24 * 60 * 60 * 1000);
-    }).length,
-    seen30d: clients.filter((item) => {
-      const lastSeenMs = tsToMs(item.lastSeenAt) || safeSignedInt(item.lastSeenAtMs);
-      return lastSeenMs > 0 && lastSeenMs >= nowMs - (30 * 24 * 60 * 60 * 1000);
-    }).length,
-    game7d: clients.filter((item) => {
-      const lastGameMs = tsToMs(item.lastGameAt);
-      return lastGameMs > 0 && lastGameMs >= nowMs - (7 * 24 * 60 * 60 * 1000);
-    }).length,
-    deposit30d: clients.filter((item) => {
-      const lastDepositMs = tsToMs(item.lastDepositAt);
-      return lastDepositMs > 0 && lastDepositMs >= nowMs - (30 * 24 * 60 * 60 * 1000);
-    }).length,
-  };
-
-  const average = (items) => items.length
-    ? items.reduce((sum, value) => sum + value, 0) / items.length
-    : 0;
-
-  return {
-    range,
-    totals: {
-      players: clients.length,
-      newPlayersInRange: newPlayersInRange.length,
-      completedMatches: completedRooms.length,
-      totalMatchesAllTime: rooms.filter((room) => String(room.status || "") === "ended").length,
-      activeReferrers: referralGraph.activeReferrerIds.size,
-      approvedDepositsHtg,
-      approvedWithdrawalsHtg,
-      netTreasuryHtg: approvedDepositsHtg - approvedWithdrawalsHtg,
-      gameProfitDoes: totalStakeDoes - totalRewardDoes,
-      gameProfitHtgEquivalent: (totalStakeDoes - totalRewardDoes) / RATE_HTG_TO_DOES,
-      payingPlayers: payingPlayerIds.size,
-      xchangeBuyHtg: xchangeMix.buyHtg,
-      xchangeBuyDoes: xchangeMix.buyDoes,
-      xchangeSellHtg: xchangeMix.sellHtg,
-      xchangeSellDoes: xchangeMix.sellDoes,
-    },
-    game: {
-      completedRooms,
-      matchesByBots,
-      botMatches: completedRooms.length - matchesByBots[0],
-      humanOnlyMatches: matchesByBots[0],
-      totalStakeDoes,
-      totalRewardDoes,
-      payoutRate,
-      botRate,
-      averageHumans: completedRooms.length ? totalHumans / completedRooms.length : 0,
-      averageBots: completedRooms.length ? totalBots / completedRooms.length : 0,
-    },
-    finance: {
-      ordersInRange,
-      approvedOrders,
-      pendingOrders,
-      reviewOrders,
-      rejectedOrders,
-      allDepositsHtg,
-      approvedDepositsHtg,
-      approvedWithdrawalsHtg,
-      avgDeposit,
-      approvalRate,
-      xchangeMix,
-    },
-    support: {
-      backlogThreads,
-      supportMessagesInRange,
-      channelMessagesInRange,
-      openThreads: supportThreads.filter((item) => String(item.status || "open") !== "closed").length,
-    },
-    advanced: {
-      avgMatchDurationMs: average(completedMatchDurations),
-      avgQueueWaitMs: average(queueWaitDurations),
-      avgFirstDepositDelayMs: average(firstDepositDelays),
-      avgSupportFirstReplyMs: average(supportFirstReplyDurations),
-      avgSupportResolutionMs: average(supportResolutionDurations),
-      topBrowser: topCountLabel(browserCounts, "Navigateur non remonté"),
-      topCountry: topCountLabel(countryCounts, "Pays non remonté"),
-      topMarketingSource: topCountLabel(marketingSourceCounts, "Aucune source"),
-      topResolutionTag: topCountLabel(resolutionTagCounts, "Aucun tag"),
-      retention,
-    },
-    presence,
-    referrals: {
-      userReferredClients,
-      approvedReferredClients,
-      referralDepositConversion,
-      graph: referralGraph,
-      ambassadorNetwork,
-    },
-    rankings: {
-      topPlayers,
-      topReferrers,
-      topAmbassadors,
-    },
-    records: {
-      referralRewardEvents,
-      referralRewardDoesTotal,
-      topReferralRewardPlayers,
-      largestGainEntry,
-      largestLossEntry,
-      topGainPlayers,
-      topLossPlayers,
-      dayExtremes,
-      weekExtremes,
-      monthExtremes,
-      largestDeposit: approvedDepositsSorted[0] || null,
-      largestWithdrawal: approvedWithdrawalsSorted[0] || null,
-      topDepositPlayers,
-      topWithdrawalPlayers,
-    },
-  };
-}
-
-function setText(id, value) {
-  const node = document.getElementById(id);
-  if (node) node.textContent = String(value);
-}
-
-function renderKpis(metrics) {
-  setText("kpiPlayers", formatInt(metrics.totals.players));
-  setText("kpiPlayersNote", `${formatInt(metrics.totals.newPlayersInRange)} nouveaux sur la periode`);
-  setText("kpiCompletedMatches", formatInt(metrics.totals.completedMatches));
-  setText("kpiCompletedMatchesNote", `${formatInt(metrics.totals.totalMatchesAllTime)} au total`);
-  setText("kpiReferrers", formatInt(metrics.totals.activeReferrers));
-  setText(
-    "kpiReferrersNote",
-    `${formatPercent(metrics.referrals.referralDepositConversion)} conversion • ${formatDoes(metrics.records.referralRewardDoesTotal)} primes`
-  );
-  setText("kpiApprovedDeposits", formatCurrencyHtg(metrics.totals.approvedDepositsHtg));
-  setText(
-    "kpiApprovedDepositsNote",
-    `${formatInt(metrics.finance.approvedOrders.length)} depots approuves`
-  );
-  setText("kpiNetTreasury", formatCurrencyHtg(metrics.totals.netTreasuryHtg));
-  setText(
-    "kpiNetTreasuryNote",
-    `${formatCurrencyHtg(metrics.totals.approvedWithdrawalsHtg)} retraits approuves`
-  );
-  setText("kpiGameProfit", formatDoes(metrics.totals.gameProfitDoes));
-  setText(
-    "kpiGameProfitNote",
-    `${formatCurrencyHtg(metrics.totals.gameProfitHtgEquivalent)} eq. HTG`
-  );
-  setText("kpiXchangeBuy", formatCurrencyHtg(metrics.totals.xchangeBuyHtg));
-  setText(
-    "kpiXchangeBuyNote",
-    `${formatDoes(metrics.totals.xchangeBuyDoes)} credites`
-  );
-  setText("kpiXchangeSell", formatCurrencyHtg(metrics.totals.xchangeSellHtg));
-  setText(
-    "kpiXchangeSellNote",
-    `${formatDoes(metrics.totals.xchangeSellDoes)} reconvertis`
-  );
-  setText("kpiOnlineNow", formatInt(metrics.presence.live.onlineUsers));
-  setText(
-    "kpiOnlineNowNote",
-    metrics.presence.live.sampledAtMs
-      ? `Instantane ${formatDateLabel(metrics.presence.live.sampledAtMs)}`
-      : "Presence live en attente"
-  );
-  setText("kpiOnlineInGame", formatInt(metrics.presence.live.onlineInGameUsers));
-  setText(
-    "kpiOnlineInGameNote",
-    `${formatInt(metrics.presence.live.activeRooms)} salles actives`
-  );
-  setText("kpiPresencePeakDay", formatInt(metrics.presence.peakDay?.maxOnlineUsers || 0));
-  setText(
-    "kpiPresencePeakDayNote",
-    metrics.presence.peakDay
-      ? `${formatDateLabel(metrics.presence.peakDay.bucketMs)}`
-      : "Aucune donnee"
-  );
-  setText("kpiPresenceAvgDay", formatInt(metrics.presence.avgDayOnline));
-  setText(
-    "kpiPresenceAvgDayNote",
-    `${formatInt(metrics.presence.daily.length)} jours analyses`
-  );
-
-  setText("miniBotMatches", formatInt(metrics.game.botMatches));
-  setText("miniHumanMatches", formatInt(metrics.game.humanOnlyMatches));
-  setText("miniBot1", formatInt(metrics.game.matchesByBots[1]));
-  setText("miniBot2", formatInt(metrics.game.matchesByBots[2]));
-  setText("miniBot3", formatInt(metrics.game.matchesByBots[3]));
-  setText("miniSupportBacklog", formatInt(metrics.support.backlogThreads));
-  setText("miniApprovalRate", formatPercent(metrics.finance.approvalRate));
-  setText("miniAvgDeposit", formatCurrencyHtg(metrics.finance.avgDeposit));
-  setText("miniPayingPlayers", formatInt(metrics.totals.payingPlayers));
-  setText("miniSupportMessages", formatInt(metrics.support.supportMessagesInRange.length));
-  setText("miniPresencePeakHour", metrics.presence.peakHour ? metrics.presence.peakHour.label : "-");
-  setText(
-    "miniPresencePeakWeek",
-    metrics.presence.peakWeek ? formatPeriodLabel(metrics.presence.peakWeek.bucketMs, "week") : "-"
-  );
-  setText(
-    "miniPresencePeakMonth",
-    metrics.presence.peakMonth ? formatPeriodLabel(metrics.presence.peakMonth.bucketMs, "month") : "-"
-  );
-  setText("miniPresenceActiveRooms", formatInt(metrics.presence.live.activeRooms));
-}
-
-function destroyChart(name) {
-  if (chartState[name]) {
-    chartState[name].destroy();
-    chartState[name] = null;
+  if (dom.snapshotsNote) {
+    const coverage = snapshot.snapshotsCoverage || {};
+    dom.snapshotsNote.textContent = coverage.limitedToRecentWindow
+      ? `Courbe fine limitee aux snapshots recents: ${formatDateTime(coverage.startMs)} -> ${formatDateTime(coverage.endMs)}`
+      : `Courbe fine: ${formatDateTime(coverage.startMs)} -> ${formatDateTime(coverage.endMs)}`;
   }
 }
 
-function renderCharts(metrics) {
+function renderPeakList(snapshot = {}) {
+  if (!dom.peakList) return;
+  const peakMoments = Array.isArray(snapshot.peakMoments) ? snapshot.peakMoments : [];
+  if (peakMoments.length <= 0) {
+    dom.peakList.innerHTML = `<div class="empty-state">Pas encore assez de snapshots pour afficher les moments de pic.</div>`;
+    return;
+  }
+  dom.peakList.innerHTML = peakMoments.map((item) => `
+    <article class="peak-row">
+      <div>
+        <p class="peak-title">${formatDateTime(item.bucketMs)}</p>
+        <p class="peak-meta">${formatInt(item.onlineInGameUsers)} joueurs actifs • ${formatInt(item.playingRooms)} rooms playing</p>
+      </div>
+      <div class="peak-title">${formatInt(item.onlineUsers)}</div>
+    </article>
+  `).join("");
+}
+
+function buildHourSeries(items = []) {
+  return items.map((item) => {
+    const samples = Math.max(1, safeInt(item.samples));
+    return {
+      label: `${String(item.hourKey || "").padStart(2, "0")}h`,
+      avgVisitors: Math.round(safeInt(item.onlineUsersSum) / samples),
+      peakVisitors: safeInt(item.onlineUsersMax),
+    };
+  });
+}
+
+function buildWeekdaySeries(items = []) {
+  const order = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+  const labels = {
+    mon: "Lun",
+    tue: "Mar",
+    wed: "Mer",
+    thu: "Jeu",
+    fri: "Ven",
+    sat: "Sam",
+    sun: "Dim",
+  };
+  return items
+    .slice()
+    .sort((a, b) => order.indexOf(String(a.weekdayKey || "").toLowerCase()) - order.indexOf(String(b.weekdayKey || "").toLowerCase()))
+    .map((item) => {
+      const samples = Math.max(1, safeInt(item.samples));
+      const key = String(item.weekdayKey || "").toLowerCase();
+      return {
+        label: labels[key] || key,
+        avgVisitors: Math.round(safeInt(item.onlineUsersSum) / samples),
+        peakVisitors: safeInt(item.onlineUsersMax),
+      };
+    });
+}
+
+function renderCharts(snapshot = {}) {
   const ChartLib = window.Chart;
   if (!ChartLib) return;
 
-  destroyChart("matches");
-  destroyChart("finance");
-  destroyChart("depth");
-  destroyChart("presenceRecent");
-  destroyChart("presenceHourly");
-  destroyChart("presenceDaily");
-  destroyChart("presenceWeekly");
-  destroyChart("presenceMonthly");
+  destroyChart("daily");
+  destroyChart("snapshots");
+  destroyChart("hour");
+  destroyChart("weekday");
 
-  const matchesCtx = document.getElementById("matchesMixChart");
-  const financeCtx = document.getElementById("financeMixChart");
-  const depthCtx = document.getElementById("referralDepthChart");
-  const presenceRecentCtx = document.getElementById("presenceRecentChart");
-  const presenceHourlyCtx = document.getElementById("presenceHourlyChart");
-  const presenceDailyCtx = document.getElementById("presenceDailyChart");
-  const presenceWeeklyCtx = document.getElementById("presenceWeeklyChart");
-  const presenceMonthlyCtx = document.getElementById("presenceMonthlyChart");
-  if (!matchesCtx || !financeCtx || !depthCtx) return;
+  const trend = Array.isArray(snapshot.trend) ? snapshot.trend : [];
+  const snapshotTrend = Array.isArray(snapshot.snapshotTrend) ? snapshot.snapshotTrend : [];
+  const hourSeries = buildHourSeries(Array.isArray(snapshot.hourOfDay) ? snapshot.hourOfDay : []);
+  const weekdaySeries = buildWeekdaySeries(Array.isArray(snapshot.weekday) ? snapshot.weekday : []);
 
-  chartState.matches = new ChartLib(matchesCtx, {
-    type: "bar",
-    data: {
-      labels: ["4 humains", "1 robot", "2 robots", "3 robots"],
-      datasets: [{
-        label: "Matchs",
-        data: [
-          metrics.game.matchesByBots[0],
-          metrics.game.matchesByBots[1],
-          metrics.game.matchesByBots[2],
-          metrics.game.matchesByBots[3],
-        ],
-        backgroundColor: [
-          "rgba(104, 215, 255, 0.62)",
-          "rgba(124, 92, 255, 0.62)",
-          "rgba(255, 156, 95, 0.62)",
-          "rgba(75, 231, 184, 0.62)",
-        ],
-        borderRadius: 12,
-        borderSkipped: false,
-      }],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-      },
-      scales: {
-        x: {
-          ticks: { color: "#dfe8ff" },
-          grid: { color: "rgba(163, 184, 255, 0.08)" },
-        },
-        y: {
-          beginAtZero: true,
-          ticks: { color: "#dfe8ff" },
-          grid: { color: "rgba(163, 184, 255, 0.08)" },
-        },
-      },
-    },
-  });
+  const dailyCtx = document.getElementById("analyticsDailyTrendChart");
+  const snapshotCtx = document.getElementById("analyticsSnapshotTrendChart");
+  const hourCtx = document.getElementById("analyticsHourChart");
+  const weekdayCtx = document.getElementById("analyticsWeekdayChart");
 
-  chartState.finance = new ChartLib(financeCtx, {
-    type: "doughnut",
-    data: {
-      labels: ["Depots approuves", "Retraits approuves", "Xchange HTG->Does", "Xchange Does->HTG"],
-      datasets: [{
-        data: [
-          Math.max(0, metrics.totals.approvedDepositsHtg),
-          Math.max(0, metrics.totals.approvedWithdrawalsHtg),
-          Math.max(0, metrics.totals.xchangeBuyHtg),
-          Math.max(0, metrics.totals.xchangeSellHtg),
-        ],
-        backgroundColor: [
-          "rgba(75, 231, 184, 0.78)",
-          "rgba(255, 125, 141, 0.72)",
-          "rgba(104, 215, 255, 0.74)",
-          "rgba(255, 191, 105, 0.74)",
-        ],
-        borderWidth: 0,
-      }],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: "66%",
-      plugins: {
-        legend: {
-          position: "bottom",
-          labels: {
-            color: "#dfe8ff",
-            usePointStyle: true,
-            padding: 16,
-          },
-        },
-      },
-    },
-  });
-
-  const depthCounts = metrics.referrals.graph.depthCounts;
-  const depthLabels = Object.keys(depthCounts)
-    .map((item) => safeInt(item))
-    .filter((item) => item > 0)
-    .sort((left, right) => left - right)
-    .slice(0, 5);
-
-  chartState.depth = new ChartLib(depthCtx, {
-    type: "line",
-    data: {
-      labels: depthLabels.length ? depthLabels.map((item) => `N${item}`) : ["N1"],
-      datasets: [{
-        label: "Filleuls",
-        data: depthLabels.length ? depthLabels.map((item) => safeInt(depthCounts[item])) : [0],
-        borderColor: "rgba(124, 92, 255, 1)",
-        backgroundColor: "rgba(124, 92, 255, 0.18)",
-        fill: true,
-        tension: 0.35,
-        pointRadius: 4,
-      }],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          labels: {
-            color: "#dfe8ff",
-          },
-        },
-      },
-      scales: {
-        x: {
-          ticks: { color: "#dfe8ff" },
-          grid: { color: "rgba(163, 184, 255, 0.08)" },
-        },
-        y: {
-          beginAtZero: true,
-          ticks: { color: "#dfe8ff" },
-          grid: { color: "rgba(163, 184, 255, 0.08)" },
-        },
-      },
-    },
-  });
-
-  if (presenceRecentCtx) {
-    const recentSnapshots = metrics.presence.recentSnapshots;
-    chartState.presenceRecent = new ChartLib(presenceRecentCtx, {
+  if (dailyCtx) {
+    chartState.daily = new ChartLib(dailyCtx, {
       type: "line",
       data: {
-        labels: recentSnapshots.length
-          ? recentSnapshots.map((item) => new Date(item.bucketMs).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }))
-          : ["-"],
+        labels: trend.map((item) => item.label),
         datasets: [
           {
-            label: "En ligne",
-            data: recentSnapshots.length ? recentSnapshots.map((item) => item.onlineUsers) : [0],
-            borderColor: "rgba(104, 215, 255, 1)",
+            label: "Pic visiteurs",
+            data: trend.map((item) => safeInt(item.peakVisitors)),
+            borderColor: "#68d7ff",
             backgroundColor: "rgba(104, 215, 255, 0.18)",
             fill: true,
             tension: 0.28,
-            pointRadius: 0,
+            borderWidth: 2,
           },
           {
-            label: "En partie",
-            data: recentSnapshots.length ? recentSnapshots.map((item) => item.onlineInGameUsers) : [0],
-            borderColor: "rgba(255, 191, 105, 1)",
-            backgroundColor: "rgba(255, 191, 105, 0.08)",
+            label: "Pic joueurs",
+            data: trend.map((item) => safeInt(item.peakPlayers)),
+            borderColor: "#4be7b8",
+            backgroundColor: "rgba(75, 231, 184, 0.14)",
             fill: false,
-            tension: 0.22,
-            pointRadius: 0,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { labels: { color: "#dfe8ff" } },
-        },
-        scales: {
-          x: {
-            ticks: { color: "#dfe8ff", maxTicksLimit: 8 },
-            grid: { color: "rgba(163, 184, 255, 0.08)" },
-          },
-          y: {
-            beginAtZero: true,
-            ticks: { color: "#dfe8ff" },
-            grid: { color: "rgba(163, 184, 255, 0.08)" },
-          },
-        },
-      },
-    });
-  }
-
-  if (presenceHourlyCtx) {
-    const hourly = metrics.presence.hourly;
-    chartState.presenceHourly = new ChartLib(presenceHourlyCtx, {
-      type: "bar",
-      data: {
-        labels: hourly.length ? hourly.map((item) => item.label) : ["-"],
-        datasets: [
-          {
-            label: "Moyenne",
-            data: hourly.length ? hourly.map((item) => Number(item.avgOnlineUsers.toFixed(2))) : [0],
-            backgroundColor: "rgba(124, 92, 255, 0.62)",
-            borderRadius: 10,
-            borderSkipped: false,
-          },
-          {
-            label: "Pic",
-            data: hourly.length ? hourly.map((item) => item.maxOnlineUsers) : [0],
-            backgroundColor: "rgba(75, 231, 184, 0.42)",
-            borderRadius: 10,
-            borderSkipped: false,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { labels: { color: "#dfe8ff" } },
-        },
-        scales: {
-          x: {
-            ticks: { color: "#dfe8ff", maxTicksLimit: 12 },
-            grid: { color: "rgba(163, 184, 255, 0.08)" },
-          },
-          y: {
-            beginAtZero: true,
-            ticks: { color: "#dfe8ff" },
-            grid: { color: "rgba(163, 184, 255, 0.08)" },
-          },
-        },
-      },
-    });
-  }
-
-  if (presenceDailyCtx) {
-    const daily = metrics.presence.daily;
-    chartState.presenceDaily = new ChartLib(presenceDailyCtx, {
-      type: "line",
-      data: {
-        labels: daily.length ? daily.map((item) => formatDateLabel(item.bucketMs)) : ["-"],
-        datasets: [
-          {
-            label: "Moyenne",
-            data: daily.length ? daily.map((item) => Number(item.avgOnlineUsers.toFixed(2))) : [0],
-            borderColor: "rgba(104, 215, 255, 1)",
-            backgroundColor: "rgba(104, 215, 255, 0.16)",
-            fill: true,
-            tension: 0.3,
-            pointRadius: 2,
-          },
-          {
-            label: "Pic",
-            data: daily.length ? daily.map((item) => item.maxOnlineUsers) : [0],
-            borderColor: "rgba(255, 125, 141, 1)",
-            backgroundColor: "rgba(255, 125, 141, 0.08)",
-            fill: false,
-            tension: 0.2,
-            pointRadius: 2,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { labels: { color: "#dfe8ff" } },
-        },
-        scales: {
-          x: {
-            ticks: { color: "#dfe8ff", maxTicksLimit: 8 },
-            grid: { color: "rgba(163, 184, 255, 0.08)" },
-          },
-          y: {
-            beginAtZero: true,
-            ticks: { color: "#dfe8ff" },
-            grid: { color: "rgba(163, 184, 255, 0.08)" },
-          },
-        },
-      },
-    });
-  }
-
-  if (presenceWeeklyCtx) {
-    const weekly = metrics.presence.weekly;
-    chartState.presenceWeekly = new ChartLib(presenceWeeklyCtx, {
-      type: "bar",
-      data: {
-        labels: weekly.length ? weekly.map((item) => formatPeriodLabel(item.bucketMs, "week")) : ["-"],
-        datasets: [
-          {
-            label: "Moyenne",
-            data: weekly.length ? weekly.map((item) => Number(item.avgOnlineUsers.toFixed(2))) : [0],
-            backgroundColor: "rgba(255, 191, 105, 0.72)",
-            borderRadius: 10,
-            borderSkipped: false,
-          },
-          {
-            label: "Pic",
-            data: weekly.length ? weekly.map((item) => item.maxOnlineUsers) : [0],
-            backgroundColor: "rgba(124, 92, 255, 0.34)",
-            borderRadius: 10,
-            borderSkipped: false,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { labels: { color: "#dfe8ff" } },
-        },
-        scales: {
-          x: {
-            ticks: { color: "#dfe8ff", maxTicksLimit: 6 },
-            grid: { color: "rgba(163, 184, 255, 0.08)" },
-          },
-          y: {
-            beginAtZero: true,
-            ticks: { color: "#dfe8ff" },
-            grid: { color: "rgba(163, 184, 255, 0.08)" },
-          },
-        },
-      },
-    });
-  }
-
-  if (presenceMonthlyCtx) {
-    const monthly = metrics.presence.monthly;
-    chartState.presenceMonthly = new ChartLib(presenceMonthlyCtx, {
-      type: "line",
-      data: {
-        labels: monthly.length ? monthly.map((item) => formatPeriodLabel(item.bucketMs, "month")) : ["-"],
-        datasets: [
-          {
-            label: "Moyenne",
-            data: monthly.length ? monthly.map((item) => Number(item.avgOnlineUsers.toFixed(2))) : [0],
-            borderColor: "rgba(75, 231, 184, 1)",
-            backgroundColor: "rgba(75, 231, 184, 0.15)",
-            fill: true,
             tension: 0.28,
-            pointRadius: 3,
-          },
-          {
-            label: "Pic",
-            data: monthly.length ? monthly.map((item) => item.maxOnlineUsers) : [0],
-            borderColor: "rgba(255, 191, 105, 1)",
-            backgroundColor: "rgba(255, 191, 105, 0.06)",
-            fill: false,
-            tension: 0.22,
-            pointRadius: 3,
+            borderWidth: 2,
           },
         ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-          legend: { labels: { color: "#dfe8ff" } },
-        },
+        plugins: { legend: { labels: { color: "#edf2ff" } } },
         scales: {
-          x: {
-            ticks: { color: "#dfe8ff", maxTicksLimit: 6 },
-            grid: { color: "rgba(163, 184, 255, 0.08)" },
+          x: { ticks: { color: "#95a4cb" }, grid: { color: "rgba(163, 184, 255, 0.08)" } },
+          y: { ticks: { color: "#95a4cb", precision: 0 }, grid: { color: "rgba(163, 184, 255, 0.08)" } },
+        },
+      },
+    });
+  }
+
+  if (snapshotCtx) {
+    chartState.snapshots = new ChartLib(snapshotCtx, {
+      type: "line",
+      data: {
+        labels: snapshotTrend.map((item) => formatDateTime(item.bucketMs)),
+        datasets: [
+          {
+            label: "Presence totale",
+            data: snapshotTrend.map((item) => safeInt(item.onlineUsers)),
+            borderColor: "#7c5cff",
+            backgroundColor: "rgba(124, 92, 255, 0.16)",
+            fill: true,
+            tension: 0.26,
+            borderWidth: 2,
           },
-          y: {
-            beginAtZero: true,
-            ticks: { color: "#dfe8ff" },
-            grid: { color: "rgba(163, 184, 255, 0.08)" },
+          {
+            label: "En jeu",
+            data: snapshotTrend.map((item) => safeInt(item.onlineInGameUsers)),
+            borderColor: "#ff9c5f",
+            backgroundColor: "rgba(255, 156, 95, 0.14)",
+            fill: false,
+            tension: 0.26,
+            borderWidth: 2,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: "#edf2ff" } } },
+        scales: {
+          x: { ticks: { color: "#95a4cb", maxRotation: 0, autoSkip: true }, grid: { display: false } },
+          y: { ticks: { color: "#95a4cb", precision: 0 }, grid: { color: "rgba(163, 184, 255, 0.08)" } },
+        },
+      },
+    });
+  }
+
+  if (hourCtx) {
+    chartState.hour = new ChartLib(hourCtx, {
+      type: "bar",
+      data: {
+        labels: hourSeries.map((item) => item.label),
+        datasets: [
+          {
+            label: "Pic visiteurs",
+            data: hourSeries.map((item) => safeInt(item.peakVisitors)),
+            backgroundColor: "rgba(104, 215, 255, 0.74)",
+            borderRadius: 12,
+          },
+          {
+            label: "Moyenne visiteurs",
+            data: hourSeries.map((item) => safeInt(item.avgVisitors)),
+            backgroundColor: "rgba(124, 92, 255, 0.56)",
+            borderRadius: 12,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: "#edf2ff" } } },
+        scales: {
+          x: { ticks: { color: "#95a4cb" }, grid: { display: false } },
+          y: { ticks: { color: "#95a4cb", precision: 0 }, grid: { color: "rgba(163, 184, 255, 0.08)" } },
+        },
+      },
+    });
+  }
+
+  if (weekdayCtx) {
+    chartState.weekday = new ChartLib(weekdayCtx, {
+      type: "radar",
+      data: {
+        labels: weekdaySeries.map((item) => item.label),
+        datasets: [{
+          label: "Pic visiteurs",
+          data: weekdaySeries.map((item) => safeInt(item.peakVisitors)),
+          borderColor: "#ff9c5f",
+          backgroundColor: "rgba(255, 156, 95, 0.18)",
+          pointBackgroundColor: "#ff9c5f",
+          borderWidth: 2,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: "#edf2ff" } } },
+        scales: {
+          r: {
+            angleLines: { color: "rgba(163, 184, 255, 0.12)" },
+            grid: { color: "rgba(163, 184, 255, 0.12)" },
+            pointLabels: { color: "#edf2ff" },
+            ticks: { color: "#95a4cb", backdropColor: "transparent", precision: 0 },
           },
         },
       },
     });
   }
-}
-
-function makeInsight(tone, title, body) {
-  const wrap = document.createElement("article");
-  wrap.className = "insight";
-
-  const tag = document.createElement("div");
-  tag.className = `insight-tag ${tone}`;
-  tag.textContent = title;
-
-  const content = document.createElement("p");
-  content.className = "insight-body";
-  content.textContent = body;
-
-  wrap.append(tag, content);
-  return wrap;
-}
-
-function renderInsights(metrics) {
-  if (!dom.insights) return;
-  dom.insights.innerHTML = "";
-
-  const insights = [];
-
-  if (metrics.presence.daily.length === 0) {
-    insights.push({
-      tone: "warn",
-      title: "Historique presence",
-      body: "Les graphes de presence commencent a se remplir apres le deploiement de la collecte planifiee. Le live reste disponible immediatement.",
-    });
-  } else {
-    insights.push({
-      tone: "good",
-      title: "Presence suivie",
-      body: `Live ${formatInt(metrics.presence.live.onlineUsers)} en ligne, heure forte ${metrics.presence.peakHour ? metrics.presence.peakHour.label : "-"}.`,
-    });
-  }
-
-  if (metrics.game.payoutRate >= 90) {
-    insights.push({
-      tone: "warn",
-      title: "Payout eleve",
-      body: `Le payout match est a ${formatPercent(metrics.game.payoutRate)}. La marge gameplay est faible sur la periode.`,
-    });
-  } else {
-    insights.push({
-      tone: "good",
-      title: "Marge gameplay",
-      body: `Le payout match reste sous controle a ${formatPercent(metrics.game.payoutRate)} avec ${formatDoes(metrics.totals.gameProfitDoes)} de marge.`,
-    });
-  }
-
-  if (metrics.game.botRate >= 60) {
-    insights.push({
-      tone: "warn",
-      title: "Dependance bots",
-      body: `${formatPercent(metrics.game.botRate)} des matchs termines incluent des robots. Cela peut indiquer un manque de densite joueur en temps reel.`,
-    });
-  } else {
-    insights.push({
-      tone: "good",
-      title: "Mix humain sain",
-      body: `Le ratio de matchs avec robots est contenu a ${formatPercent(metrics.game.botRate)}.`,
-    });
-  }
-
-  if (metrics.support.backlogThreads > 0) {
-    insights.push({
-      tone: "warn",
-      title: "Backlog support",
-      body: `${formatInt(metrics.support.backlogThreads)} conversation(s) attendent encore une reponse agent.`,
-    });
-  } else {
-    insights.push({
-      tone: "good",
-      title: "Support fluide",
-      body: "Aucun fil support n'est actuellement marque en attente cote agent.",
-    });
-  }
-
-  if (metrics.finance.approvalRate < 45 && metrics.finance.ordersInRange.length > 0) {
-    insights.push({
-      tone: "bad",
-      title: "Conversion depot faible",
-      body: `Seulement ${formatPercent(metrics.finance.approvalRate)} des depots soumis sont approuves sur la periode.`,
-    });
-  } else {
-    insights.push({
-      tone: "good",
-      title: "Funnel depot",
-      body: `Le taux d'approbation depot est de ${formatPercent(metrics.finance.approvalRate)}.`,
-    });
-  }
-
-  if (metrics.referrals.userReferredClients.length > 0) {
-    insights.push({
-      tone: metrics.referrals.referralDepositConversion >= 35 ? "good" : "warn",
-      title: "Referral conversion",
-      body: `${formatPercent(metrics.referrals.referralDepositConversion)} des filleuls utilisateurs ont deja passe un premier depot approuve.`,
-    });
-  }
-
-  insights.slice(0, 5).forEach((item) => {
-    dom.insights.appendChild(makeInsight(item.tone, item.title, item.body));
-  });
-}
-
-function createDataRow(name, meta, value) {
-  const row = document.createElement("div");
-  row.className = "data-row";
-
-  const left = document.createElement("div");
-  const title = document.createElement("div");
-  title.className = "data-name";
-  title.textContent = name;
-  const info = document.createElement("div");
-  info.className = "data-meta";
-  info.textContent = meta;
-  left.append(title, info);
-
-  const right = document.createElement("div");
-  right.className = "data-value";
-  right.textContent = value;
-
-  row.append(left, right);
-  return row;
-}
-
-function renderDataList(target, rows, emptyLabel) {
-  if (!target) return;
-  target.innerHTML = "";
-  if (!rows.length) {
-    const empty = document.createElement("div");
-    empty.className = "empty-state";
-    empty.textContent = emptyLabel;
-    target.appendChild(empty);
-    return;
-  }
-
-  rows.forEach((row) => target.appendChild(row));
-}
-
-function renderRankings(metrics) {
-  renderDataList(
-    dom.topPlayers,
-    metrics.rankings.topPlayers.map((item) => createDataRow(
-      item.name,
-      `${item.email || "Sans email"} • ${formatDoes(item.doesBalance)}`,
-      `${formatInt(item.matches)} matchs`
-    )),
-    "Aucune participation sur la periode."
-  );
-
-  renderDataList(
-    dom.topReferrers,
-    metrics.rankings.topReferrers.map((item) => createDataRow(
-      item.name,
-      `${formatInt(item.directCount)} directs • ${formatInt(item.depositCount)} filleuls avec depot`,
-      `${formatInt(item.descendantCount)} descendants • ${formatDoes(item.rewardTotalDoes)}`
-    )),
-    "Aucun parrain actif pour l'instant."
-  );
-
-  renderDataList(
-    dom.topAmbassadors,
-    metrics.rankings.topAmbassadors.map((item) => createDataRow(
-      item.name,
-      `R1:${formatInt(item.depth1)} • R2:${formatInt(item.depth2)} • R3:${formatInt(item.depth3)}`,
-      `${formatInt(item.visibleNetwork)} reseau • ${formatSignedDoes(item.deltaDoes)}`
-    )),
-    "Aucun ambassadeur ou reseau visible."
-  );
-}
-
-function renderRecords(metrics) {
-  const clientMap = metrics.referrals.graph.clientsById;
-  const resolvePlayer = (playerId) => {
-    const client = clientMap.get(String(playerId || "").trim()) || {};
-    return String(client.name || client.email || playerId || "Inconnu");
-  };
-
-  const referralRows = [
-    createDataRow(
-      "Primes parrainage total",
-      `${formatInt(metrics.records.referralRewardEvents.length)} bonus de premier depot sur la periode`,
-      formatDoes(metrics.records.referralRewardDoesTotal)
-    ),
-    ...metrics.records.topReferralRewardPlayers.map((item) => createDataRow(
-      item.name,
-      "Cumul recu via filleuls convertis",
-      formatDoes(item.amount)
-    )),
-  ];
-
-  const gainLossRows = [];
-  if (metrics.records.largestGainEntry) {
-    gainLossRows.push(createDataRow(
-      "Plus gros gain ponctuel",
-      `${resolvePlayer(metrics.records.largestGainEntry.playerId)} • ${sourceLabel(metrics.records.largestGainEntry.source)} • ${formatDateLabel(metrics.records.largestGainEntry.createdMs)}`,
-      formatSignedDoes(metrics.records.largestGainEntry.deltaDoes)
-    ));
-  }
-  if (metrics.records.largestLossEntry) {
-    gainLossRows.push(createDataRow(
-      "Plus grosse perte ponctuelle",
-      `${resolvePlayer(metrics.records.largestLossEntry.playerId)} • ${sourceLabel(metrics.records.largestLossEntry.source)} • ${formatDateLabel(metrics.records.largestLossEntry.createdMs)}`,
-      formatSignedDoes(metrics.records.largestLossEntry.deltaDoes)
-    ));
-  }
-
-  [
-    ["Jour", metrics.records.dayExtremes],
-    ["Semaine", metrics.records.weekExtremes],
-    ["Mois", metrics.records.monthExtremes],
-  ].forEach(([label, bucket]) => {
-    if (bucket?.bestGain) {
-      gainLossRows.push(createDataRow(
-        `Pic gain ${label.toLowerCase()}`,
-        `${formatPeriodLabel(bucket.bestGain.bucketMs, label === "Jour" ? "day" : label === "Semaine" ? "week" : "month")} • ${formatInt(bucket.bestGain.events)} operations`,
-        formatSignedDoes(bucket.bestGain.positiveDoes)
-      ));
-    }
-    if (bucket?.worstLoss) {
-      gainLossRows.push(createDataRow(
-        `Pic perte ${label.toLowerCase()}`,
-        `${formatPeriodLabel(bucket.worstLoss.bucketMs, label === "Jour" ? "day" : label === "Semaine" ? "week" : "month")} • ${formatInt(bucket.worstLoss.events)} operations`,
-        formatSignedDoes(-bucket.worstLoss.negativeDoes)
-      ));
-    }
-  });
-
-  metrics.records.topGainPlayers.forEach((item) => {
-    gainLossRows.push(createDataRow(
-      `Top gagnant: ${item.name}`,
-      "Somme des credits sur la periode",
-      formatDoes(item.amount)
-    ));
-  });
-  metrics.records.topLossPlayers.forEach((item) => {
-    gainLossRows.push(createDataRow(
-      `Top perdant: ${item.name}`,
-      "Somme des debits sur la periode",
-      formatSignedDoes(-item.amount)
-    ));
-  });
-
-  const financeRows = [];
-  if (metrics.records.largestDeposit) {
-    financeRows.push(createDataRow(
-      "Plus gros depot global",
-      `${resolvePlayer(metrics.records.largestDeposit.playerId)} • ${formatDateLabel(getCreatedMs(metrics.records.largestDeposit))}`,
-      formatCurrencyHtg(metrics.records.largestDeposit.amountHtg)
-    ));
-  }
-  if (metrics.records.largestWithdrawal) {
-    financeRows.push(createDataRow(
-      "Plus gros retrait global",
-      `${resolvePlayer(metrics.records.largestWithdrawal.playerId)} • ${formatDateLabel(getCreatedMs(metrics.records.largestWithdrawal))}`,
-      formatCurrencyHtg(metrics.records.largestWithdrawal.amountHtg)
-    ));
-  }
-  metrics.records.topDepositPlayers.forEach((item) => {
-    financeRows.push(createDataRow(
-      `Record depot: ${item.name}`,
-      "Max depot unique du joueur",
-      formatCurrencyHtg(item.amountHtg)
-    ));
-  });
-  metrics.records.topWithdrawalPlayers.forEach((item) => {
-    financeRows.push(createDataRow(
-      `Record retrait: ${item.name}`,
-      "Max retrait unique du joueur",
-      formatCurrencyHtg(item.amountHtg)
-    ));
-  });
-
-  renderDataList(
-    dom.referralRewards,
-    referralRows,
-    "Aucune prime de parrainage detectee sur la periode."
-  );
-  renderDataList(
-    dom.gainLossRecords,
-    gainLossRows,
-    "Aucun flux Does positif ou negatif sur la periode."
-  );
-  renderDataList(
-    dom.financeRecords,
-    financeRows,
-    "Aucun depot ou retrait approuve sur la periode."
-  );
-}
-
-function renderReferralTree(metrics) {
-  if (!dom.treeWrap) return;
-  dom.treeWrap.innerHTML = "";
-
-  const graph = metrics.referrals.graph;
-  const depthLimit = Math.max(2, Math.min(5, safeInt(dom.treeDepth?.value || 3)));
-  const roots = graph.roots.slice(0, MAX_TREE_ROOTS);
-
-  if (!roots.length) {
-    const empty = document.createElement("div");
-    empty.className = "empty-state";
-    empty.textContent = "Aucune branche user referral detectee.";
-    dom.treeWrap.appendChild(empty);
-    return;
-  }
-
-  roots.forEach((rootId) => {
-    const root = graph.clientsById.get(rootId) || {};
-    const rootStats = graph.parentStats.find((item) => item.parentId === rootId) || { descendantCount: 0 };
-    const card = document.createElement("article");
-    card.className = "tree-root";
-
-    const title = document.createElement("h3");
-    title.className = "tree-title";
-    title.textContent = String(root.name || root.email || rootId);
-
-    const caption = document.createElement("p");
-    caption.className = "tree-caption";
-    caption.textContent = `${formatInt(rootStats.descendantCount)} descendant(s) • ${root.email || rootId}`;
-
-    const levelsWrap = document.createElement("div");
-    levelsWrap.className = "tree-levels";
-
-    const levels = buildLevelNodes(rootId, graph, depthLimit);
-    levels.forEach((levelNodes, index) => {
-      const level = document.createElement("div");
-      level.className = "tree-level";
-
-      const label = document.createElement("div");
-      label.className = "tree-level-label";
-      label.textContent = `Niveau ${index + 1} • ${formatInt(levelNodes.length)} noeud(s)`;
-
-      const badges = document.createElement("div");
-      badges.className = "tree-badges";
-
-      levelNodes.slice(0, 18).forEach((nodeId) => {
-        const node = graph.clientsById.get(nodeId) || {};
-        const badge = document.createElement("div");
-        badge.className = "tree-badge";
-        badge.textContent = String(node.name || node.email || nodeId);
-        badges.appendChild(badge);
-      });
-
-      if (levelNodes.length > 18) {
-        const more = document.createElement("div");
-        more.className = "tree-badge";
-        more.textContent = `+${formatInt(levelNodes.length - 18)} autres`;
-        badges.appendChild(more);
-      }
-
-      level.append(label, badges);
-      levelsWrap.appendChild(level);
-    });
-
-    card.append(title, caption, levelsWrap);
-    dom.treeWrap.appendChild(card);
-  });
-}
-
-function renderRecommendedMetrics(metrics = null) {
-  if (!dom.recommendedMetrics) return;
-  dom.recommendedMetrics.innerHTML = "";
-
-  const advanced = metrics?.advanced || null;
-  const items = advanced ? [
-    {
-      tone: "good",
-      title: "Timing matchs",
-      body: `Duree moyenne: ${formatDuration(advanced.avgMatchDurationMs)} • attente moyenne: ${formatDuration(advanced.avgQueueWaitMs)}.`,
-    },
-    {
-      tone: "good",
-      title: "Conversion 1er depot",
-      body: `Delai moyen avant premier depot approuve: ${formatDuration(advanced.avgFirstDepositDelayMs)}.`,
-    },
-    {
-      tone: "good",
-      title: "Session & device",
-      body: `Top navigateur: ${advanced.topBrowser} • top pays: ${advanced.topCountry}.`,
-    },
-    {
-      tone: "good",
-      title: "SLA support",
-      body: `1ere reponse: ${formatDuration(advanced.avgSupportFirstReplyMs)} • resolution moyenne: ${formatDuration(advanced.avgSupportResolutionMs)} • tag dominant: ${advanced.topResolutionTag}.`,
-    },
-    {
-      tone: "good",
-      title: "Attribution marketing",
-      body: `Source la plus presente: ${advanced.topMarketingSource}. Les depots heritent maintenant de la source d'acquisition du client.`,
-    },
-    {
-      tone: "good",
-      title: "Cohortes retention",
-      body: `J1: ${formatInt(advanced.retention.seen1d)} • J7: ${formatInt(advanced.retention.seen7d)} • J30: ${formatInt(advanced.retention.seen30d)} • joueurs actifs 7j: ${formatInt(advanced.retention.game7d)}.`,
-    },
-  ] : [
-    {
-      tone: "warn",
-      title: "Collecte avancee",
-      body: "Les variables avancees seront affichees ici des que les donnees sont chargees.",
-    },
-  ];
-
-  items.forEach((item) => {
-    dom.recommendedMetrics.appendChild(makeInsight(item.tone, item.title, item.body));
-  });
-}
-
-function renderAll(metrics) {
-  renderKpis(metrics);
-  renderInsights(metrics);
-  renderRankings(metrics);
-  renderRecords(metrics);
-  renderReferralTree(metrics);
-  renderRecommendedMetrics(metrics);
-  renderCharts(metrics);
 }
 
 async function refreshAnalytics() {
   try {
+    setStatus("Chargement des analytics de presence...", "neutral");
     await ensureFinanceDashboardSession({
-      title: "Global Analytics",
-      description: "Connecte-toi avec le compte admin finance pour charger les indicateurs globaux.",
+      title: "Analytics presence",
+      description: "Connecte-toi avec le compte administrateur autorise pour consulter la presence, les visiteurs et l'activite de jeu.",
     });
-    setStatus("Chargement des donnees...", "warn");
-    const raw = await fetchAllAnalyticsData();
-    state.raw = raw;
-    renderBotDifficultyControls(raw?.botDifficulty);
-    state.computed = computeMetrics(raw, readDateRangeFromInputs());
-    renderAll(state.computed);
-    setStatus(
-      `Derniere mise a jour: ${formatDateLabel(raw?.generatedAtMs)} • ${formatInt(state.computed.totals.players)} joueurs charges`,
-      "success"
-    );
+
+    const result = await getPresenceAnalyticsSnapshotSecure(buildPayload());
+    const snapshot = result?.snapshot || {};
+    renderSummary(snapshot, result || {});
+    renderPeakList(snapshot);
+    renderCharts(snapshot);
+    setStatus("Analytics de presence a jour.", "success");
   } catch (error) {
-    console.error("[ANALYTICS] refresh error", error);
-    setStatus(error?.message || "Impossible de charger les analytics.", "error");
+    console.error("[ANALYTICS_PRESENCE] refresh error", error);
+    setStatus(error?.message || "Impossible de charger les analytics de presence.", "error");
   }
-}
-
-function applyFilters() {
-  if (!state.raw) {
-    refreshAnalytics();
-    return;
-  }
-  state.computed = computeMetrics(state.raw, readDateRangeFromInputs());
-  renderAll(state.computed);
-  setStatus(
-    `Filtre applique du ${formatDateLabel(state.computed.range.fromMs)} au ${formatDateLabel(state.computed.range.toMs)}`,
-    "neutral"
-  );
-}
-
-async function applyBotDifficulty(level) {
-  const nextLevel = normalizeBotDifficulty(level);
-  try {
-    await ensureFinanceDashboardSession({
-      title: "Global Analytics",
-      description: "Connecte-toi avec le compte admin finance pour piloter le niveau des bots.",
-    });
-    setStatus(`Changement du niveau bot vers ${botDifficultyLabel(nextLevel)}...`, "warn");
-    const result = await setBotDifficultySecure({ botDifficulty: nextLevel });
-    const appliedLevel = normalizeBotDifficulty(result?.botDifficulty || nextLevel);
-    renderBotDifficultyControls(appliedLevel);
-    if (state.raw) state.raw.botDifficulty = appliedLevel;
-    setStatus(`Niveau des bots mis a jour: ${botDifficultyLabel(appliedLevel)}.`, "success");
-  } catch (error) {
-    console.error("[ANALYTICS] bot difficulty error", error);
-    renderBotDifficultyControls(state.botDifficulty);
-    setStatus(error?.message || "Impossible de changer le niveau des bots.", "error");
-  }
-}
-
-function initDefaultFilters() {
-  const now = new Date();
-  const from = new Date(now.getTime() - (29 * 24 * 60 * 60 * 1000));
-  if (dom.dateFrom) dom.dateFrom.value = getDateInputValue(from);
-  if (dom.dateTo) dom.dateTo.value = getDateInputValue(now);
 }
 
 function bindEvents() {
-  dom.refreshBtn?.addEventListener("click", refreshAnalytics);
-  dom.applyBtn?.addEventListener("click", applyFilters);
-  dom.treeDepth?.addEventListener("change", applyFilters);
-  dom.dateFrom?.addEventListener("change", applyFilters);
-  dom.dateTo?.addEventListener("change", applyFilters);
-  dom.botDifficultyButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      applyBotDifficulty(button.dataset.botLevel);
-    });
+  dom.windowSelect?.addEventListener("change", () => {
+    const nextWindow = String(dom.windowSelect.value || "today").trim().toLowerCase();
+    syncDatesForWindow(nextWindow);
+  });
+  dom.refreshBtn?.addEventListener("click", () => {
+    void refreshAnalytics();
+  });
+  dom.applyBtn?.addEventListener("click", () => {
+    void refreshAnalytics();
   });
 }
 
 async function init() {
-  initDefaultFilters();
+  syncDatesForWindow("today");
   bindEvents();
-  renderBotDifficultyControls(DEFAULT_BOT_DIFFICULTY);
-  renderRecommendedMetrics(null);
   await refreshAnalytics();
 }
 
-init();
+void init();

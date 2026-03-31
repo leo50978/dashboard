@@ -24,6 +24,8 @@ const loadingEl = document.getElementById("ordersStatusLoading");
 const errorEl = document.getElementById("ordersStatusError");
 const contentEl = document.getElementById("ordersStatusContent");
 const tableHeadRowEl = document.querySelector("table thead tr");
+const CACHE_VERSION = 1;
+const CACHE_KEY = `domino_dashboard_orders_status_cache_v${CACHE_VERSION}_${status}`;
 
 let currentRows = [];
 let currentModalOrder = null;
@@ -683,20 +685,96 @@ function findOrder(orderId, clientId) {
   return currentRows.find((row) => row.id === orderId && row.clientId === clientId) || null;
 }
 
-async function refreshRows() {
-  const rows = await loadOrders(status);
-  currentRows = rows;
-  const stats = computeOrderStats(rows);
+function readRowsCache() {
+  try {
+    const raw = window.localStorage?.getItem(CACHE_KEY) || "";
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const rows = Array.isArray(parsed?.rows) ? parsed.rows : [];
+    return {
+      savedAtMs: Number(parsed?.savedAtMs || 0) || 0,
+      rows,
+    };
+  } catch (error) {
+    console.warn("[ORDERS_STATUS] read cache failed", error);
+    return null;
+  }
+}
 
-  if (totalEl) totalEl.textContent = String(rows.length);
+function writeRowsCache(rows = []) {
+  try {
+    window.localStorage?.setItem(CACHE_KEY, JSON.stringify({
+      savedAtMs: Date.now(),
+      rows: Array.isArray(rows) ? rows : [],
+    }));
+  } catch (error) {
+    console.warn("[ORDERS_STATUS] write cache failed", error);
+  }
+}
+
+function removeOrderFromCache(order) {
+  if (!order?.id || !order?.clientId) return;
+  const cached = readRowsCache();
+  if (!cached) return;
+  const nextRows = cached.rows.filter((row) => !(row?.id === order.id && row?.clientId === order.clientId));
+  writeRowsCache(nextRows);
+}
+
+function applyRows(rows, options = {}) {
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const fromCache = options.fromCache === true;
+  currentRows = safeRows;
+  const stats = computeOrderStats(safeRows);
+
+  if (totalEl) totalEl.textContent = String(safeRows.length);
   if (amountEl) amountEl.textContent = formatPrice(stats.amount);
 
-  if (!rows.length) {
+  if (!safeRows.length) {
     tableBodyEl && (tableBodyEl.innerHTML = "");
     emptyEl?.classList.remove("hidden");
   } else {
     emptyEl?.classList.add("hidden");
-    renderRows(rows);
+    renderRows(safeRows);
+  }
+
+  if (loadingEl) {
+    loadingEl.textContent = fromCache ? "Affichage du cache local. Synchronisation en cours..." : "Chargement des commandes...";
+  }
+}
+
+async function refreshRows() {
+  const rows = await loadOrders(status);
+  applyRows(rows, { fromCache: false });
+  writeRowsCache(rows);
+}
+
+function hydrateFromCache() {
+  const cached = readRowsCache();
+  if (!cached || !Array.isArray(cached.rows) || cached.rows.length <= 0) return false;
+  applyRows(cached.rows, { fromCache: true });
+  loadingEl?.classList.remove("hidden");
+  contentEl?.classList.remove("hidden");
+  return true;
+}
+
+async function refreshRowsAndHandleFailure() {
+  try {
+    await refreshRows();
+    errorEl?.classList.add("hidden");
+    loadingEl?.classList.add("hidden");
+    contentEl?.classList.remove("hidden");
+  } catch (error) {
+    if (currentRows.length > 0) {
+      console.error("[ORDERS_STATUS] refresh failed, cache kept", error);
+      loadingEl?.classList.add("hidden");
+      contentEl?.classList.remove("hidden");
+      if (errorEl) {
+        errorEl.textContent = "Synchronisation impossible pour le moment. Dernier cache affiche.";
+        errorEl.classList.remove("hidden");
+      }
+      return;
+    }
+    throw error;
   }
 }
 
@@ -731,7 +809,11 @@ async function handleDecision(order, decision) {
 
     document.getElementById("ordersStatusModal")?.classList.add("hidden");
     currentModalOrder = null;
-    await refreshRows();
+    removeOrderFromCache(order);
+    const nextRows = currentRows.filter((row) => !(row.id === order.id && row.clientId === order.clientId));
+    applyRows(nextRows, { fromCache: false });
+    writeRowsCache(nextRows);
+    void refreshRowsAndHandleFailure();
   } catch (error) {
     console.error("[ORDERS_STATUS] resolve decision failed", error);
     showToast(error?.message || "Impossible de traiter cette commande.", "error");
@@ -767,10 +849,8 @@ async function init() {
       adminEmailEl.textContent = adminUser?.email || adminUser?.uid || "Admin connecte";
     }
 
-    await refreshRows();
-
-    loadingEl?.classList.add("hidden");
-    contentEl?.classList.remove("hidden");
+    hydrateFromCache();
+    await refreshRowsAndHandleFailure();
   } catch (error) {
     console.error("[ORDERS_STATUS] init failed", error);
     loadingEl?.classList.add("hidden");
