@@ -503,16 +503,25 @@ function renderSnapshot(snapshot = null) {
 }
 
 async function loadSnapshot() {
+  const payload = getSelectedPayload();
+  console.info("[DEPOSIT_FLOW_DEBUG] load:start", payload);
   setLoading(true);
   setStatus("Chargement des flux dépôts…");
   try {
-    const payload = getSelectedPayload();
     const response = await getDepositMethodAnalyticsSnapshotSecure(payload);
+    console.info("[DEPOSIT_FLOW_DEBUG] load:response", response);
     const snapshot = response?.snapshot || null;
     renderSnapshot(snapshot);
     setStatus("Snapshot dépôts chargé.", "success");
   } catch (error) {
     console.error("[DEPOSIT_FLOW] load failed", error);
+    console.error("[DEPOSIT_FLOW_DEBUG] load:error", {
+      payload,
+      message: String(error?.message || error),
+      code: String(error?.code || ""),
+      details: error?.details || "",
+      stack: String(error?.stack || ""),
+    });
     setStatus(error?.message || "Impossible de charger les analytics de dépôts.", "error");
   } finally {
     setLoading(false);

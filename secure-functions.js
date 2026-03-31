@@ -104,6 +104,10 @@ export async function getGlobalAnalyticsSnapshotSecure(payload = {}) {
   return invokeCallable("getGlobalAnalyticsSnapshot", payload, "Impossible de charger les analytics globaux.");
 }
 
+export async function getDuelAnalyticsSnapshotSecure(payload = {}) {
+  return invokeCallable("getDuelAnalyticsSnapshot", payload, "Impossible de charger les analytics duel.");
+}
+
 export async function getClientAcquisitionSnapshotSecure(payload = {}) {
   return invokeCallable("getClientAcquisitionSnapshot", payload, "Impossible de charger les analytics d'acquisition.");
 }

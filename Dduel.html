@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="shortcut icon" href="./favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <link rel="manifest" href="./site.webmanifest" />
+    <script src="./runtime-config.js"></script>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://cdn.jsdelivr.net https://www.google.com https://www.recaptcha.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://www.gstatic.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https: blob:; media-src 'self' data: https: blob:; connect-src 'self' data: blob: https://*.googleapis.com https://apis.google.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseinstallations.googleapis.com https://content-firebaseappcheck.googleapis.com https://www.gstatic.com https://www.google.com https://accounts.google.com https://does-2c234.firebaseapp.com https://does-2c234.web.app https://www.recaptcha.net https://us-central1-does-2c234.cloudfunctions.net https://*.cloudfunctions.net https://firebasestorage.googleapis.com https://storage.googleapis.com https://cdn.jsdelivr.net; frame-src https://www.google.com https://accounts.google.com https://apis.google.com https://www.gstatic.com https://does-2c234.firebaseapp.com https://does-2c234.web.app https://www.recaptcha.net; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; block-all-mixed-content;"
+    />
+    <title>Dominoes Lakay - Analytics Duel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Sora:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-0: #050816;
+        --bg-1: #0a1024;
+        --bg-2: #121a33;
+        --panel: rgba(13, 22, 44, 0.68);
+        --panel-strong: rgba(10, 18, 38, 0.84);
+        --panel-soft: rgba(255, 255, 255, 0.04);
+        --line: rgba(163, 184, 255, 0.14);
+        --line-strong: rgba(163, 184, 255, 0.24);
+        --text: #edf2ff;
+        --muted: #95a4cb;
+        --accent: #68d7ff;
+        --accent-2: #7c5cff;
+        --accent-3: #ff9c5f;
+        --good: #4be7b8;
+        --warn: #ffbf69;
+        --bad: #ff7d8d;
+        --shadow-hard: 16px 16px 40px rgba(2, 7, 22, 0.78);
+        --shadow-soft: -12px -12px 28px rgba(49, 67, 122, 0.14);
+        --shadow-inset: inset 7px 7px 18px rgba(4, 9, 23, 0.76), inset -8px -8px 20px rgba(36, 48, 92, 0.24);
+      }
+
+      * { box-sizing: border-box; }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background:
+          radial-gradient(circle at top right, rgba(124, 92, 255, 0.14), transparent 28%),
+          radial-gradient(circle at 15% 20%, rgba(104, 215, 255, 0.12), transparent 32%),
+          radial-gradient(circle at bottom left, rgba(255, 156, 95, 0.12), transparent 30%),
+          linear-gradient(160deg, var(--bg-0) 0%, var(--bg-1) 46%, var(--bg-2) 100%);
+        color: var(--text);
+        font-family: "Space Grotesk", sans-serif;
+      }
+
+      body::before,
+      body::after {
+        content: "";
+        position: fixed;
+        border-radius: 999px;
+        pointer-events: none;
+        filter: blur(22px);
+        z-index: 0;
+      }
+
+      body::before {
+        width: 18rem;
+        height: 18rem;
+        top: -5rem;
+        right: -5rem;
+        background: rgba(104, 215, 255, 0.12);
+      }
+
+      body::after {
+        width: 24rem;
+        height: 24rem;
+        left: -8rem;
+        bottom: -8rem;
+        background: rgba(124, 92, 255, 0.14);
+      }
+
+      .page {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .shell {
+        max-width: 1500px;
+        margin: 0 auto;
+      }
+
+      .glass,
+      .neo {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        box-shadow: var(--shadow-hard), var(--shadow-soft);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+      }
+
+      .neo {
+        background: linear-gradient(180deg, rgba(18, 28, 57, 0.82), rgba(8, 15, 34, 0.82));
+        box-shadow: var(--shadow-hard), var(--shadow-soft), var(--shadow-inset);
+      }
+
+      .topbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 16px;
+        align-items: center;
+        padding: 20px 22px;
+        border-radius: 28px;
+      }
+
+      .eyebrow {
+        margin: 0;
+        font-size: 0.72rem;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--accent);
+        font-weight: 700;
+      }
+
+      .hero-title {
+        margin: 10px 0 0;
+        font-family: "Sora", sans-serif;
+        font-size: clamp(1.8rem, 3vw, 3rem);
+        line-height: 1.02;
+        font-weight: 800;
+      }
+
+      .hero-copy {
+        margin: 10px 0 0;
+        max-width: 74ch;
+        color: var(--muted);
+        line-height: 1.55;
+        font-size: 0.98rem;
+      }
+
+      .top-actions {
+        display: grid;
+        gap: 10px;
+        justify-items: end;
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .link-chip,
+      .action-btn {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        text-decoration: none;
+        color: var(--text);
+        background: var(--panel-soft);
+        padding: 11px 14px;
+        font: inherit;
+        cursor: pointer;
+        transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+      }
+
+      .link-chip:hover,
+      .action-btn:hover {
+        transform: translateY(-1px);
+        border-color: var(--line-strong);
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .action-btn.primary {
+        background: linear-gradient(135deg, rgba(104, 215, 255, 0.2), rgba(124, 92, 255, 0.22));
+      }
+
+      .status-pill {
+        min-height: 1.2rem;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+
+      .status-pill[data-tone="error"] { color: var(--bad); }
+      .status-pill[data-tone="success"] { color: var(--good); }
+
+      .section {
+        margin-top: 18px;
+        border-radius: 26px;
+        padding: 18px;
+      }
+
+      .filters {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        align-items: end;
+      }
+
+      .field {
+        display: grid;
+        gap: 8px;
+      }
+
+      .field label {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .field input,
+      .field select {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(7, 14, 31, 0.78);
+        color: var(--text);
+        padding: 12px 14px;
+        font: inherit;
+        outline: none;
+        box-shadow: var(--shadow-inset);
+      }
+
+      .runtime-strip {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 14px;
+        align-items: center;
+        padding: 14px 16px;
+        border-radius: 20px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .runtime-copy {
+        display: grid;
+        gap: 6px;
+      }
+
+      .runtime-title {
+        margin: 0;
+        font-size: 0.84rem;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .runtime-note {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.45;
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .kpi {
+        border-radius: 22px;
+        padding: 18px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .kpi::after {
+        content: "";
+        position: absolute;
+        inset: auto -20% -35% auto;
+        width: 9rem;
+        height: 9rem;
+        border-radius: 999px;
+        background: radial-gradient(circle at center, rgba(255, 255, 255, 0.08), transparent 60%);
+        pointer-events: none;
+      }
+
+      .kpi-label {
+        margin: 0;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .kpi-value {
+        margin: 10px 0 0;
+        font-family: "Sora", sans-serif;
+        font-size: clamp(1.6rem, 2.6vw, 2.7rem);
+        font-weight: 800;
+        line-height: 1;
+      }
+
+      .kpi-note {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .accent-a .kpi-value { color: var(--accent); }
+      .accent-b .kpi-value { color: var(--accent-3); }
+      .accent-c .kpi-value { color: var(--bad); }
+      .accent-d .kpi-value { color: var(--good); }
+
+      .subgrid {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 18px;
+        align-items: start;
+      }
+
+      .panel {
+        border-radius: 24px;
+        padding: 18px;
+      }
+
+      .panel-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+        margin-bottom: 14px;
+      }
+
+      .panel-title {
+        margin: 0;
+        font-family: "Sora", sans-serif;
+        font-size: 1rem;
+        font-weight: 700;
+      }
+
+      .panel-copy {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+        line-height: 1.5;
+      }
+
+      .mini-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .mini-card {
+        border-radius: 18px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.035);
+      }
+
+      .mini-card strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 1.25rem;
+        font-family: "Sora", sans-serif;
+      }
+
+      .mini-card span {
+        font-size: 0.78rem;
+        color: var(--muted);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+
+      .mini-card p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+        line-height: 1.5;
+      }
+
+      .chart-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr 1fr;
+        gap: 18px;
+      }
+
+      .chart-card {
+        border-radius: 24px;
+        padding: 18px;
+        min-height: 360px;
+      }
+
+      .chart-frame {
+        position: relative;
+        height: 280px;
+      }
+
+      .results-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .result-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 14px;
+        align-items: center;
+        padding: 12px 14px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .result-title {
+        font-weight: 700;
+      }
+
+      .result-meta {
+        margin-top: 4px;
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
+
+      .result-value {
+        font-family: "Sora", sans-serif;
+        font-weight: 700;
+        color: var(--accent);
+        text-align: right;
+      }
+
+      .empty-state {
+        padding: 16px;
+        border-radius: 18px;
+        border: 1px dashed var(--line);
+        color: var(--muted);
+        text-align: center;
+      }
+
+      @media (max-width: 1180px) {
+        .subgrid,
+        .chart-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 980px) {
+        .topbar,
+        .filters,
+        .kpi-grid,
+        .mini-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .top-actions,
+        .nav-links {
+          justify-items: stretch;
+          justify-content: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="shell">
+        <section class="topbar neo">
+          <div>
+            <p class="eyebrow">Dashboard Duel</p>
+            <h1 class="hero-title">Analyse dédiée au jeu à 2</h1>
+            <p class="hero-copy">
+              Lis rapidement les volumes duel, la part des matchs avec bot, les victoires humain vs bot, les mises et
+              l’évolution par période sans passer par le dashboard global.
+            </p>
+          </div>
+
+          <div class="top-actions">
+            <div class="nav-links">
+              <a class="link-chip" href="./index.html">Hub</a>
+              <a class="link-chip" href="./Danalytics.html">Analytics global</a>
+            </div>
+            <div id="duelStatus" class="status-pill">Prêt.</div>
+          </div>
+        </section>
+
+        <section class="section neo">
+          <div class="filters">
+            <div class="field">
+              <label for="duelWindow">Période</label>
+              <select id="duelWindow">
+                <option value="today">Aujourd'hui</option>
+                <option value="7d">7 jours</option>
+                <option value="30d" selected>30 jours</option>
+                <option value="global">Global</option>
+                <option value="custom">Personnalisée</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="duelDateFrom">Date de début</label>
+              <input id="duelDateFrom" type="date" />
+            </div>
+
+            <div class="field">
+              <label for="duelDateTo">Date de fin</label>
+              <input id="duelDateTo" type="date" />
+            </div>
+
+            <button id="duelRefreshBtn" class="action-btn primary" type="button">Actualiser</button>
+          </div>
+
+          <div class="runtime-strip">
+            <div class="runtime-copy">
+              <p class="runtime-title">Couverture de lecture</p>
+              <p id="duelCoverage" class="runtime-note">En attente du premier snapshot duel.</p>
+            </div>
+            <p id="duelGeneratedAt" class="runtime-note">Dernier snapshot: -</p>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="kpi-grid">
+            <article class="kpi neo accent-a">
+              <p class="kpi-label">Matchs joués</p>
+              <p id="duelTotalMatches" class="kpi-value">0</p>
+              <p id="duelTotalMatchesNote" class="kpi-note">-</p>
+            </article>
+
+            <article class="kpi neo accent-b">
+              <p class="kpi-label">Matchs avec bots</p>
+              <p id="duelWithBots" class="kpi-value">0</p>
+              <p id="duelWithBotsNote" class="kpi-note">-</p>
+            </article>
+
+            <article class="kpi neo accent-c">
+              <p class="kpi-label">Victoires bots</p>
+              <p id="duelBotWins" class="kpi-value">0</p>
+              <p id="duelBotWinsNote" class="kpi-note">-</p>
+            </article>
+
+            <article class="kpi neo accent-d">
+              <p class="kpi-label">Victoires humains</p>
+              <p id="duelHumanWins" class="kpi-value">0</p>
+              <p id="duelHumanWinsNote" class="kpi-note">-</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section subgrid">
+          <article class="panel neo">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">Lecture rapide</h2>
+                <p class="panel-copy">Vue courte sur la durée, les mises et la répartition public vs entre amis.</p>
+              </div>
+            </div>
+
+            <div class="mini-grid">
+              <div class="mini-card">
+                <span>Durée moyenne</span>
+                <strong id="duelAvgDuration">-</strong>
+                <p>Temps moyen d’un duel terminé sur la période filtrée.</p>
+              </div>
+              <div class="mini-card">
+                <span>Mise moyenne</span>
+                <strong id="duelAvgStake">-</strong>
+                <p>Panier moyen d’entrée observé sur les matchs duel.</p>
+              </div>
+              <div class="mini-card">
+                <span>Matchs publics</span>
+                <strong id="duelPublicMatches">0</strong>
+                <p>Matchs lancés via le flux duel public.</p>
+              </div>
+              <div class="mini-card">
+                <span>Entre amis</span>
+                <strong id="duelFriendMatches">0</strong>
+                <p>Matchs joués dans les salles privées duel entre amis.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel neo">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">Mix des mises</h2>
+                <p class="panel-copy">Répartition rapide des mises duel sur la période.</p>
+              </div>
+            </div>
+            <div class="mini-card">
+              <span>Répartition</span>
+              <strong id="duelStakeMix">-</strong>
+              <p>Lecture texte utile quand tu veux confirmer vite les volumes 500 / 1000 sans regarder les graphes.</p>
+            </div>
+          </article>
+        </section>
+
+        <section class="section chart-grid">
+          <article class="chart-card neo">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">Volume duel</h2>
+                <p class="panel-copy">Évolution des duels terminés et de la part avec bot.</p>
+              </div>
+            </div>
+            <div class="chart-frame">
+              <canvas id="duelMatchesTrendChart"></canvas>
+            </div>
+          </article>
+
+          <article class="chart-card neo">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">Issue des matchs</h2>
+                <p class="panel-copy">Part des victoires humain et bot.</p>
+              </div>
+            </div>
+            <div class="chart-frame">
+              <canvas id="duelOutcomeChart"></canvas>
+            </div>
+          </article>
+
+          <article class="chart-card neo">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">Modes de salle</h2>
+                <p class="panel-copy">Public contre entre amis.</p>
+              </div>
+            </div>
+            <div class="chart-frame">
+              <canvas id="duelModeChart"></canvas>
+            </div>
+          </article>
+
+          <article class="chart-card neo">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">Mises duel</h2>
+                <p class="panel-copy">Répartition des matchs par niveau de mise.</p>
+              </div>
+            </div>
+            <div class="chart-frame">
+              <canvas id="duelStakeChart"></canvas>
+            </div>
+          </article>
+        </section>
+
+        <section class="section neo">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">Derniers résultats</h2>
+              <p class="panel-copy">Lecture rapide des derniers duels terminés dans la période filtrée.</p>
+            </div>
+          </div>
+          <div id="duelRecentResults" class="results-list"></div>
+        </section>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="./dashboard-nav-bubble.js"></script>
+    <script type="module" src="./Dduel.js"></script>
+  </body>
+</html>

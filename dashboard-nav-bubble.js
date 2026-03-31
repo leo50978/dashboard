@@ -17,6 +17,7 @@
     { href: "./Dacquisition.html", label: "Acquisition", key: "dacquisition.html" },
     { href: "./sondage.html", label: "Sondages", key: "sondage.html" },
     { href: "./Danalytics.html", label: "Analytics", key: "danalytics.html" },
+    { href: "./Dduel.html", label: "Duel 2 joueurs", key: "dduel.html" },
     { href: "./Ddiscussion.html", label: "Discussion", key: "ddiscussion.html" },
     { href: "./ambassader.html", label: "Ambassadeur", key: "ambassader.html" },
     { href: "./createambassadeur.html", label: "Créer", key: "createambassadeur.html" },
