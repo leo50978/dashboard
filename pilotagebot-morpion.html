@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <script src="./runtime-config.js"></script>
+  <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="shortcut icon" href="./favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+  <link rel="manifest" href="./site.webmanifest" />
+  <title>Vitch Studio · Pilotage Bot Morpion</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07110d;
+      --panel: rgba(12, 28, 22, 0.88);
+      --line: rgba(148, 163, 184, 0.16);
+      --text: #edf9f3;
+      --muted: #9ab9ad;
+      --mint: #34d399;
+      --lime: #bef264;
+      --danger: #fb7185;
+      --amber: #f59e0b;
+      --sky: #38bdf8;
+      --violet: #a78bfa;
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Manrope", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(52, 211, 153, 0.16), transparent 28%),
+        radial-gradient(circle at top right, rgba(56, 189, 248, 0.14), transparent 24%),
+        linear-gradient(180deg, #04100c 0%, var(--bg) 52%, #030a08 100%);
+    }
+    .shell {
+      width: min(1240px, 100%);
+      margin: 0 auto;
+      padding:
+        calc(16px + env(safe-area-inset-top, 0px))
+        max(14px, env(safe-area-inset-left, 0px))
+        calc(34px + env(safe-area-inset-bottom, 0px))
+        max(14px, env(safe-area-inset-right, 0px));
+    }
+    .hero, .panel, .metric, .mix-card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.26);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+    .hero { border-radius: 28px; padding: 20px; overflow: hidden; }
+    .eyebrow {
+      margin: 0;
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: #8ff5d0;
+      font-weight: 800;
+    }
+    h1, h2, h3 { margin: 0; font-family: "Space Grotesk", "Manrope", sans-serif; }
+    h1 { margin-top: 12px; font-size: clamp(2.1rem, 5vw, 4rem); line-height: 0.98; max-width: 13ch; }
+    .hero-copy, .section-copy, .empty-copy, .helper-copy, .status-copy, .metric small {
+      color: var(--muted);
+      margin: 0;
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+    .hero-copy { margin-top: 14px; max-width: 70ch; }
+    .hero-top, .section-head { display: grid; gap: 12px; }
+    .admin-chip, .back-link, .badge-pill {
+      display: inline-flex; align-items: center; gap: 10px; width: fit-content;
+      border-radius: 999px; border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05); padding: 10px 14px; color: var(--text);
+      text-decoration: none; font-size: 0.88rem; font-weight: 700;
+    }
+    .admin-chip { color: #d8fff2; }
+    .back-link { color: #c6fff0; }
+    .metric-grid { margin-top: 20px; display: grid; gap: 14px; grid-template-columns: 1fr; }
+    .metric { border-radius: 22px; padding: 16px; min-width: 0; }
+    .metric label, .field label {
+      display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted);
+    }
+    .metric strong { display: block; margin-top: 10px; font-size: clamp(1.3rem, 4vw, 2rem); font-weight: 800; overflow-wrap: anywhere; }
+    .metric small { display: block; margin-top: 8px; font-size: 0.86rem; }
+    .panel { margin-top: 18px; border-radius: 24px; padding: 18px; }
+    .control-grid, .chart-grid, .mix-grid { display: grid; gap: 14px; grid-template-columns: 1fr; }
+    .control-card, .chart-card {
+      display: grid; gap: 12px; padding: 16px; border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.06); background: rgba(5, 13, 10, 0.4);
+    }
+    .field { display: grid; gap: 8px; min-width: 0; }
+    .field select {
+      width: 100%; min-width: 0; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
+      background: rgba(3, 10, 8, 0.55); color: var(--text); padding: 14px 15px; font: inherit; outline: none;
+    }
+    .segmented, .action-row { display: grid; gap: 10px; }
+    .segmented { grid-template-columns: 1fr 1fr; }
+    button {
+      appearance: none; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 12px 14px;
+      background: rgba(255,255,255,0.05); color: var(--text); font: inherit; font-weight: 800; cursor: pointer;
+      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+    }
+    button.is-active {
+      border-color: rgba(52, 211, 153, 0.45);
+      background: linear-gradient(135deg, rgba(52, 211, 153, 0.22), rgba(56, 189, 248, 0.16));
+      color: #ffffff;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+    }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    .action-row button {
+      background: linear-gradient(135deg, rgba(52, 211, 153, 0.24), rgba(190, 242, 100, 0.18));
+      border-color: rgba(52, 211, 153, 0.34);
+      color: #f6fff8;
+    }
+    .status-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+    .badge-pill[data-tone="danger"] { color: #ffd4dc; border-color: rgba(251,113,133,0.26); background: rgba(251,113,133,0.12); }
+    .badge-pill[data-tone="defense"] { color: #ffe0b4; border-color: rgba(245,158,11,0.26); background: rgba(245,158,11,0.12); }
+    .badge-pill[data-tone="comfort"] { color: #d8ffe8; border-color: rgba(52,211,153,0.26); background: rgba(52,211,153,0.12); }
+    .badge-pill[data-tone="neutral"] { color: #dce9ff; border-color: rgba(167,139,250,0.26); background: rgba(167,139,250,0.12); }
+    .equity-shell {
+      margin-top: 14px; border-radius: 24px; padding: 14px; min-height: 260px;
+      background: radial-gradient(circle at top, rgba(52,211,153,0.10), transparent 48%), linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.06); overflow: hidden;
+    }
+    .equity-svg { width: 100%; height: 240px; display: block; }
+    .equity-grid-line { stroke: rgba(255,255,255,0.08); stroke-width: 1; }
+    .equity-zero-line { stroke: rgba(255,255,255,0.18); stroke-width: 1.2; stroke-dasharray: 6 6; }
+    .equity-area { fill: url(#morpionPilotEquityGradient); opacity: 0.34; }
+    .equity-line { fill: none; stroke: #34d399; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    .equity-dot { fill: #d9fff0; stroke: rgba(52,211,153,0.42); stroke-width: 2; }
+    .equity-axis-row { margin-top: 14px; display: flex; justify-content: space-between; gap: 12px; font-size: 0.78rem; color: var(--muted); }
+    .equity-axis-row span { flex: 1; }
+    .equity-axis-row span:nth-child(2) { text-align: center; }
+    .equity-axis-row span:last-child { text-align: right; }
+    .trend-list, .mix-grid { margin-top: 10px; }
+    .trend-row {
+      display: grid; grid-template-columns: minmax(68px, 92px) minmax(110px, 1fr) auto; gap: 12px; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .trend-row:last-child { border-bottom: none; }
+    .trend-track, .mix-track { position: relative; width: 100%; height: 12px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow: hidden; }
+    .trend-bar, .mix-fill { position: absolute; inset: 0 auto 0 0; border-radius: inherit; }
+    .trend-bar.positive, .mix-fill.positive { background: linear-gradient(90deg, var(--mint), var(--lime)); }
+    .trend-bar.negative, .mix-fill.negative { background: linear-gradient(90deg, #ff8da0, #fb7185); }
+    .mix-card { border-radius: 20px; padding: 15px; }
+    .mix-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+    .mix-inline { margin-top: 12px; font-size: 0.86rem; color: var(--muted); }
+    .positive { color: var(--mint); }
+    .negative { color: var(--danger); }
+    @media (min-width: 720px) {
+      .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .control-grid, .chart-grid, .mix-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (min-width: 1060px) {
+      .metric-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .control-grid { grid-template-columns: 1.15fr 0.85fr; }
+      .chart-grid { grid-template-columns: 1.15fr 0.85fr; }
+    }
+  </style>
+</head>
+<body>
+  <script src="./dashboard-nav-bubble.js"></script>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-top">
+        <a class="back-link" href="./Dmorpion.html">Retour analytics Morpion</a>
+        <span class="admin-chip" id="morpionPilotAdminEmail">Session admin en cours...</span>
+        <div>
+          <p class="eyebrow">Pilotage Bot Morpion</p>
+          <h1>Stabiliser le profit Morpion automatiquement.</h1>
+          <p class="hero-copy">
+            Ce pilotage est strictement limite au Morpion. Si la marge baisse et que les salles 2 humains deviennent trop dominantes,
+            le systeme peut fermer temporairement le mode 2 humains pour relancer la courbe de profit.
+          </p>
+        </div>
+      </div>
+      <div class="metric-grid">
+        <article class="metric">
+          <label>Mode actif</label>
+          <strong id="morpionPilotModeValue">-</strong>
+          <small id="morpionPilotModeCopy">-</small>
+        </article>
+        <article class="metric">
+          <label>Profit net</label>
+          <strong id="morpionPilotNetValue">-</strong>
+          <small id="morpionPilotNetCopy">-</small>
+        </article>
+        <article class="metric">
+          <label>Marge</label>
+          <strong id="morpionPilotMarginValue">-</strong>
+          <small id="morpionPilotMarginCopy">-</small>
+        </article>
+        <article class="metric">
+          <label>Salles analysees</label>
+          <strong id="morpionPilotRoomsValue">-</strong>
+          <small id="morpionPilotRoomsCopy">-</small>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <h2>Controle Morpion uniquement</h2>
+        <p class="section-copy">Aucun impact sur Domino 2 joueurs ou 4 joueurs.</p>
+      </div>
+      <div class="control-grid">
+        <article class="control-card">
+          <div class="field">
+            <label>Mode</label>
+            <div class="segmented">
+              <button type="button" id="morpionPilotModeManualBtn">Manuel</button>
+              <button type="button" id="morpionPilotModeAutoBtn">Automatique</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Fenetre d'analyse</label>
+            <select id="morpionPilotWindowSelect">
+              <option value="today">Aujourd'hui</option>
+              <option value="24h">24 heures glissantes</option>
+              <option value="7d">7 derniers jours</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Regle manuelle</label>
+            <div class="segmented">
+              <button type="button" id="morpionPilotAllowHumanBtn">Autoriser 2 humains</button>
+              <button type="button" id="morpionPilotForceBotBtn">Forcer mode bot</button>
+            </div>
+          </div>
+          <div class="action-row">
+            <button type="button" id="morpionPilotApplyBtn">Appliquer le pilotage Morpion</button>
+          </div>
+        </article>
+        <article class="control-card">
+          <div class="status-row">
+            <span class="badge-pill" id="morpionPilotBandBadge">Bande -</span>
+            <span class="badge-pill" id="morpionPilotRoutingBadge">Routage -</span>
+          </div>
+          <p class="status-copy" id="morpionPilotReasonCopy">-</p>
+          <p class="helper-copy" id="morpionPilotFetchMeta">-</p>
+          <div class="metric-grid">
+            <article class="metric">
+              <label>Salles 2 humains</label>
+              <strong id="morpionPilotHumanOnlyValue">-</strong>
+              <small id="morpionPilotHumanOnlyCopy">-</small>
+            </article>
+            <article class="metric">
+              <label>Salles avec bot</label>
+              <strong id="morpionPilotWithBotValue">-</strong>
+              <small id="morpionPilotWithBotCopy">-</small>
+            </article>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <h2>Courbe d'evolution</h2>
+        <p class="section-copy">Lecture cumulée du profit net Morpion sur la fenetre active.</p>
+      </div>
+      <article class="chart-card">
+        <div class="equity-shell">
+          <svg class="equity-svg" id="morpionPilotEquitySvg" viewBox="0 0 720 240" role="img" aria-label="Courbe cumulative du profit Morpion">
+            <defs>
+              <linearGradient id="morpionPilotEquityGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#34d399" stop-opacity="0.38"></stop>
+                <stop offset="100%" stop-color="#34d399" stop-opacity="0"></stop>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="equity-axis-row" id="morpionPilotEquityAxis"><span>-</span><span>-</span><span>-</span></div>
+        </div>
+      </article>
+      <div class="chart-grid">
+        <article class="chart-card">
+          <h3>Variation par tranche</h3>
+          <div class="trend-list" id="morpionPilotTrendList"><p class="empty-copy">Chargement...</p></div>
+        </article>
+        <article class="chart-card">
+          <h3>Mix des salles</h3>
+          <div class="mix-grid" id="morpionPilotMixGrid"><p class="empty-copy">Chargement...</p></div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="./pilotagebot-morpion.js"></script>
+</body>
+</html>

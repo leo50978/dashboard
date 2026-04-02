@@ -112,6 +112,10 @@ export async function getDuelAnalyticsSnapshotSecure(payload = {}) {
   return invokeCallable("getDuelAnalyticsSnapshot", payload, "Impossible de charger les analytics duel.");
 }
 
+export async function getMorpionAnalyticsSnapshotSecure(payload = {}) {
+  return invokeCallable("getMorpionAnalyticsSnapshot", payload, "Impossible de charger les analytics Morpion.");
+}
+
 export async function getRecruitmentAnalyticsSnapshotSecure(payload = {}) {
   return invokeCallable("getRecruitmentAnalyticsSnapshot", payload, "Impossible de charger les analytics recrutement.");
 }
@@ -178,6 +182,14 @@ export async function getBotPilotSnapshotSecure(payload = {}) {
 
 export async function setBotPilotControlSecure(payload = {}) {
   return invokeCallable("setBotPilotControl", payload, "Impossible de mettre a jour le pilotage des bots.");
+}
+
+export async function getMorpionPilotSnapshotSecure(payload = {}) {
+  return invokeCallable("getMorpionPilotSnapshot", payload, "Impossible de charger le pilotage Morpion.");
+}
+
+export async function setMorpionPilotControlSecure(payload = {}) {
+  return invokeCallable("setMorpionPilotControl", payload, "Impossible de mettre a jour le pilotage Morpion.");
 }
 
 export async function resolveDepositReviewSecure(payload = {}) {
