@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="./runtime-config.js"></script>
+    <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="shortcut icon" href="./favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <link rel="manifest" href="./site.webmanifest" />
+    <title>Dashboard Morpion · Tendances</title>
+    <style>
+      :root {
+        --bg: #060d1a;
+        --panel: rgba(16, 27, 49, 0.76);
+        --line: rgba(148, 163, 184, 0.2);
+        --text: #edf3ff;
+        --muted: #9bb0d9;
+        --accent: #64d2ff;
+        --accent2: #7c5cff;
+        --good: #43d8ab;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Space Grotesk", "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at 15% 15%, rgba(100, 210, 255, 0.16), transparent 28%),
+          radial-gradient(circle at 90% 10%, rgba(124, 92, 255, 0.14), transparent 26%),
+          linear-gradient(170deg, #040913 0%, #0a1224 45%, #111d38 100%);
+      }
+      .page {
+        max-width: 1360px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: var(--panel);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        box-shadow: 0 24px 50px rgba(2, 8, 20, 0.35);
+      }
+      .hero { padding: 18px; }
+      .eyebrow {
+        margin: 0;
+        font-size: 0.75rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--accent);
+        font-weight: 700;
+      }
+      h1 {
+        margin: 10px 0 0;
+        font-size: clamp(1.6rem, 3vw, 2.8rem);
+        line-height: 1.04;
+      }
+      .hero-copy {
+        margin: 10px 0 0;
+        max-width: 70ch;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+      .hero-actions {
+        margin-top: 14px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .chip, .btn {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 10px 12px;
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        font: inherit;
+        text-decoration: none;
+      }
+      .btn.primary {
+        border-color: rgba(100, 210, 255, 0.4);
+        background: linear-gradient(135deg, rgba(100, 210, 255, 0.22), rgba(124, 92, 255, 0.2));
+        cursor: pointer;
+      }
+      .filters {
+        margin-top: 16px;
+        padding: 14px;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      }
+      .field { display: grid; gap: 6px; }
+      .field label {
+        font-size: 0.74rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .field input,
+      .field select {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(7, 14, 30, 0.72);
+        color: var(--text);
+        padding: 10px 11px;
+        font: inherit;
+      }
+      .stats {
+        margin-top: 16px;
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+      .stat { padding: 14px; }
+      .stat label {
+        display: block;
+        font-size: 0.72rem;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .stat strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 1.55rem;
+      }
+      .stat small {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+      }
+      .charts {
+        margin-top: 16px;
+        padding: 14px;
+        display: grid;
+        gap: 14px;
+        grid-template-columns: 1.3fr 0.7fr;
+      }
+      .chart-card {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.03);
+        padding: 12px;
+      }
+      .chart-card h2 {
+        margin: 0 0 10px;
+        font-size: 1rem;
+      }
+      .chart-wrap { height: 360px; }
+      .chart-wrap.small { height: 250px; }
+      .status {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .status[data-tone="error"] { color: #ff8ca1; }
+      .status[data-tone="success"] { color: var(--good); }
+      @media (max-width: 980px) {
+        .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .charts { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 640px) {
+        .stats { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <script src="./dashboard-nav-bubble.js"></script>
+    <main class="page">
+      <section class="panel hero">
+        <p class="eyebrow">Morpion · Tendances</p>
+        <h1>Courbe des matchs joués</h1>
+        <p class="hero-copy">
+          Vue trading-like pour suivre l’évolution des matchs Morpion dans le temps, avec filtres de composition, gagnant, mise et période.
+        </p>
+        <div class="hero-actions">
+          <a class="chip" href="./Dmorpion.html">Retour analytics Morpion</a>
+          <span class="chip" id="morpionTrendAdminEmail">Session admin...</span>
+          <button class="btn primary" id="morpionTrendRefreshBtn" type="button">Rafraîchir</button>
+        </div>
+      </section>
+
+      <section class="panel filters">
+        <div class="field">
+          <label for="morpionTrendWindow">Fenêtre</label>
+          <select id="morpionTrendWindow">
+            <option value="today">Aujourd’hui</option>
+            <option value="7d">7 jours</option>
+            <option value="30d" selected>30 jours</option>
+            <option value="global">Global</option>
+            <option value="custom">Personnalisé</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="morpionTrendDateFrom">Date début</label>
+          <input id="morpionTrendDateFrom" type="date" />
+        </div>
+        <div class="field">
+          <label for="morpionTrendDateTo">Date fin</label>
+          <input id="morpionTrendDateTo" type="date" />
+        </div>
+        <div class="field">
+          <label for="morpionTrendComposition">Composition</label>
+          <select id="morpionTrendComposition">
+            <option value="all">Toutes</option>
+            <option value="human_only">2 humains</option>
+            <option value="with_bot">Humain + bot</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="morpionTrendWinnerType">Gagnant</label>
+          <select id="morpionTrendWinnerType">
+            <option value="all">Tous</option>
+            <option value="human">Humain</option>
+            <option value="bot">Bot</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="morpionTrendStake">Mise (Does)</label>
+          <select id="morpionTrendStake">
+            <option value="0">Toutes</option>
+            <option value="500">500</option>
+            <option value="1000">1000</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="stats">
+        <article class="panel stat">
+          <label>Matchs joués</label>
+          <strong id="morpionTrendMatchesPlayed">0</strong>
+          <small id="morpionTrendMatchesPlayedNote">-</small>
+        </article>
+        <article class="panel stat">
+          <label>2 humains</label>
+          <strong id="morpionTrendHumanOnly">0</strong>
+          <small id="morpionTrendHumanOnlyNote">-</small>
+        </article>
+        <article class="panel stat">
+          <label>Humain + bot</label>
+          <strong id="morpionTrendWithBot">0</strong>
+          <small id="morpionTrendWithBotNote">-</small>
+        </article>
+        <article class="panel stat">
+          <label>Durée moyenne</label>
+          <strong id="morpionTrendAvgDuration">-</strong>
+          <small id="morpionTrendAvgDurationNote">-</small>
+        </article>
+      </section>
+
+      <section class="panel charts">
+        <article class="chart-card">
+          <h2>Courbe cumulative (type trading)</h2>
+          <div class="chart-wrap">
+            <canvas id="morpionTrendCurveChart"></canvas>
+          </div>
+        </article>
+        <article class="chart-card">
+          <h2>Distribution des matchs</h2>
+          <div class="chart-wrap small">
+            <canvas id="morpionTrendMixChart"></canvas>
+          </div>
+        </article>
+      </section>
+
+      <p class="status" id="morpionTrendStatus">Chargement...</p>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script type="module" src="./Dmorpion-tendance.js"></script>
+  </body>
+</html>

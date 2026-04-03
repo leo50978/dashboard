@@ -34,7 +34,6 @@ const dom = {
   humanOnlyShare: document.getElementById("morpionHumanOnlyShare"),
   withBotShare: document.getElementById("morpionWithBotShare"),
   stakeMix: document.getElementById("morpionStakeMix"),
-  recentResults: document.getElementById("morpionRecentResults"),
 };
 
 function safeInt(value) {
@@ -185,41 +184,6 @@ function renderSummary(snapshot = {}) {
   if (dom.generatedAt) {
     dom.generatedAt.textContent = `Dernier snapshot: ${formatDateTime(snapshot.generatedAtMs)}`;
   }
-}
-
-function renderRecentResults(snapshot = {}) {
-  if (!dom.recentResults) return;
-  const recentResults = Array.isArray(snapshot.recentResults) ? snapshot.recentResults : [];
-  if (recentResults.length <= 0) {
-    dom.recentResults.innerHTML = `<div class="empty-state">Aucune salle Morpion terminée sur cette période.</div>`;
-    return;
-  }
-  dom.recentResults.innerHTML = recentResults
-    .map((item) => {
-      const compositionLabel = item.compositionLabel || (item.botCount > 0 ? "1 humain + 1 bot" : "2 humains");
-      const winnerLabel = item.winnerType === "bot"
-        ? "Victoire bot"
-        : item.winnerType === "human"
-          ? "Victoire humain"
-          : "Résultat inconnu";
-      const extraBits = [compositionLabel, formatDoes(item.stakeDoes), formatDateTime(item.endedAtMs)];
-      if (item.compositionKey === "with_bot" && item.botDifficulty) {
-        extraBits.push(`Bot ${String(item.botDifficulty).toUpperCase()}`);
-      }
-      if (item.endedReason) {
-        extraBits.push(item.endedReason);
-      }
-      return `
-        <div class="result-row">
-          <div>
-            <div class="result-title">${winnerLabel}</div>
-            <div class="result-meta">${extraBits.join(" • ")}</div>
-          </div>
-          <div class="result-value">${formatDuration(item.durationMs)}</div>
-        </div>
-      `;
-    })
-    .join("");
 }
 
 function renderCharts(snapshot = {}) {
@@ -388,7 +352,6 @@ async function refreshMorpionAnalytics() {
     const result = await getMorpionAnalyticsSnapshotSecure(buildPayload());
     const snapshot = result?.snapshot || {};
     renderSummary(snapshot);
-    renderRecentResults(snapshot);
     renderCharts(snapshot);
     setStatus("Analytics Morpion mises a jour.", "success");
   } catch (error) {

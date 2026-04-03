@@ -192,6 +192,14 @@ export async function setMorpionPilotControlSecure(payload = {}) {
   return invokeCallable("setMorpionPilotControl", payload, "Impossible de mettre a jour le pilotage Morpion.");
 }
 
+export async function getMorpionWaitingQueueDashboardSecure(payload = {}) {
+  return invokeCallable("getMorpionWaitingQueueDashboard", payload, "Impossible de charger la file d'attente Morpion.");
+}
+
+export async function inviteMorpionWaitingPlayerSecure(payload = {}) {
+  return invokeCallable("inviteMorpionWaitingPlayer", payload, "Impossible d'envoyer l'invitation joueur.");
+}
+
 export async function resolveDepositReviewSecure(payload = {}) {
   return invokeCallable("resolveDepositReviewSecure", payload, "Impossible de traiter la commande.");
 }
