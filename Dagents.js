@@ -5,7 +5,6 @@ const dom = {
   status: document.getElementById("agentsStatus"),
   refreshBtn: document.getElementById("agentsRefreshBtn"),
   searchInput: document.getElementById("agentSearchInput"),
-  desiredStatus: document.getElementById("agentDesiredStatus"),
   manualPromoCode: document.getElementById("agentManualPromoCode"),
   searchBtn: document.getElementById("agentSearchBtn"),
   reloadListBtn: document.getElementById("agentReloadListBtn"),
@@ -119,6 +118,9 @@ function renderSearchResults(items = []) {
   dom.searchResults.innerHTML = items.map((item) => {
     const isAgent = item.isAgent === true;
     const status = String(item.agentStatus || "").toLowerCase();
+    const isActive = status === "active";
+    const canDeclare = !isAgent;
+    const canActivate = isAgent && !isActive;
     return `
       <article class="result-card">
         <div class="result-head">
@@ -133,8 +135,15 @@ function renderSearchResults(items = []) {
         </div>
         <div class="meta">Dernière activité: ${escapeHtml(item.lastSeenAtMs ? new Date(item.lastSeenAtMs).toLocaleString("fr-FR") : "inconnue")}</div>
         <div class="actions-row">
-          <button class="action-btn" type="button" data-action="assign" data-uid="${escapeHtml(item.uid)}" data-status="active">Nommer actif</button>
-          <button class="action-btn" type="button" data-action="assign" data-uid="${escapeHtml(item.uid)}" data-status="inactive">Nommer inactif</button>
+          ${canDeclare
+            ? `<button class="action-btn primary" type="button" data-action="declare" data-uid="${escapeHtml(item.uid)}">Déclarer agent</button>`
+            : ""}
+          ${canActivate
+            ? `<button class="action-btn" type="button" data-action="activate" data-uid="${escapeHtml(item.uid)}">Activer et créditer 25 000 HTG</button>`
+            : ""}
+          ${isActive
+            ? `<button class="action-btn secondary" type="button" disabled>Compte agent déjà actif</button>`
+            : ""}
         </div>
       </article>
     `;
@@ -165,6 +174,7 @@ function renderAgentList(items = []) {
   dom.agentsListEmpty.style.display = "none";
   dom.agentsList.innerHTML = items.map((item) => {
     const isActive = String(item.status || "").toLowerCase() === "active";
+    const isDeclared = true;
     return `
       <article class="agent-card">
         <div class="agent-head">
@@ -180,7 +190,10 @@ function renderAgentList(items = []) {
         <div class="meta">Budget restant: ${escapeHtml(formatHtg(item.signupBudgetRemainingHtg))} · Gains du mois: ${escapeHtml(formatInt(item.currentMonthEarnedDoes))} Does</div>
         <div class="meta">Signups suivis: ${escapeHtml(formatInt(item.totalTrackedSignups))} · Dépôts: ${escapeHtml(formatInt(item.totalTrackedDeposits))} · Victoires: ${escapeHtml(formatInt(item.totalTrackedWins))}</div>
         <div class="actions-row">
-          <button class="action-btn" type="button" data-action="toggle" data-uid="${escapeHtml(item.uid)}" data-status="${isActive ? "inactive" : "active"}">${isActive ? "Désactiver" : "Activer"}</button>
+          ${isDeclared ? `<button class="action-btn secondary" type="button" disabled>Compte déjà déclaré agent</button>` : ""}
+          ${isActive
+            ? `<button class="action-btn" type="button" data-action="deactivate" data-uid="${escapeHtml(item.uid)}">Désactiver</button>`
+            : `<button class="action-btn primary" type="button" data-action="activate" data-uid="${escapeHtml(item.uid)}">Activer et créditer 25 000 HTG</button>`}
         </div>
       </article>
     `;
@@ -324,18 +337,27 @@ async function performSearch() {
   setStatus("Recherche terminée.", "success");
 }
 
-async function assignAgent(uid, explicitStatus = "") {
-  const status = String(explicitStatus || dom.desiredStatus?.value || "inactive").trim().toLowerCase() === "active"
+async function upsertAgentStatus(uid, status = "inactive") {
+  const normalizedStatus = String(status || "inactive").trim().toLowerCase() === "active"
     ? "active"
     : "inactive";
   const promoCode = String(dom.manualPromoCode?.value || "").trim().toUpperCase();
-  setStatus("Enregistrement de l'agent...");
+  setStatus(
+    normalizedStatus === "active"
+      ? "Activation du compte agent..."
+      : "Déclaration du compte agent..."
+  );
   await invokeCallable(
     "upsertAgentSecure",
-    { clientId: uid, status, promoCode },
+    { clientId: uid, status: normalizedStatus, promoCode },
     "Impossible d'enregistrer l'agent."
   );
-  setStatus(`Agent mis à jour (${status}).`, "success");
+  setStatus(
+    normalizedStatus === "active"
+      ? "Compte agent activé et budget initial crédité."
+      : "Compte déclaré agent. Le bouton dashboard doit maintenant apparaître sur le profil utilisateur.",
+    "success"
+  );
   await refreshAgentsList();
   if (dom.searchInput?.value) {
     await performSearch();
@@ -366,12 +388,27 @@ function bindDelegatedActions() {
     if (!button) return;
     const action = String(button.getAttribute("data-action") || "");
     const uid = String(button.getAttribute("data-uid") || "");
-    const status = String(button.getAttribute("data-status") || "");
     if (!uid) return;
 
-    if (action === "assign" || action === "toggle") {
-      void assignAgent(uid, status).catch((error) => {
-        console.error("[DAGENTS] assign error", error);
+    if (action === "declare") {
+      void upsertAgentStatus(uid, "inactive").catch((error) => {
+        console.error("[DAGENTS] declare error", error);
+        setStatus(error?.message || "Impossible de déclarer le compte agent.", "error");
+      });
+      return;
+    }
+
+    if (action === "activate") {
+      void upsertAgentStatus(uid, "active").catch((error) => {
+        console.error("[DAGENTS] activate error", error);
+        setStatus(error?.message || "Impossible d'activer le compte agent.", "error");
+      });
+      return;
+    }
+
+    if (action === "deactivate") {
+      void upsertAgentStatus(uid, "inactive").catch((error) => {
+        console.error("[DAGENTS] deactivate error", error);
         setStatus(error?.message || "Impossible de mettre à jour l'agent.", "error");
       });
     }

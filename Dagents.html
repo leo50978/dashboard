@@ -57,7 +57,7 @@
       .page {
         position: relative;
         min-height: 100vh;
-        padding: 20px;
+        padding: 14px;
       }
 
       .shell {
@@ -80,11 +80,11 @@
 
       .topbar {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 16px;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
         align-items: center;
-        padding: 20px 22px;
-        border-radius: 28px;
+        padding: 16px;
+        border-radius: 24px;
       }
 
       .eyebrow {
@@ -110,13 +110,14 @@
         color: var(--muted);
         line-height: 1.55;
         font-size: 0.98rem;
+        overflow-wrap: anywhere;
       }
 
       .nav-links {
         display: flex;
         gap: 10px;
         flex-wrap: wrap;
-        justify-content: flex-end;
+        justify-content: stretch;
       }
 
       .link-chip,
@@ -130,6 +131,11 @@
         font: inherit;
         cursor: pointer;
         transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+      }
+
+      .nav-links > * {
+        flex: 1 1 180px;
+        text-align: center;
       }
 
       .action-btn.primary {
@@ -146,9 +152,9 @@
       .status-pill[data-tone="success"] { color: var(--good); }
 
       .section {
-        margin-top: 18px;
-        border-radius: 26px;
-        padding: 18px;
+        margin-top: 16px;
+        border-radius: 22px;
+        padding: 14px;
       }
 
       .filters,
@@ -160,16 +166,16 @@
       }
 
       .filters {
-        grid-template-columns: minmax(260px, 2fr) repeat(2, minmax(180px, 1fr)) auto auto;
+        grid-template-columns: 1fr;
         align-items: end;
       }
 
       .stats-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: 1fr;
       }
 
       .content-grid {
-        grid-template-columns: minmax(0, 1fr) minmax(340px, 0.88fr);
+        grid-template-columns: 1fr;
         align-items: start;
       }
 
@@ -197,10 +203,23 @@
         font: inherit;
       }
 
+      .field input,
+      .field select,
+      .result-title,
+      .agent-title,
+      .meta,
+      .empty,
+      td,
+      th {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
       .stat-card,
       .panel {
         border-radius: 24px;
-        padding: 16px;
+        padding: 14px;
+        min-width: 0;
       }
 
       .stat-label {
@@ -228,6 +247,7 @@
         border-radius: 20px;
         padding: 14px;
         background: rgba(255, 255, 255, 0.03);
+        min-width: 0;
       }
 
       .result-head,
@@ -331,6 +351,19 @@
         margin-top: 14px;
       }
 
+      .actions-row .action-btn {
+        flex: 1 1 100%;
+      }
+
+      .action-btn.secondary {
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .payroll-filters {
+        margin-top: 14px;
+        grid-template-columns: 1fr;
+      }
+
       .panel h2 {
         margin: 0;
         font-size: 1.05rem;
@@ -344,19 +377,49 @@
         color: var(--muted);
       }
 
-      @media (max-width: 1080px) {
-        .filters,
-        .stats-grid,
-        .content-grid {
-          grid-template-columns: 1fr;
+      @media (min-width: 720px) {
+        .page {
+          padding: 20px;
         }
 
         .topbar {
-          grid-template-columns: 1fr;
+          grid-template-columns: minmax(0, 1fr) auto;
+          padding: 20px 22px;
+          border-radius: 28px;
         }
 
         .nav-links {
-          justify-content: flex-start;
+          justify-content: flex-end;
+        }
+
+        .nav-links > * {
+          flex: 0 0 auto;
+        }
+
+        .filters {
+          grid-template-columns: minmax(220px, 2fr) minmax(180px, 1fr) minmax(180px, 1fr) auto auto;
+        }
+
+        .payroll-filters {
+          grid-template-columns: minmax(180px, 1fr) auto auto;
+        }
+
+        .stats-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .actions-row .action-btn {
+          flex: 1 1 180px;
+        }
+      }
+
+      @media (min-width: 1080px) {
+        .stats-grid {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .content-grid {
+          grid-template-columns: minmax(0, 1fr) minmax(340px, 0.88fr);
         }
       }
     </style>
@@ -369,7 +432,7 @@
             <p class="eyebrow">Programme agents</p>
             <h1 class="hero-title">Déclarer, activer et suivre les agents</h1>
             <p class="hero-copy">
-              Cette page sert à nommer des utilisateurs comme agents, à activer leur compte et à suivre rapidement leur budget, leur code promo et leur état opérationnel.
+              Cette page sert à déclarer des utilisateurs comme agents, à activer ensuite leur compte pour créditer le budget agent initial, puis à suivre rapidement leur code promo et leur état opérationnel.
             </p>
             <div id="agentsStatus" class="status-pill"></div>
           </div>
@@ -384,13 +447,6 @@
             <div class="field">
               <label for="agentSearchInput">Rechercher un utilisateur</label>
               <input id="agentSearchInput" type="text" placeholder="uid, email, username ou téléphone" />
-            </div>
-            <div class="field">
-              <label for="agentDesiredStatus">Statut à appliquer</label>
-              <select id="agentDesiredStatus">
-                <option value="active">Actif</option>
-                <option value="inactive">Inactif</option>
-              </select>
             </div>
             <div class="field">
               <label for="agentManualPromoCode">Code promo</label>
@@ -413,12 +469,12 @@
           <article class="neo stat-card">
             <div class="stat-label">Actifs</div>
             <div id="agentsActiveCount" class="stat-value">0</div>
-            <div class="stat-note">Peuvent accéder à leur dashboard</div>
+            <div class="stat-note">Budget agent initial déjà crédité</div>
           </article>
           <article class="neo stat-card">
             <div class="stat-label">Inactifs</div>
             <div id="agentsInactiveCount" class="stat-value">0</div>
-            <div class="stat-note">Déclarés mais non activés</div>
+            <div class="stat-note">Déclarés, dashboard visible, activation en attente</div>
           </article>
           <article class="neo stat-card">
             <div class="stat-label">Budget restant</div>
@@ -472,7 +528,7 @@
             </div>
 
             <h2>Payroll agent</h2>
-            <div class="filters" style="grid-template-columns: minmax(180px, 1fr) auto auto; margin-top:14px;">
+            <div class="filters payroll-filters">
               <div class="field">
                 <label for="agentPayrollMonthInput">Mois cible</label>
                 <input id="agentPayrollMonthInput" type="month" />
