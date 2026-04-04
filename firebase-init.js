@@ -108,6 +108,10 @@ function readRuntimeFirebaseConfig() {
 const dashboardRuntimeConfig = readDashboardRuntimeConfig();
 const firebaseConfig = readRuntimeFirebaseConfig();
 
+function isDashboardAppCheckEnabled() {
+  return dashboardRuntimeConfig?.appCheckEnabled === true;
+}
+
 function resolveRuntimeAuthDomain(defaultAuthDomain) {
   if (typeof window === "undefined") return defaultAuthDomain;
 
@@ -230,6 +234,13 @@ async function bootstrapRemoteAppCheck() {
 }
 
 function initializeAppCheckSafely() {
+  if (!isDashboardAppCheckEnabled()) {
+    if (typeof console !== "undefined") {
+      console.info("[APP_CHECK] désactivé sur le dashboard.");
+    }
+    return;
+  }
+
   if (shouldSkipAppCheckOnCurrentPage()) {
     if (typeof console !== "undefined") {
       console.info("[APP_CHECK] ignoré en environnement local/dev ou handler Firebase Auth.");
