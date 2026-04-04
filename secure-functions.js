@@ -184,6 +184,18 @@ export async function setBotPilotControlSecure(payload = {}) {
   return invokeCallable("setBotPilotControl", payload, "Impossible de mettre a jour le pilotage des bots.");
 }
 
+export async function setDuelBotDifficultySecure(payload = {}) {
+  return invokeCallable("setDuelBotDifficulty", payload, "Impossible de changer le niveau du bot duel.");
+}
+
+export async function getDuelBotPilotSnapshotSecure(payload = {}) {
+  return invokeCallable("getDuelBotPilotSnapshot", payload, "Impossible de charger le pilotage duel.");
+}
+
+export async function setDuelBotPilotControlSecure(payload = {}) {
+  return invokeCallable("setDuelBotPilotControl", payload, "Impossible de mettre a jour le pilotage duel.");
+}
+
 export async function getMorpionPilotSnapshotSecure(payload = {}) {
   return invokeCallable("getMorpionPilotSnapshot", payload, "Impossible de charger le pilotage Morpion.");
 }
