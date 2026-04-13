@@ -124,6 +124,10 @@ export async function getClientAcquisitionSnapshotSecure(payload = {}) {
   return invokeCallable("getClientAcquisitionSnapshot", payload, "Impossible de charger les analytics d'acquisition.");
 }
 
+export async function getDashboardClientScopeSnapshotSecure(payload = {}) {
+  return invokeCallable("getDashboardClientScopeSnapshot", payload, "Impossible de charger la liste clients du dashboard.");
+}
+
 export async function getDepositMethodAnalyticsSnapshotSecure(payload = {}) {
   return invokeCallable("getDepositMethodAnalyticsSnapshot", payload, "Impossible de charger les analytics des depots.");
 }

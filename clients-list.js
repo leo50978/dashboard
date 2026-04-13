@@ -1,5 +1,5 @@
-import { ensureClientsAccess, loadClientRows, computeClientStats, formatDate, formatDoes, formatPrice, formatSignedDoes } from "./clients-data.js";
-import { unfreezeClientAccountSecure } from "./secure-functions.js";
+import { ensureClientsAccess, formatDate, formatDoes, formatPrice, formatSignedDoes } from "./clients-data.js";
+import { getDashboardClientScopeSnapshotSecure, unfreezeClientAccountSecure } from "./secure-functions.js";
 
 const scope = String(window.__CLIENTS_SCOPE || "active").trim().toLowerCase();
 const isFrozenPage = scope === "frozen";
@@ -30,11 +30,26 @@ const emptyEl = document.getElementById("clientsListEmpty");
 const searchInputEl = document.getElementById("clientsSearchInput");
 const searchMetaEl = document.getElementById("clientsSearchMeta");
 const sortSelectEl = document.getElementById("clientsSortSelect");
+const paginationEl = document.getElementById("clientsPagination");
+const loadMoreBtn = document.getElementById("clientsLoadMoreBtn");
 
-let allRows = [];
+let loadedRows = [];
 let currentRows = [];
 let unfreezeKey = "";
 let toastTimer = 0;
+let nextOffset = 0;
+let hasMoreRows = true;
+let loadInFlight = false;
+let loadRequestToken = 0;
+let searchDebounceTimer = 0;
+let queuedRefresh = false;
+let currentStats = {
+  total: 0,
+  totalOrders: 0,
+  totalHtgBalance: 0,
+  totalDoesBalance: 0,
+};
+let currentTotalMatches = 0;
 
 function escapeHtml(value = "") {
   return String(value || "")
@@ -141,30 +156,16 @@ function safeText(value) {
   return String(Number.isFinite(Number(value)) ? Math.trunc(Number(value)) : value ?? "");
 }
 
-function normalizeSearch(value = "") {
-  return String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
+function setLoadMoreState() {
+  if (!paginationEl || !loadMoreBtn) return;
+  const shouldShow = loadedRows.length > 0 && (hasMoreRows || loadInFlight);
+  paginationEl.classList.toggle("hidden", !shouldShow);
+  loadMoreBtn.disabled = loadInFlight || !hasMoreRows;
+  loadMoreBtn.textContent = loadInFlight ? "Chargement..." : "Voir plus";
 }
 
-function filterRows(rows = [], query = "") {
-  const normalizedQuery = normalizeSearch(query);
-  if (!normalizedQuery) return [...rows];
-  return rows.filter((row) => {
-    const haystack = [
-      row.displayName,
-      row.email,
-      row.phone,
-      row.id,
-      row.freezeMode,
-      row.gamePerformance,
-    ]
-      .map((item) => normalizeSearch(item))
-      .join(" ");
-    return haystack.includes(normalizedQuery);
-  });
+function getCurrentQuery() {
+  return String(searchInputEl?.value || "").trim();
 }
 
 function compareDefault(left = {}, right = {}) {
@@ -221,35 +222,92 @@ function sortRows(rows = [], sortKey = "") {
 }
 
 function renderStats(rows = []) {
-  const stats = computeClientStats(rows);
-
-  if (countEl) countEl.textContent = String(stats.total);
-  if (ordersEl) ordersEl.textContent = String(stats.totalOrders);
+  if (countEl) countEl.textContent = String(currentStats.total || 0);
+  if (ordersEl) ordersEl.textContent = String(currentStats.totalOrders || 0);
   if (balanceEl) {
     balanceEl.textContent = scope === "frozen"
-      ? formatPrice(stats.totalHtgBalance)
-      : `${formatPrice(stats.totalHtgBalance)} · ${formatDoes(stats.totalDoesBalance)}`;
+      ? formatPrice(currentStats.totalHtgBalance || 0)
+      : `${formatPrice(currentStats.totalHtgBalance || 0)} · ${formatDoes(currentStats.totalDoesBalance || 0)}`;
   }
 }
 
-function applySearch() {
-  const query = String(searchInputEl?.value || "").trim();
+function renderCurrentRows() {
   const sortKey = String(sortSelectEl?.value || "default").trim().toLowerCase();
-  currentRows = sortRows(filterRows(allRows, query), sortKey);
+  const query = getCurrentQuery();
+  currentRows = sortRows(loadedRows, sortKey);
   if (searchMetaEl) {
     const sortLabel = sortSelectEl?.selectedOptions?.[0]?.textContent?.trim();
-    searchMetaEl.textContent = query
-      ? `${currentRows.length} résultat(s) sur ${allRows.length}${sortLabel ? ` · ${sortLabel}` : ""}`
-      : `${allRows.length} client(s) chargés${sortLabel ? ` · ${sortLabel}` : ""}`;
+    const suffix = sortLabel ? ` · ${sortLabel}` : "";
+    if (query) {
+      searchMetaEl.textContent = hasMoreRows
+        ? `${currentTotalMatches} résultat(s) trouvés pour "${query}"${suffix} · ${currentRows.length} affiché(s)`
+        : `${currentTotalMatches} résultat(s) trouvés pour "${query}"${suffix}`;
+    } else {
+      searchMetaEl.textContent = hasMoreRows
+        ? `${currentStats.total || 0} client(s) sur la page${suffix} · ${currentRows.length} affiché(s)`
+        : `${currentStats.total || 0} client(s) sur la page${suffix}`;
+    }
   }
   renderStats(currentRows);
   renderRows(currentRows);
+  setLoadMoreState();
+}
+
+async function loadRowsPage({ reset = false } = {}) {
+  if (loadInFlight) {
+    if (reset) queuedRefresh = true;
+    return;
+  }
+
+  const requestToken = ++loadRequestToken;
+  if (reset) {
+    loadedRows = [];
+    currentRows = [];
+    nextOffset = 0;
+    hasMoreRows = true;
+    currentTotalMatches = 0;
+    renderCurrentRows();
+  }
+  loadInFlight = true;
+  setLoadMoreState();
+
+  try {
+    const page = await getDashboardClientScopeSnapshotSecure({
+      scope,
+      query: getCurrentQuery(),
+      offset: reset ? 0 : nextOffset,
+      pageSize: 10,
+    });
+
+    if (requestToken !== loadRequestToken) return;
+
+    currentStats = page?.stats && typeof page.stats === "object"
+      ? {
+          total: Number(page.stats.total || 0),
+          totalOrders: Number(page.stats.totalOrders || 0),
+          totalHtgBalance: Number(page.stats.totalHtgBalance || 0),
+          totalDoesBalance: Number(page.stats.totalDoesBalance || 0),
+        }
+      : currentStats;
+    currentTotalMatches = Number(page?.totalMatches || 0);
+    nextOffset = Number(page?.nextOffset || 0);
+    hasMoreRows = page?.hasMore === true;
+    loadedRows = reset ? [...(page?.rows || [])] : [...loadedRows, ...(page?.rows || [])];
+    renderCurrentRows();
+  } finally {
+    if (requestToken === loadRequestToken) {
+      loadInFlight = false;
+      setLoadMoreState();
+    }
+    if (!loadInFlight && queuedRefresh) {
+      queuedRefresh = false;
+      void loadRowsPage({ reset: true });
+    }
+  }
 }
 
 async function refresh() {
-  const rows = await loadClientRows(scope);
-  allRows = rows;
-  applySearch();
+  await loadRowsPage({ reset: true });
 }
 
 async function handleUnfreeze(clientId) {
@@ -285,11 +343,19 @@ listEl?.addEventListener("click", (event) => {
 });
 
 searchInputEl?.addEventListener("input", () => {
-  applySearch();
+  window.clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = window.setTimeout(() => {
+    void refresh();
+  }, 260);
 });
 
 sortSelectEl?.addEventListener("change", () => {
-  applySearch();
+  renderCurrentRows();
+});
+
+loadMoreBtn?.addEventListener("click", () => {
+  if (loadInFlight || !hasMoreRows) return;
+  void loadRowsPage();
 });
 
 async function init() {
