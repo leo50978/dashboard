@@ -28,10 +28,27 @@ function normalizeCallableError(err, fallback = "Erreur serveur") {
 
 async function invokeCallable(name, payload = {}, fallbackError = "Erreur serveur") {
   try {
+    console.info("[DASHBOARD_CALLABLE] start", {
+      name,
+      payload,
+      location: typeof window !== "undefined" ? String(window.location?.href || "") : "",
+    });
     const callable = getCallable(name);
     const res = await callable(payload);
+    console.info("[DASHBOARD_CALLABLE] done", {
+      name,
+      hasData: !!res?.data,
+      keys: res?.data && typeof res.data === "object" ? Object.keys(res.data) : [],
+    });
     return res?.data || null;
   } catch (err) {
+    console.error("[DASHBOARD_CALLABLE] failed", {
+      name,
+      payload,
+      code: err?.code || "",
+      message: err?.message || "",
+      details: err?.details || null,
+    });
     throw normalizeCallableError(err, fallbackError);
   }
 }
@@ -142,6 +159,26 @@ export async function getAgentDepositClientContextSecure(payload = {}) {
 
 export async function creditAgentDepositSecure(payload = {}) {
   return invokeCallable("creditAgentDepositSecure", payload, "Impossible de crediter le compte client.");
+}
+
+export async function adminSetClientPasswordSecure(payload = {}) {
+  return invokeCallable("adminSetClientPasswordSecure", payload, "Impossible de reinitialiser le mot de passe du client.");
+}
+
+export async function getDashboardDeletionReviewSnapshotSecure(payload = {}) {
+  return invokeCallable("getDashboardDeletionReviewSnapshotSecure", payload, "Impossible de charger la revue des comptes a supprimer.");
+}
+
+export async function setClientDeletionReviewStatusSecure(payload = {}) {
+  return invokeCallable("setClientDeletionReviewStatusSecure", payload, "Impossible de mettre a jour le statut de suppression.");
+}
+
+export async function archiveClientAccountSecure(payload = {}) {
+  return invokeCallable("archiveClientAccountSecure", payload, "Impossible d'archiver ce compte.");
+}
+
+export async function deleteClientAccountSecure(payload = {}) {
+  return invokeCallable("deleteClientAccountSecure", payload, "Impossible de supprimer ce compte.");
 }
 
 export async function markChatSeenSecure(payload = {}) {

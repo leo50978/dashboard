@@ -272,11 +272,27 @@ async function loadRowsPage({ reset = false } = {}) {
   setLoadMoreState();
 
   try {
+    console.info("[CLIENTS_LIST] loadRowsPage:start", {
+      scope,
+      reset,
+      query: getCurrentQuery(),
+      offset: reset ? 0 : nextOffset,
+      pageSize: 10,
+    });
     const page = await getDashboardClientScopeSnapshotSecure({
       scope,
       query: getCurrentQuery(),
       offset: reset ? 0 : nextOffset,
       pageSize: 10,
+    });
+    console.info("[CLIENTS_LIST] loadRowsPage:done", {
+      scope,
+      reset,
+      receivedRows: Array.isArray(page?.rows) ? page.rows.length : 0,
+      totalMatches: Number(page?.totalMatches || 0),
+      nextOffset: Number(page?.nextOffset || 0),
+      hasMore: page?.hasMore === true,
+      stats: page?.stats || null,
     });
 
     if (requestToken !== loadRequestToken) return;
@@ -294,6 +310,17 @@ async function loadRowsPage({ reset = false } = {}) {
     hasMoreRows = page?.hasMore === true;
     loadedRows = reset ? [...(page?.rows || [])] : [...loadedRows, ...(page?.rows || [])];
     renderCurrentRows();
+  } catch (error) {
+    console.error("[CLIENTS_LIST] loadRowsPage:failed", {
+      scope,
+      reset,
+      query: getCurrentQuery(),
+      offset: reset ? 0 : nextOffset,
+      code: error?.code || "",
+      message: error?.message || "",
+      details: error?.details || null,
+    });
+    throw error;
   } finally {
     if (requestToken === loadRequestToken) {
       loadInFlight = false;

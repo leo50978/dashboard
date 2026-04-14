@@ -12,6 +12,8 @@
     { href: "./index.html", label: "Accueil", key: "index.html" },
     { href: "./Dpayment.html", label: "Paiements", key: "dpayment.html" },
     { href: "./Dagentdeposit.html", label: "Depot agent", key: "dagentdeposit.html" },
+    { href: "./Dpassword-recovery.html", label: "Password reset", key: "dpassword-recovery.html" },
+    { href: "./Dclients-deletion-review.html", label: "Suppression comptes", key: "dclients-deletion-review.html" },
     { href: "./Ddepositflow.html", label: "Flux depots", key: "ddepositflow.html" },
     { href: "./pilotagebot.html", label: "Pilotage bots", key: "pilotagebot.html" },
     { href: "./pilotagebot-morpion.html", label: "File Morpion", key: "pilotagebot-morpion.html" },

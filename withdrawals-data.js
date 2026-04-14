@@ -1,4 +1,16 @@
-import { collection, db, deleteDoc, doc, getDocs, updateDoc } from "./firebase-init.js";
+import {
+  collection,
+  collectionGroup,
+  db,
+  deleteDoc,
+  doc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  updateDoc,
+  where,
+} from "./firebase-init.js";
 import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js";
 
 export const WITHDRAWAL_STATUS_META = {
@@ -104,14 +116,30 @@ export async function loadClientWithdrawals(clientId = "") {
 
 export async function loadWithdrawals(status = "all") {
   const normalizedStatus = String(status || "all").trim().toLowerCase();
-  const clientsSnapshot = await getDocs(collection(db, "clients"));
-  const clientIds = clientsSnapshot.docs.map((docSnap) => docSnap.id).filter(Boolean);
-  const perClient = await Promise.all(clientIds.map((clientId) => loadClientWithdrawals(clientId)));
+  const normalizedFilter = normalizedStatus === "all" ? "all" : normalizeStatus(normalizedStatus);
+  const baseRef = collectionGroup(db, "withdrawals");
+  const constraints = [];
+  if (normalizedFilter !== "all") {
+    constraints.push(where("status", "==", normalizedFilter));
+  }
+  constraints.push(orderBy("createdAt", "desc"));
+  constraints.push(limit(200));
 
-  return perClient
-    .flat()
-    .filter((item) => normalizedStatus === "all" || item.status === normalizedStatus)
-    .sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
+  try {
+    const snap = await getDocs(query(baseRef, ...constraints));
+    return snap.docs.map(normalizeWithdrawal);
+  } catch (error) {
+    console.warn("[WITHDRAWALS_DATA] fallback sans orderBy pour withdrawals", error);
+    const fallbackConstraints = [];
+    if (normalizedFilter !== "all") {
+      fallbackConstraints.push(where("status", "==", normalizedFilter));
+    }
+    fallbackConstraints.push(limit(200));
+    const snap = await getDocs(query(baseRef, ...fallbackConstraints));
+    return snap.docs
+      .map(normalizeWithdrawal)
+      .sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
+  }
 }
 
 export function computeWithdrawalStats(withdrawals = []) {
