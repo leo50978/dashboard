@@ -20,6 +20,8 @@
     { href: "./Dacquisition.html", label: "Acquisition", key: "dacquisition.html" },
     { href: "./sondage.html", label: "Sondages", key: "sondage.html" },
     { href: "./Danalytics.html", label: "Analytics", key: "danalytics.html" },
+    { href: "./Dsite-visits.html", label: "Visites site", key: "dsite-visits.html" },
+    { href: "./Dgames-volume.html", label: "Volume jeux", key: "dgames-volume.html" },
     { href: "./Dduel.html", label: "Duel 2 joueurs", key: "dduel.html" },
     { href: "./Dmorpion.html", label: "Morpion 5", key: "dmorpion.html" },
     { href: "./Dmorpion-tendance.html", label: "Tendance Morpion", key: "dmorpion-tendance.html" },

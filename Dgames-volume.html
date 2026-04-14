@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="shortcut icon" href="./favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <link rel="manifest" href="./site.webmanifest" />
+    <script src="./runtime-config.js"></script>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://cdn.jsdelivr.net https://www.google.com https://www.recaptcha.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://www.gstatic.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https: blob:; media-src 'self' data: https: blob:; connect-src 'self' data: blob: https://*.googleapis.com https://apis.google.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseinstallations.googleapis.com https://content-firebaseappcheck.googleapis.com https://www.gstatic.com https://www.google.com https://accounts.google.com https://does-2c234.firebaseapp.com https://does-2c234.web.app https://www.recaptcha.net https://us-central1-does-2c234.cloudfunctions.net https://*.cloudfunctions.net https://firebasestorage.googleapis.com https://storage.googleapis.com https://cdn.jsdelivr.net; frame-src https://www.google.com https://accounts.google.com https://apis.google.com https://www.gstatic.com https://does-2c234.firebaseapp.com https://does-2c234.web.app https://www.recaptcha.net; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; block-all-mixed-content;"
+    />
+    <title>Dominoes Lakay - Volume des parties</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Sora:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-0: #050816;
+        --bg-1: #0a1024;
+        --bg-2: #121a33;
+        --panel: rgba(13, 22, 44, 0.68);
+        --panel-soft: rgba(255, 255, 255, 0.04);
+        --line: rgba(163, 184, 255, 0.14);
+        --line-strong: rgba(163, 184, 255, 0.24);
+        --text: #edf2ff;
+        --muted: #95a4cb;
+        --accent: #68d7ff;
+        --accent-2: #7c5cff;
+        --accent-3: #ff9c5f;
+        --good: #4be7b8;
+        --bad: #ff7d8d;
+        --shadow-hard: 16px 16px 40px rgba(2, 7, 22, 0.78);
+        --shadow-soft: -12px -12px 28px rgba(49, 67, 122, 0.14);
+        --shadow-inset: inset 7px 7px 18px rgba(4, 9, 23, 0.76), inset -8px -8px 20px rgba(36, 48, 92, 0.24);
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        background:
+          radial-gradient(circle at top right, rgba(124, 92, 255, 0.14), transparent 28%),
+          radial-gradient(circle at 15% 20%, rgba(104, 215, 255, 0.12), transparent 32%),
+          radial-gradient(circle at bottom left, rgba(255, 156, 95, 0.12), transparent 30%),
+          linear-gradient(160deg, var(--bg-0) 0%, var(--bg-1) 46%, var(--bg-2) 100%);
+        color: var(--text);
+        font-family: "Space Grotesk", sans-serif;
+      }
+      body::before,
+      body::after {
+        content: "";
+        position: fixed;
+        border-radius: 999px;
+        pointer-events: none;
+        filter: blur(22px);
+        z-index: 0;
+      }
+      body::before {
+        width: 18rem;
+        height: 18rem;
+        top: -5rem;
+        right: -5rem;
+        background: rgba(104, 215, 255, 0.12);
+      }
+      body::after {
+        width: 24rem;
+        height: 24rem;
+        left: -8rem;
+        bottom: -8rem;
+        background: rgba(124, 92, 255, 0.14);
+      }
+      .page { position: relative; z-index: 1; min-height: 100vh; padding: 20px; }
+      .shell { max-width: 1500px; margin: 0 auto; }
+      .glass, .neo {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        box-shadow: var(--shadow-hard), var(--shadow-soft);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+      }
+      .neo {
+        background: linear-gradient(180deg, rgba(18, 28, 57, 0.82), rgba(8, 15, 34, 0.82));
+        box-shadow: var(--shadow-hard), var(--shadow-soft), var(--shadow-inset);
+      }
+      .topbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 16px;
+        align-items: center;
+        padding: 20px 22px;
+        border-radius: 28px;
+      }
+      .eyebrow {
+        margin: 0;
+        font-size: 0.72rem;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--accent);
+        font-weight: 700;
+      }
+      .hero-title {
+        margin: 10px 0 0;
+        font-family: "Sora", sans-serif;
+        font-size: clamp(1.8rem, 3vw, 3rem);
+        line-height: 1.02;
+        font-weight: 800;
+      }
+      .hero-copy {
+        margin: 10px 0 0;
+        max-width: 74ch;
+        color: var(--muted);
+        line-height: 1.55;
+        font-size: 0.98rem;
+      }
+      .top-actions {
+        display: grid;
+        gap: 10px;
+        justify-items: end;
+      }
+      .nav-links {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .link-chip, .action-btn {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        text-decoration: none;
+        color: var(--text);
+        background: var(--panel-soft);
+        padding: 11px 14px;
+        font: inherit;
+        cursor: pointer;
+        transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+      }
+      .link-chip:hover, .action-btn:hover {
+        transform: translateY(-1px);
+        border-color: var(--line-strong);
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .action-btn.primary {
+        background: linear-gradient(135deg, rgba(104, 215, 255, 0.2), rgba(124, 92, 255, 0.22));
+      }
+      .status-pill {
+        min-height: 1.2rem;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .status-pill[data-tone="error"] { color: var(--bad); }
+      .status-pill[data-tone="success"] { color: var(--good); }
+      .section { margin-top: 18px; border-radius: 26px; padding: 18px; }
+      .filters {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        align-items: end;
+      }
+      .field { display: grid; gap: 8px; }
+      .field label {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .field input, .field select {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(7, 14, 31, 0.78);
+        color: var(--text);
+        padding: 12px 14px;
+        font: inherit;
+        outline: none;
+        box-shadow: var(--shadow-inset);
+      }
+      .runtime-strip {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 14px;
+        align-items: center;
+        padding: 14px 16px;
+        border-radius: 20px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .runtime-copy { display: grid; gap: 6px; }
+      .runtime-title {
+        margin: 0;
+        font-size: 0.84rem;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .runtime-note { margin: 0; color: var(--muted); font-size: 0.9rem; line-height: 1.45; }
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+      }
+      .kpi { border-radius: 22px; padding: 18px; }
+      .kpi-label {
+        margin: 0;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--muted);
+      }
+      .kpi-value {
+        margin: 12px 0 0;
+        font-family: "Sora", sans-serif;
+        font-size: clamp(1.8rem, 3vw, 2.5rem);
+      }
+      .kpi-note { margin: 12px 0 0; color: var(--muted); line-height: 1.45; font-size: 0.92rem; }
+      .mini-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+      .mini-card { border-radius: 22px; padding: 18px; }
+      .mini-label {
+        margin: 0;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        font-size: 0.75rem;
+      }
+      .mini-value {
+        margin: 10px 0 0;
+        font-size: 1.4rem;
+        font-weight: 700;
+      }
+      .chart-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+        gap: 16px;
+      }
+      .chart-card { border-radius: 24px; padding: 18px; }
+      .chart-title {
+        margin: 0;
+        font-size: 1.02rem;
+        font-family: "Sora", sans-serif;
+      }
+      .chart-copy {
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.45;
+        font-size: 0.92rem;
+      }
+      .chart-wrap {
+        position: relative;
+        margin-top: 18px;
+        min-height: 280px;
+      }
+      @media (max-width: 1100px) {
+        .filters, .kpi-grid, .mini-grid, .chart-grid { grid-template-columns: 1fr; }
+        .topbar { grid-template-columns: 1fr; }
+        .top-actions { justify-items: stretch; }
+        .nav-links { justify-content: flex-start; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <div class="shell">
+        <section class="glass topbar">
+          <div>
+            <p class="eyebrow">Analytics parties</p>
+            <h1 class="hero-title">Volume des parties jouées</h1>
+            <p class="hero-copy">
+              Vue consolidée du nombre total de parties terminées sur Domino classique, Duel 2 joueurs et Morpion 5.
+            </p>
+          </div>
+          <div class="top-actions">
+            <div class="nav-links">
+              <a class="link-chip" href="./index.html">Accueil</a>
+              <a class="link-chip" href="./Danalytics.html">Analytics présence</a>
+            </div>
+            <button class="action-btn primary" id="gamesVolumeRefreshBtn" type="button">Actualiser</button>
+            <div class="status-pill" id="gamesVolumeStatus" data-tone="neutral"></div>
+          </div>
+        </section>
+
+        <section class="neo section">
+          <div class="filters">
+            <div class="field">
+              <label for="gamesVolumeWindow">Période</label>
+              <select id="gamesVolumeWindow">
+                <option value="today">Aujourd'hui</option>
+                <option value="7d">7 derniers jours</option>
+                <option value="30d">30 derniers jours</option>
+                <option value="custom">Personnalisée</option>
+                <option value="global">Historique complet</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="gamesVolumeDateFrom">Du</label>
+              <input id="gamesVolumeDateFrom" type="date" />
+            </div>
+            <div class="field">
+              <label for="gamesVolumeDateTo">Au</label>
+              <input id="gamesVolumeDateTo" type="date" />
+            </div>
+            <div class="field">
+              <label>Etat</label>
+              <div class="runtime-note">Chargement initial sur aujourd'hui pour limiter les lectures inutiles.</div>
+            </div>
+          </div>
+
+          <div class="runtime-strip">
+            <div class="runtime-copy">
+              <p class="runtime-title" id="gamesVolumeCoverage">Couverture: --</p>
+              <p class="runtime-note" id="gamesVolumeGeneratedAt">Dernier snapshot: --</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section kpi-grid">
+          <article class="neo kpi">
+            <p class="kpi-label">Total parties</p>
+            <p class="kpi-value" id="gamesVolumeTotal">--</p>
+            <p class="kpi-note" id="gamesVolumeTotalNote">--</p>
+          </article>
+          <article class="neo kpi">
+            <p class="kpi-label">Domino classique</p>
+            <p class="kpi-value" id="gamesVolumeClassic">--</p>
+            <p class="kpi-note" id="gamesVolumeClassicNote">--</p>
+          </article>
+          <article class="neo kpi">
+            <p class="kpi-label">Duel 2 joueurs</p>
+            <p class="kpi-value" id="gamesVolumeDuel">--</p>
+            <p class="kpi-note" id="gamesVolumeDuelNote">--</p>
+          </article>
+          <article class="neo kpi">
+            <p class="kpi-label">Morpion 5</p>
+            <p class="kpi-value" id="gamesVolumeMorpion">--</p>
+            <p class="kpi-note" id="gamesVolumeMorpionNote">--</p>
+          </article>
+        </section>
+
+        <section class="section mini-grid">
+          <article class="neo mini-card">
+            <p class="mini-label">Moyenne par point</p>
+            <p class="mini-value" id="gamesVolumeAvg">--</p>
+          </article>
+          <article class="neo mini-card">
+            <p class="mini-label">Pic période</p>
+            <p class="mini-value" id="gamesVolumePeak">--</p>
+          </article>
+          <article class="neo mini-card">
+            <p class="mini-label">Moment fort</p>
+            <p class="mini-value" id="gamesVolumePeakLabel">--</p>
+            <p class="kpi-note" id="gamesVolumeBotMix" style="margin:10px 0 0;">--</p>
+          </article>
+        </section>
+
+        <section class="section chart-grid">
+          <article class="neo chart-card">
+            <h2 class="chart-title">Courbe des parties</h2>
+            <p class="chart-copy">Le volume suit les parties terminées sur chaque jeu, avec une lecture totale par point de temps.</p>
+            <div class="chart-wrap">
+              <canvas id="gamesVolumeTrendChart"></canvas>
+            </div>
+          </article>
+          <article class="neo chart-card">
+            <h2 class="chart-title">Répartition par jeu</h2>
+            <p class="chart-copy">Vue immédiate du poids de chaque jeu dans le trafic réel de parties terminées.</p>
+            <div class="chart-wrap">
+              <canvas id="gamesVolumeMixChart"></canvas>
+            </div>
+          </article>
+        </section>
+
+        <section class="section">
+          <article class="neo chart-card">
+            <h2 class="chart-title">Comparatif direct</h2>
+            <p class="chart-copy">Barres simples pour comparer les volumes de parties entre les jeux du site sur la période choisie.</p>
+            <div class="chart-wrap">
+              <canvas id="gamesVolumeCompareChart"></canvas>
+            </div>
+          </article>
+        </section>
+      </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script type="module" src="./dashboard-nav-bubble.js"></script>
+    <script type="module" src="./Dgames-volume.js"></script>
+  </body>
+</html>
