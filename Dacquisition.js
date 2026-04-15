@@ -168,7 +168,7 @@ function renderSummary(snapshot = null) {
   dom.totalAccountsCopy.textContent = `${formatInt(summary.accountsBeforeWindow)} comptes existaient déjà avant cette fenêtre.`;
 
   dom.signupsValue.textContent = formatInt(summary.signupsCount);
-  dom.signupsCopy.textContent = `${formatInt(summary.welcomeBonusSignupsCount)} ont déjà pris le bonus bienvenue sur cette cohorte.`;
+  dom.signupsCopy.textContent = `${formatInt(summary.welcomeBonusSignupsCount)} avaient déjà pris l'ancien bonus bienvenue sur cette cohorte.`;
 
   dom.realClientsValue.textContent = formatInt(summary.realClients);
   dom.realClientsCopy.textContent = `${formatPercent(summary.realClientRatePct)} de toute la base a déjà déposé au moins une fois.`;
