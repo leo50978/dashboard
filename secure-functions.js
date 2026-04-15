@@ -133,6 +133,10 @@ export async function getGamesVolumeAnalyticsSnapshotSecure(payload = {}) {
   return invokeCallable("getGamesVolumeAnalyticsSnapshot", payload, "Impossible de charger les analytics des parties.");
 }
 
+export async function getAiAdvisorSnapshotSecure(payload = {}) {
+  return invokeCallable("getAiAdvisorSnapshot", payload, "Impossible de charger le rapport IA.");
+}
+
 export async function getDuelAnalyticsSnapshotSecure(payload = {}) {
   return invokeCallable("getDuelAnalyticsSnapshot", payload, "Impossible de charger les analytics duel.");
 }

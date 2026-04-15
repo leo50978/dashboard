@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="./runtime-config.js"></script>
+    <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="shortcut icon" href="./favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <link rel="manifest" href="./site.webmanifest" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://www.gstatic.com https://www.google.com https://www.recaptcha.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://www.gstatic.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https: blob:; connect-src 'self' data: blob: https://*.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseinstallations.googleapis.com https://content-firebaseappcheck.googleapis.com https://www.gstatic.com https://www.google.com https://www.recaptcha.net https://us-central1-does-2c234.cloudfunctions.net https://*.cloudfunctions.net https://firebasestorage.googleapis.com https://storage.googleapis.com; frame-src https://www.google.com https://www.gstatic.com https://www.recaptcha.net; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; block-all-mixed-content;"
+    />
+    <title>Conseiller IA · Dominoes Lakay</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg-0: #060a16;
+        --bg-1: #0b1324;
+        --bg-2: #14203c;
+        --panel: rgba(12, 22, 42, 0.76);
+        --line: rgba(148, 163, 184, 0.16);
+        --text: #eff5ff;
+        --muted: #98add3;
+        --accent: #40c4ff;
+        --accent-2: #7c5cff;
+        --accent-3: #ff9c5f;
+        --good: #4be7b8;
+        --warn: #ffcf5c;
+        --bad: #ff7d8d;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Space Grotesk", "Sora", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(64, 196, 255, 0.18), transparent 28%),
+          radial-gradient(circle at top right, rgba(124, 92, 255, 0.18), transparent 24%),
+          linear-gradient(160deg, var(--bg-0) 0%, var(--bg-1) 48%, var(--bg-2) 100%);
+      }
+
+      .shell {
+        width: min(1260px, calc(100% - 28px));
+        margin: 0 auto;
+        padding: 34px 0 48px;
+      }
+
+      .hero,
+      .section-card,
+      .metric-card,
+      .score-card,
+      .pill-card,
+      .prompt-card {
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background: var(--panel);
+        box-shadow: 0 28px 64px rgba(4, 10, 24, 0.34);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.25fr 0.75fr;
+        gap: 22px;
+        padding: 28px;
+      }
+
+      .eyebrow {
+        margin: 0 0 12px;
+        color: #8fdcff;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2.2rem, 4vw, 3.85rem);
+        line-height: 0.98;
+        font-weight: 800;
+      }
+
+      .hero-copy {
+        margin: 18px 0 0;
+        max-width: 52rem;
+        color: var(--muted);
+        line-height: 1.8;
+      }
+
+      .hero-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 22px;
+      }
+
+      .hero-badge {
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        padding: 10px 14px;
+        background: rgba(255, 255, 255, 0.05);
+        color: #dbeafe;
+        font-size: 0.84rem;
+      }
+
+      .section-card {
+        padding: 22px;
+      }
+
+      .control-grid,
+      .score-grid,
+      .metrics-grid,
+      .signal-grid {
+        display: grid;
+        gap: 18px;
+      }
+
+      .control-grid {
+        grid-template-columns: 1.2fr auto auto;
+        align-items: end;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #dbeafe;
+      }
+
+      select,
+      textarea {
+        width: 100%;
+        border-radius: 18px;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text);
+        font: inherit;
+      }
+
+      select {
+        padding: 14px 16px;
+      }
+
+      textarea {
+        min-height: 420px;
+        padding: 18px;
+        line-height: 1.7;
+        resize: vertical;
+      }
+
+      .action-btn {
+        border: none;
+        border-radius: 999px;
+        padding: 14px 18px;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+        transition: transform 160ms ease, opacity 160ms ease, background 160ms ease;
+      }
+
+      .action-btn:hover { transform: translateY(-1px); }
+      .action-btn:disabled { cursor: default; opacity: 0.68; transform: none; }
+
+      .action-btn.primary {
+        color: #081120;
+        background: linear-gradient(135deg, #40c4ff 0%, #9ce4ff 100%);
+        box-shadow: 0 18px 36px rgba(64, 196, 255, 0.22);
+      }
+
+      .action-btn.secondary {
+        color: #f4f8ff;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+      }
+
+      .status-pill {
+        margin-top: 14px;
+        min-height: 44px;
+        border-radius: 18px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        color: #dbeafe;
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .status-pill[data-tone="success"] {
+        border-color: rgba(75, 231, 184, 0.28);
+        background: rgba(75, 231, 184, 0.1);
+        color: #caffea;
+      }
+
+      .status-pill[data-tone="error"] {
+        border-color: rgba(255, 125, 141, 0.28);
+        background: rgba(255, 125, 141, 0.1);
+        color: #ffd0d7;
+      }
+
+      .status-pill[data-tone="warning"] {
+        border-color: rgba(255, 207, 92, 0.28);
+        background: rgba(255, 207, 92, 0.1);
+        color: #fff1be;
+      }
+
+      .section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 16px;
+        margin: 26px 0 16px;
+      }
+
+      .section-head h2,
+      .prompt-head h2 {
+        margin: 0;
+        font-size: 1.28rem;
+      }
+
+      .section-head p,
+      .prompt-head p,
+      .section-copy {
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+
+      .score-grid {
+        grid-template-columns: minmax(260px, 0.72fr) minmax(0, 1.28fr);
+      }
+
+      .score-card {
+        padding: 24px;
+        display: grid;
+        align-content: start;
+        gap: 14px;
+      }
+
+      .score-orb {
+        width: 148px;
+        height: 148px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        margin-top: 6px;
+        background:
+          radial-gradient(circle at 30% 30%, rgba(255,255,255,0.18), transparent 36%),
+          conic-gradient(from 180deg, rgba(64,196,255,0.2), rgba(124,92,255,0.72), rgba(75,231,184,0.65), rgba(64,196,255,0.2));
+        box-shadow: inset 0 0 0 10px rgba(6, 10, 22, 0.5), 0 18px 40px rgba(6, 10, 24, 0.28);
+      }
+
+      .score-orb span {
+        font-size: 2.6rem;
+        font-weight: 800;
+      }
+
+      .level-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 999px;
+        padding: 9px 14px;
+        width: fit-content;
+        font-size: 0.84rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .level-chip.good { background: rgba(75, 231, 184, 0.12); color: #baf8df; }
+      .level-chip.watch { background: rgba(255, 207, 92, 0.12); color: #fff0c2; }
+      .level-chip.warning { background: rgba(255, 156, 95, 0.12); color: #ffd9be; }
+      .level-chip.critical { background: rgba(255, 125, 141, 0.12); color: #ffd1d8; }
+
+      .pill-card {
+        padding: 20px;
+      }
+
+      .pill-grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .dimension-row {
+        display: grid;
+        gap: 8px;
+      }
+
+      .dimension-labels {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 0.94rem;
+      }
+
+      .dimension-track {
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.07);
+        overflow: hidden;
+      }
+
+      .dimension-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #40c4ff 0%, #7c5cff 55%, #4be7b8 100%);
+      }
+
+      .signal-grid,
+      .metrics-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .metric-card {
+        padding: 20px;
+      }
+
+      .metric-label {
+        margin: 0;
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: #8fdcff;
+      }
+
+      .metric-value {
+        margin: 12px 0 6px;
+        font-size: clamp(1.9rem, 2.6vw, 2.5rem);
+        font-weight: 800;
+      }
+
+      .metric-note {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+
+      .signal-list {
+        margin: 14px 0 0;
+        padding-left: 18px;
+        color: var(--muted);
+        line-height: 1.8;
+      }
+
+      .signal-list li + li {
+        margin-top: 8px;
+      }
+
+      .signal-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 800;
+      }
+
+      .signal-title.good { color: #baf8df; }
+      .signal-title.warn { color: #fff0c2; }
+      .signal-title.bad { color: #ffd1d8; }
+
+      .prompt-card {
+        padding: 22px;
+      }
+
+      .prompt-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+
+      .prompt-meta {
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .empty-state {
+        border-radius: 22px;
+        border: 1px dashed rgba(148, 163, 184, 0.22);
+        padding: 22px;
+        color: var(--muted);
+        line-height: 1.7;
+        background: rgba(255,255,255,0.03);
+      }
+
+      @media (max-width: 1080px) {
+        .hero,
+        .score-grid,
+        .signal-grid,
+        .metrics-grid,
+        .control-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Strategie & pilotage</p>
+          <h1>Conseiller IA du site</h1>
+          <p class="hero-copy">
+            Cette page rassemble les chiffres utiles du site dans un seul rapport lisible, puis génère un prompt prêt à envoyer à ChatGPT.
+            Le but est de recevoir des conseils concrets sur quoi améliorer, quoi ajouter, quoi retirer, quoi surveiller et quelles décisions prendre.
+          </p>
+          <div class="hero-badges">
+            <span class="hero-badge">Prompt quotidien</span>
+            <span class="hero-badge">Prompt global recent</span>
+            <span class="hero-badge">Score santé</span>
+            <span class="hero-badge">Aucun chargement tant que tu ne cliques pas</span>
+          </div>
+        </div>
+        <div class="section-card">
+          <p class="metric-label">Pourquoi cette page</p>
+          <p class="section-copy">
+            Elle évite d’ouvrir plusieurs dashboards puis de résumer tout à la main. Le bouton génère une base propre avec les chiffres utiles,
+            un niveau de santé du site et un prompt qui force ChatGPT à raisonner comme un analyste data, produit, croissance et opérations.
+          </p>
+          <div class="status-pill" id="aiAdvisorStatus" data-tone="neutral">
+            Aucune lecture Firebase n'est lancée tant que tu ne génères pas un rapport.
+          </div>
+        </div>
+      </section>
+
+      <section class="section-head">
+        <div>
+          <h2>Génération du rapport</h2>
+          <p>Choisis le type d’analyse puis génère un prompt prêt à copier.</p>
+        </div>
+      </section>
+
+      <section class="section-card">
+        <div class="control-grid">
+          <div>
+            <label for="aiAdvisorReportType">Type de prompt</label>
+            <select id="aiAdvisorReportType">
+              <option value="daily">Quotidien</option>
+              <option value="global">Global récent</option>
+            </select>
+          </div>
+          <button class="action-btn primary" id="aiAdvisorGenerateBtn" type="button">Generer le prompt</button>
+          <button class="action-btn secondary" id="aiAdvisorCopyBtn" type="button" disabled>Copier le prompt</button>
+        </div>
+      </section>
+
+      <section class="section-head">
+        <div>
+          <h2>Santé du site</h2>
+          <p>Lecture rapide pour savoir si le site est malade, amateur, moyen ou avancé.</p>
+        </div>
+        <div class="prompt-meta" id="aiAdvisorGeneratedAt">Dernier rapport: --</div>
+      </section>
+
+      <section class="score-grid">
+        <article class="score-card">
+          <p class="metric-label">Score global</p>
+          <div class="score-orb"><span id="aiAdvisorHealthScore">--</span></div>
+          <div class="level-chip watch" id="aiAdvisorHealthLevel">En attente</div>
+          <p class="metric-note" id="aiAdvisorHealthCopy">
+            Clique sur “Generer le prompt” pour calculer le niveau de santé du site à partir des analytics.
+          </p>
+        </article>
+
+        <article class="pill-card">
+          <p class="metric-label">Dimensions</p>
+          <div class="pill-grid" id="aiAdvisorDimensions">
+            <div class="empty-state">Les dimensions trafic, engagement, monetisation, retention et operations apparaitront ici.</div>
+          </div>
+        </article>
+      </section>
+
+      <section class="section-head">
+        <div>
+          <h2>Signaux</h2>
+          <p>Les points forts, les alertes et les priorités d’action extraits du snapshot.</p>
+        </div>
+      </section>
+
+      <section class="signal-grid">
+        <article class="metric-card">
+          <p class="signal-title good">Points forts</p>
+          <ul class="signal-list" id="aiAdvisorStrengths">
+            <li>Le rapport n’a pas encore été généré.</li>
+          </ul>
+        </article>
+        <article class="metric-card">
+          <p class="signal-title bad">Alertes</p>
+          <ul class="signal-list" id="aiAdvisorAlerts">
+            <li>Le rapport n’a pas encore été généré.</li>
+          </ul>
+        </article>
+        <article class="metric-card">
+          <p class="signal-title warn">Priorités</p>
+          <ul class="signal-list" id="aiAdvisorPriorities">
+            <li>Le rapport n’a pas encore été généré.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="section-head">
+        <div>
+          <h2>Chiffres utiles</h2>
+          <p>Vue synthétique de ce que le prompt va envoyer à ChatGPT.</p>
+        </div>
+      </section>
+
+      <section class="metrics-grid" id="aiAdvisorMetrics">
+        <article class="metric-card">
+          <p class="metric-label">Trafic</p>
+          <p class="metric-value">--</p>
+          <p class="metric-note">Le trafic utile apparaitra ici.</p>
+        </article>
+        <article class="metric-card">
+          <p class="metric-label">Jeux</p>
+          <p class="metric-value">--</p>
+          <p class="metric-note">Le volume de parties apparaitra ici.</p>
+        </article>
+        <article class="metric-card">
+          <p class="metric-label">Business</p>
+          <p class="metric-value">--</p>
+          <p class="metric-note">Les indicateurs depots / acquisition apparaitront ici.</p>
+        </article>
+      </section>
+
+      <section class="section-head">
+        <div>
+          <h2>Prompt prêt à copier</h2>
+          <p>Le texte ci-dessous est conçu pour pousser ChatGPT à agir comme analyste data, produit, croissance et opérations.</p>
+        </div>
+      </section>
+
+      <section class="prompt-card">
+        <div class="prompt-head">
+          <div>
+            <h2>Prompt IA</h2>
+            <p>Tu peux le coller directement dans ChatGPT.</p>
+          </div>
+          <div class="prompt-meta" id="aiAdvisorPromptMeta">Aucun prompt généré</div>
+        </div>
+        <textarea id="aiAdvisorPromptOutput" readonly spellcheck="false" placeholder="Le prompt apparaitra ici apres generation."></textarea>
+      </section>
+    </main>
+
+    <script type="module" src="./dashboard-nav-bubble.js"></script>
+    <script type="module" src="./Dai-advisor.js"></script>
+  </body>
+</html>
