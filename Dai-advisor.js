@@ -4,6 +4,8 @@ import { getAiAdvisorSnapshotSecure } from "./secure-functions.js";
 const dom = {
   status: document.getElementById("aiAdvisorStatus"),
   reportType: document.getElementById("aiAdvisorReportType"),
+  dateFrom: document.getElementById("aiAdvisorDateFrom"),
+  dateTo: document.getElementById("aiAdvisorDateTo"),
   generateBtn: document.getElementById("aiAdvisorGenerateBtn"),
   copyBtn: document.getElementById("aiAdvisorCopyBtn"),
   generatedAt: document.getElementById("aiAdvisorGeneratedAt"),
@@ -52,10 +54,86 @@ function formatDateTime(ms) {
   });
 }
 
+function formatDateOnly(ms) {
+  const safeMs = safeInt(ms);
+  if (!safeMs) return "--";
+  return new Date(safeMs).toLocaleDateString("fr-FR", {
+    dateStyle: "medium",
+  });
+}
+
 function reportTypeLabel(reportType = "daily") {
   return String(reportType || "").trim().toLowerCase() === "global"
     ? "Global recent"
     : "Quotidien";
+}
+
+function parseInputDateStartMs(rawValue = "") {
+  const value = String(rawValue || "").trim();
+  if (!value) return 0;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return NaN;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  return new Date(year, month - 1, day, 0, 0, 0, 0).getTime();
+}
+
+function parseInputDateEndMs(rawValue = "") {
+  const value = String(rawValue || "").trim();
+  if (!value) return 0;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return NaN;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  return new Date(year, month - 1, day, 23, 59, 59, 999).getTime();
+}
+
+function resolveRequestedRange() {
+  const startRaw = String(dom.dateFrom?.value || "").trim();
+  const endRaw = String(dom.dateTo?.value || "").trim();
+  if (!startRaw && !endRaw) {
+    return { ok: true, hasRange: false, startMs: 0, endMs: 0, label: "" };
+  }
+  if (!startRaw || !endRaw) {
+    return {
+      ok: false,
+      message: "Choisis une date de debut et une date de fin pour utiliser le filtre de periode.",
+    };
+  }
+
+  const startMs = parseInputDateStartMs(startRaw);
+  const endMs = parseInputDateEndMs(endRaw);
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || startMs <= 0 || endMs <= 0) {
+    return { ok: false, message: "Les dates saisies sont invalides." };
+  }
+  if (startMs > endMs) {
+    return { ok: false, message: "La date de debut doit etre inferieure ou egale a la date de fin." };
+  }
+
+  const maxRangeMs = 180 * 24 * 60 * 60 * 1000;
+  if ((endMs - startMs) > maxRangeMs) {
+    return { ok: false, message: "La periode est trop large. Choisis maximum 180 jours pour garder un rapport rapide." };
+  }
+
+  return {
+    ok: true,
+    hasRange: true,
+    startMs,
+    endMs,
+    label: `${formatDateOnly(startMs)} -> ${formatDateOnly(endMs)}`,
+  };
+}
+
+function resolvePeriodLabel(snapshot = {}) {
+  const windows = snapshot.windows || {};
+  const startMs = safeInt(windows.startMs);
+  const endMs = safeInt(windows.endMs);
+  if (startMs > 0 && endMs > 0) {
+    return `${formatDateOnly(startMs)} -> ${formatDateOnly(endMs)}`;
+  }
+  return reportTypeLabel(snapshot.reportType || "daily");
 }
 
 function setStatus(text, tone = "neutral") {
@@ -206,6 +284,13 @@ function buildPromptFacts(snapshot = {}) {
     reportType: snapshot.reportType,
     reportLabel: snapshot.reportLabel,
     generatedAtMs: snapshot.generatedAtMs,
+    period: {
+      startMs: safeInt(snapshot.windows?.startMs),
+      endMs: safeInt(snapshot.windows?.endMs),
+      analyticsWindow: String(snapshot.windows?.analyticsWindow || ""),
+      customRangeApplied: snapshot.windows?.customRangeApplied === true,
+      label: resolvePeriodLabel(snapshot),
+    },
     health: {
       score: safeInt(health.overallScore),
       level: health.level || "",
@@ -321,6 +406,7 @@ function buildPrompt(snapshot = {}) {
     "- Si tu identifies une fuite de conversion, de retention, de confiance ou d'operations, dis-le clairement.",
     "",
     `Type de rapport: ${data.reportLabel}`,
+    `Periode analysee: ${data.period.label}`,
     `Date du snapshot: ${formatDateTime(data.generatedAtMs)}`,
     `Sante globale du site: score ${formatInt(data.health.score)}/100 (${healthLevelLabel(data.health.level)})`,
     "",
@@ -347,7 +433,7 @@ function renderPrompt(snapshot = {}) {
   const prompt = buildPrompt(snapshot);
   dom.promptOutput.value = prompt;
   if (dom.promptMeta) {
-    dom.promptMeta.textContent = `${reportTypeLabel(snapshot.reportType)} • ${formatDateTime(snapshot.generatedAtMs)}`;
+    dom.promptMeta.textContent = `${resolvePeriodLabel(snapshot)} • ${formatDateTime(snapshot.generatedAtMs)}`;
   }
   if (dom.copyBtn) {
     dom.copyBtn.disabled = !prompt.trim();
@@ -373,13 +459,25 @@ async function generateReport() {
       description: "Connecte-toi avec le compte administrateur autorise pour generer un prompt de pilotage du site.",
     });
     const reportType = String(dom.reportType?.value || "daily").trim().toLowerCase() === "global" ? "global" : "daily";
-    const result = await getAiAdvisorSnapshotSecure({ reportType });
+    const period = resolveRequestedRange();
+    if (!period.ok) {
+      throw new Error(period.message || "Periode invalide.");
+    }
+    const payload = period.hasRange
+      ? { reportType, startMs: period.startMs, endMs: period.endMs }
+      : { reportType };
+    const result = await getAiAdvisorSnapshotSecure(payload);
     const snapshot = result?.snapshot || null;
     if (!snapshot) {
       throw new Error("Snapshot IA introuvable.");
     }
     renderSnapshot(snapshot);
-    setStatus("Rapport IA genere. Tu peux maintenant copier le prompt.", "success");
+    setStatus(
+      period.hasRange
+        ? `Rapport IA genere pour ${period.label}. Tu peux maintenant copier le prompt.`
+        : "Rapport IA genere. Tu peux maintenant copier le prompt.",
+      "success"
+    );
   } catch (error) {
     console.error("[AI_ADVISOR] generate error", error);
     setStatus(error?.message || "Impossible de generer le rapport IA.", "error");
@@ -409,10 +507,23 @@ function bindEvents() {
     void copyPrompt();
   });
 
-  dom.reportType?.addEventListener("change", () => {
+  const refreshReadyStatus = () => {
     const nextLabel = reportTypeLabel(dom.reportType?.value || "daily");
+    const period = resolveRequestedRange();
+    if (!period.ok) {
+      setStatus(period.message || "Periode invalide.", "warning");
+      return;
+    }
+    if (period.hasRange) {
+      setStatus(`Mode pret: ${nextLabel} • Periode: ${period.label}. Clique sur "Generer le prompt".`, "neutral");
+      return;
+    }
     setStatus(`Mode pret: ${nextLabel}. Clique sur "Generer le prompt" pour lancer les lectures utiles.`, "neutral");
-  });
+  };
+
+  dom.reportType?.addEventListener("change", refreshReadyStatus);
+  dom.dateFrom?.addEventListener("change", refreshReadyStatus);
+  dom.dateTo?.addEventListener("change", refreshReadyStatus);
 }
 
 bindEvents();

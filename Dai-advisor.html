@@ -126,7 +126,7 @@
       }
 
       .control-grid {
-        grid-template-columns: 1.2fr auto auto;
+        grid-template-columns: 1.15fr 1fr 1fr auto auto;
         align-items: end;
       }
 
@@ -140,6 +140,7 @@
       }
 
       select,
+      input,
       textarea {
         width: 100%;
         border-radius: 18px;
@@ -150,6 +151,10 @@
       }
 
       select {
+        padding: 14px 16px;
+      }
+
+      input {
         padding: 14px 16px;
       }
 
@@ -449,6 +454,14 @@
               <option value="daily">Quotidien</option>
               <option value="global">Global récent</option>
             </select>
+          </div>
+          <div>
+            <label for="aiAdvisorDateFrom">Date debut (optionnel)</label>
+            <input id="aiAdvisorDateFrom" type="date" />
+          </div>
+          <div>
+            <label for="aiAdvisorDateTo">Date fin (optionnel)</label>
+            <input id="aiAdvisorDateTo" type="date" />
           </div>
           <button class="action-btn primary" id="aiAdvisorGenerateBtn" type="button">Generer le prompt</button>
           <button class="action-btn secondary" id="aiAdvisorCopyBtn" type="button" disabled>Copier le prompt</button>
