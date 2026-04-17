@@ -225,6 +225,14 @@ export async function adminCheckSecure(payload = {}) {
   return invokeCallable("adminCheck", payload, "Accès administrateur refusé.");
 }
 
+export async function getPublicWhatsappModalConfigSecure(payload = {}) {
+  return invokeCallable("getPublicWhatsappModalConfigSecure", payload, "Impossible de charger la configuration WhatsApp.");
+}
+
+export async function setWhatsappModalConfigSecure(payload = {}) {
+  return invokeCallable("setWhatsappModalConfigSecure", payload, "Impossible de mettre à jour la configuration WhatsApp.");
+}
+
 export async function setBotDifficultySecure(payload = {}) {
   return invokeCallable("setBotDifficulty", payload, "Impossible de changer le niveau des bots.");
 }
