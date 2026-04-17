@@ -19,15 +19,22 @@ const badgeEl = document.getElementById("ordersStatusBadge");
 const totalEl = document.getElementById("ordersStatusCount");
 const amountEl = document.getElementById("ordersStatusAmount");
 const tableBodyEl = document.getElementById("ordersStatusTableBody");
+const tableShellEl = document.querySelector(".table-shell");
 const emptyEl = document.getElementById("ordersStatusEmpty");
 const loadingEl = document.getElementById("ordersStatusLoading");
 const errorEl = document.getElementById("ordersStatusError");
 const contentEl = document.getElementById("ordersStatusContent");
 const tableHeadRowEl = document.querySelector("table thead tr");
-const CACHE_VERSION = 1;
-const CACHE_KEY = `domino_dashboard_orders_status_cache_v${CACHE_VERSION}_${status}`;
+const queueSectionEl = document.getElementById("ordersStatusQueueSection");
+const queueCursorEl = document.getElementById("ordersQueueCursor");
+const queueBodyEl = document.getElementById("ordersStatusQueueBody");
+const queueViewBtn = document.getElementById("ordersQueueViewBtn");
+const queueRejectBtn = document.getElementById("ordersQueueRejectBtn");
+const queueApproveBtn = document.getElementById("ordersQueueApproveBtn");
+const queueNextBtn = document.getElementById("ordersQueueNextBtn");
 
 let currentRows = [];
+let currentQueueIndex = 0;
 let currentModalOrder = null;
 let currentModalHistory = [];
 let currentHistoryExpanded = false;
@@ -685,76 +692,106 @@ function findOrder(orderId, clientId) {
   return currentRows.find((row) => row.id === orderId && row.clientId === clientId) || null;
 }
 
-function readRowsCache() {
-  try {
-    const raw = window.localStorage?.getItem(CACHE_KEY) || "";
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    const rows = Array.isArray(parsed?.rows) ? parsed.rows : [];
-    return {
-      savedAtMs: Number(parsed?.savedAtMs || 0) || 0,
-      rows,
-    };
-  } catch (error) {
-    console.warn("[ORDERS_STATUS] read cache failed", error);
-    return null;
+function orderKey(order) {
+  return `${String(order?.clientId || "")}:${String(order?.id || "")}`;
+}
+
+function clampQueueIndex() {
+  if (!currentRows.length) {
+    currentQueueIndex = 0;
+    return;
   }
+  if (currentQueueIndex < 0) currentQueueIndex = 0;
+  if (currentQueueIndex >= currentRows.length) currentQueueIndex = currentRows.length - 1;
 }
 
-function writeRowsCache(rows = []) {
-  try {
-    window.localStorage?.setItem(CACHE_KEY, JSON.stringify({
-      savedAtMs: Date.now(),
-      rows: Array.isArray(rows) ? rows : [],
-    }));
-  } catch (error) {
-    console.warn("[ORDERS_STATUS] write cache failed", error);
+function getCurrentQueueOrder() {
+  if (!currentRows.length) return null;
+  clampQueueIndex();
+  return currentRows[currentQueueIndex] || null;
+}
+
+function setQueueButtonsEnabled(enabled) {
+  [queueViewBtn, queueRejectBtn, queueApproveBtn, queueNextBtn].forEach((btn) => {
+    if (!btn) return;
+    btn.disabled = !enabled;
+    btn.style.opacity = enabled ? "1" : ".55";
+    btn.style.cursor = enabled ? "pointer" : "not-allowed";
+  });
+}
+
+function renderQueueCard() {
+  if (!canReview || !queueSectionEl || !queueBodyEl) return;
+  const order = getCurrentQueueOrder();
+  const total = currentRows.length;
+  if (queueCursorEl) {
+    queueCursorEl.textContent = total ? `${currentQueueIndex + 1} / ${total}` : "0 / 0";
   }
+
+  if (!order) {
+    queueBodyEl.innerHTML = `
+      <div style="border:1px dashed rgba(148,163,184,.24);border-radius:14px;padding:14px;color:#64748b;">
+        Aucune commande en attente.
+      </div>
+    `;
+    setQueueButtonsEnabled(false);
+    return;
+  }
+
+  queueBodyEl.innerHTML = `
+    <div style="border:1px solid rgba(148,163,184,.24);border-radius:16px;padding:14px;">
+      <p style="margin:0;font-weight:900;font-size:1.05rem;">${escapeHtml(order.uniqueCode || order.id)}</p>
+      <p style="margin:8px 0 0;color:#334155;">${escapeHtml(order.customerName || "-")} · ${escapeHtml(order.customerEmail || "-")}</p>
+      <p style="margin:6px 0 0;color:#334155;">${formatPrice(order.amount)} · ${escapeHtml(order.methodName || "Methode non definie")}</p>
+      <p style="margin:6px 0 0;color:#64748b;">Soumis le ${escapeHtml(formatDate(order.createdAtMs))}</p>
+      <p style="margin:6px 0 0;color:#64748b;">Tel deposant: ${escapeHtml(order.depositorPhone || "-")}</p>
+    </div>
+  `;
+  setQueueButtonsEnabled(true);
 }
 
-function removeOrderFromCache(order) {
-  if (!order?.id || !order?.clientId) return;
-  const cached = readRowsCache();
-  if (!cached) return;
-  const nextRows = cached.rows.filter((row) => !(row?.id === order.id && row?.clientId === order.clientId));
-  writeRowsCache(nextRows);
-}
-
-function applyRows(rows, options = {}) {
+function applyRows(rows) {
   const safeRows = Array.isArray(rows) ? rows : [];
-  const fromCache = options.fromCache === true;
+  const previousOrder = getCurrentQueueOrder();
+  const previousKey = orderKey(previousOrder);
+
   currentRows = safeRows;
+  if (canReview && previousKey) {
+    const sameOrderIndex = currentRows.findIndex((row) => orderKey(row) === previousKey);
+    if (sameOrderIndex >= 0) {
+      currentQueueIndex = sameOrderIndex;
+    }
+  }
+  clampQueueIndex();
   const stats = computeOrderStats(safeRows);
 
   if (totalEl) totalEl.textContent = String(safeRows.length);
   if (amountEl) amountEl.textContent = formatPrice(stats.amount);
 
+  if (canReview) {
+    tableShellEl?.classList.add("hidden");
+    queueSectionEl?.classList.remove("hidden");
+    renderQueueCard();
+  } else {
+    queueSectionEl?.classList.add("hidden");
+    tableShellEl?.classList.remove("hidden");
+    if (!safeRows.length) {
+      tableBodyEl && (tableBodyEl.innerHTML = "");
+    } else {
+      renderRows(safeRows);
+    }
+  }
+
   if (!safeRows.length) {
-    tableBodyEl && (tableBodyEl.innerHTML = "");
     emptyEl?.classList.remove("hidden");
   } else {
     emptyEl?.classList.add("hidden");
-    renderRows(safeRows);
-  }
-
-  if (loadingEl) {
-    loadingEl.textContent = fromCache ? "Affichage du cache local. Synchronisation en cours..." : "Chargement des commandes...";
   }
 }
 
 async function refreshRows() {
   const rows = await loadOrders(status);
-  applyRows(rows, { fromCache: false });
-  writeRowsCache(rows);
-}
-
-function hydrateFromCache() {
-  const cached = readRowsCache();
-  if (!cached || !Array.isArray(cached.rows) || cached.rows.length <= 0) return false;
-  applyRows(cached.rows, { fromCache: true });
-  loadingEl?.classList.remove("hidden");
-  contentEl?.classList.remove("hidden");
-  return true;
+  applyRows(rows);
 }
 
 async function refreshRowsAndHandleFailure() {
@@ -764,16 +801,7 @@ async function refreshRowsAndHandleFailure() {
     loadingEl?.classList.add("hidden");
     contentEl?.classList.remove("hidden");
   } catch (error) {
-    if (currentRows.length > 0) {
-      console.error("[ORDERS_STATUS] refresh failed, cache kept", error);
-      loadingEl?.classList.add("hidden");
-      contentEl?.classList.remove("hidden");
-      if (errorEl) {
-        errorEl.textContent = "Synchronisation impossible pour le moment. Dernier cache affiche.";
-        errorEl.classList.remove("hidden");
-      }
-      return;
-    }
+    console.error("[ORDERS_STATUS] refresh failed", error);
     throw error;
   }
 }
@@ -809,10 +837,8 @@ async function handleDecision(order, decision) {
 
     document.getElementById("ordersStatusModal")?.classList.add("hidden");
     currentModalOrder = null;
-    removeOrderFromCache(order);
     const nextRows = currentRows.filter((row) => !(row.id === order.id && row.clientId === order.clientId));
-    applyRows(nextRows, { fromCache: false });
-    writeRowsCache(nextRows);
+    applyRows(nextRows);
     void refreshRowsAndHandleFailure();
   } catch (error) {
     console.error("[ORDERS_STATUS] resolve decision failed", error);
@@ -842,6 +868,30 @@ tableBodyEl?.addEventListener("click", (event) => {
   }
 });
 
+queueViewBtn?.addEventListener("click", () => {
+  const order = getCurrentQueueOrder();
+  if (!order) return;
+  void openOrderModal(order);
+});
+
+queueApproveBtn?.addEventListener("click", () => {
+  const order = getCurrentQueueOrder();
+  if (!order) return;
+  void handleDecision(order, "approve");
+});
+
+queueRejectBtn?.addEventListener("click", () => {
+  const order = getCurrentQueueOrder();
+  if (!order) return;
+  void handleDecision(order, "reject");
+});
+
+queueNextBtn?.addEventListener("click", () => {
+  if (!currentRows.length) return;
+  currentQueueIndex = (currentQueueIndex + 1) % currentRows.length;
+  renderQueueCard();
+});
+
 async function init() {
   try {
     const adminUser = await ensureOrdersAccess(meta.label);
@@ -849,7 +899,6 @@ async function init() {
       adminEmailEl.textContent = adminUser?.email || adminUser?.uid || "Admin connecte";
     }
 
-    hydrateFromCache();
     await refreshRowsAndHandleFailure();
   } catch (error) {
     console.error("[ORDERS_STATUS] init failed", error);

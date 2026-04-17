@@ -1,4 +1,4 @@
-import { collection, db, getDocs } from "./firebase-init.js";
+import { collection, collectionGroup, db, getDocs, query, where } from "./firebase-init.js";
 import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js";
 
 export const ORDER_STATUS_META = {
@@ -128,14 +128,26 @@ export async function loadClientOrders(clientId = "") {
 
 export async function loadOrders(status = "all") {
   const normalizedStatus = String(status || "all").trim().toLowerCase();
-  const clientsSnapshot = await getDocs(collection(db, "clients"));
-  const clientIds = clientsSnapshot.docs.map((docSnap) => docSnap.id).filter(Boolean);
-  const perClientOrders = await Promise.all(clientIds.map((clientId) => loadClientOrders(clientId)));
-
-  return perClientOrders
-    .flat()
-    .filter((order) => normalizedStatus === "all" || order.status === normalizedStatus)
-    .sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
+  try {
+    const ordersRef = collectionGroup(db, "orders");
+    const ordersQuery = normalizedStatus === "all"
+      ? ordersRef
+      : query(ordersRef, where("status", "==", normalizedStatus));
+    const snap = await getDocs(ordersQuery);
+    return snap.docs
+      .map(normalizeOrder)
+      .filter((order) => normalizedStatus === "all" || order.status === normalizedStatus)
+      .sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
+  } catch (error) {
+    console.warn("[ORDERS_DATA] fallback loadOrders per-client", error);
+    const clientsSnapshot = await getDocs(collection(db, "clients"));
+    const clientIds = clientsSnapshot.docs.map((docSnap) => docSnap.id).filter(Boolean);
+    const perClientOrders = await Promise.all(clientIds.map((clientId) => loadClientOrders(clientId)));
+    return perClientOrders
+      .flat()
+      .filter((order) => normalizedStatus === "all" || order.status === normalizedStatus)
+      .sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
+  }
 }
 
 export function computeOrderStats(orders = []) {

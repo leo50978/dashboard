@@ -252,6 +252,19 @@
           <div class="stat"><p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);font-weight:800;">Total</p><p id="ordersStatusCount" style="margin:10px 0 0;font-size:2rem;font-weight:900;">0</p></div>
           <div class="stat"><p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);font-weight:800;">Montant</p><p id="ordersStatusAmount" style="margin:10px 0 0;font-size:2rem;font-weight:900;">0 HTG</p></div>
         </div>
+        <div id="ordersStatusQueueSection" class="hidden" style="margin-top:18px;border:1px solid var(--line);background:white;border-radius:20px;padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:800;">File de traitement</p>
+            <span id="ordersQueueCursor" class="status-pill">0 / 0</span>
+          </div>
+          <div id="ordersStatusQueueBody" style="margin-top:12px;"></div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;">
+            <button id="ordersQueueViewBtn" type="button" class="btn btn-secondary" style="width:auto;min-height:42px;padding:8px 12px;">Consulter</button>
+            <button id="ordersQueueRejectBtn" type="button" class="btn btn-secondary" style="width:auto;min-height:42px;padding:8px 12px;border-color:#fecaca;color:#991b1b;background:#fff5f5;">Rejeter</button>
+            <button id="ordersQueueApproveBtn" type="button" class="btn btn-primary" style="width:auto;min-height:42px;padding:8px 12px;background:#059669;">Approuver</button>
+            <button id="ordersQueueNextBtn" type="button" class="btn btn-secondary" style="width:auto;min-height:42px;padding:8px 12px;">Next</button>
+          </div>
+        </div>
         <div class="table-shell">
           <table>
             <thead><tr><th>Date</th><th>Client</th><th>Email</th><th>Montant</th><th>Methode</th><th>Statut</th><th>Code</th></tr></thead>
