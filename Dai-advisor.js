@@ -232,7 +232,7 @@ function renderMetrics(snapshot = {}) {
       <p class="metric-label">Jeux</p>
       <p class="metric-value">${formatInt(games.totalMatches)}</p>
       <p class="metric-note">
-        Domino ${formatInt(games.classicMatches)} • Duel ${formatInt(games.duelMatches)} • Morpion ${formatInt(games.morpionMatches)}.
+        Domino ${formatInt(games.classicMatches)} • Duel ${formatInt(games.duelMatches)} • Morpion ${formatInt(games.morpionMatches)} • Pong ${formatInt(games.pongMatches)}.
       </p>
     </article>
     <article class="metric-card">

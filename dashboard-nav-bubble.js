@@ -25,6 +25,7 @@
     { href: "./Dgames-volume.html", label: "Volume jeux", key: "dgames-volume.html" },
     { href: "./Dduel.html", label: "Duel 2 joueurs", key: "dduel.html" },
     { href: "./Dmorpion.html", label: "Morpion 5", key: "dmorpion.html" },
+    { href: "./Dpong.html", label: "Pong", key: "dpong.html" },
     { href: "./Dmorpion-tendance.html", label: "Tendance Morpion", key: "dmorpion-tendance.html" },
     { href: "./Drecrutement.html", label: "Recrutement", key: "drecrutement.html" },
     { href: "./Ddiscussion.html", label: "Discussion", key: "ddiscussion.html" },
