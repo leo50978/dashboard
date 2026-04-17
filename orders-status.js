@@ -32,6 +32,7 @@ const queueViewBtn = document.getElementById("ordersQueueViewBtn");
 const queueRejectBtn = document.getElementById("ordersQueueRejectBtn");
 const queueApproveBtn = document.getElementById("ordersQueueApproveBtn");
 const queueNextBtn = document.getElementById("ordersQueueNextBtn");
+const queueRefreshBtn = document.getElementById("ordersQueueRefreshBtn");
 
 let currentRows = [];
 let currentQueueIndex = 0;
@@ -41,6 +42,7 @@ let currentHistoryExpanded = false;
 let activeDecisionKey = "";
 let toastTimeout = 0;
 let modalHistoryToken = 0;
+let isRefreshingRows = false;
 
 function ensureOrdersStatusUiStyles() {
   if (document.getElementById("ordersStatusUiStyles")) return;
@@ -718,6 +720,13 @@ function setQueueButtonsEnabled(enabled) {
     btn.style.opacity = enabled ? "1" : ".55";
     btn.style.cursor = enabled ? "pointer" : "not-allowed";
   });
+
+  if (!queueRefreshBtn) return;
+  const refreshEnabled = !isRefreshingRows;
+  queueRefreshBtn.disabled = !refreshEnabled;
+  queueRefreshBtn.style.opacity = refreshEnabled ? "1" : ".55";
+  queueRefreshBtn.style.cursor = refreshEnabled ? "pointer" : "not-allowed";
+  queueRefreshBtn.textContent = refreshEnabled ? "Refresh" : "Refresh...";
 }
 
 function renderQueueCard() {
@@ -806,6 +815,18 @@ async function refreshRowsAndHandleFailure() {
   }
 }
 
+async function refreshRowsFromQueue() {
+  if (isRefreshingRows) return;
+  isRefreshingRows = true;
+  setQueueButtonsEnabled(Boolean(getCurrentQueueOrder()));
+  try {
+    await refreshRowsAndHandleFailure();
+  } finally {
+    isRefreshingRows = false;
+    setQueueButtonsEnabled(Boolean(getCurrentQueueOrder()));
+  }
+}
+
 async function handleDecision(order, decision) {
   const decisionLabel = decision === "approve" ? "approuver" : "rejeter";
   const decisionKey = `${order.clientId}:${order.id}:${decision}`;
@@ -887,9 +908,14 @@ queueRejectBtn?.addEventListener("click", () => {
 });
 
 queueNextBtn?.addEventListener("click", () => {
+  if (isRefreshingRows) return;
   if (!currentRows.length) return;
   currentQueueIndex = (currentQueueIndex + 1) % currentRows.length;
   renderQueueCard();
+});
+
+queueRefreshBtn?.addEventListener("click", () => {
+  void refreshRowsFromQueue();
 });
 
 async function init() {
