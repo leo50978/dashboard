@@ -19,11 +19,13 @@ const dom = {
   classicMatches: document.getElementById("gamesVolumeClassic"),
   duelMatches: document.getElementById("gamesVolumeDuel"),
   morpionMatches: document.getElementById("gamesVolumeMorpion"),
+  dameMatches: document.getElementById("gamesVolumeDame"),
   pongMatches: document.getElementById("gamesVolumePong"),
   totalMatchesNote: document.getElementById("gamesVolumeTotalNote"),
   classicMatchesNote: document.getElementById("gamesVolumeClassicNote"),
   duelMatchesNote: document.getElementById("gamesVolumeDuelNote"),
   morpionMatchesNote: document.getElementById("gamesVolumeMorpionNote"),
+  dameMatchesNote: document.getElementById("gamesVolumeDameNote"),
   pongMatchesNote: document.getElementById("gamesVolumePongNote"),
   avgMatches: document.getElementById("gamesVolumeAvg"),
   peakMatches: document.getElementById("gamesVolumePeak"),
@@ -124,19 +126,21 @@ function renderSummary(snapshot = {}, result = {}) {
   if (dom.classicMatches) dom.classicMatches.textContent = formatInt(summary.classicMatches);
   if (dom.duelMatches) dom.duelMatches.textContent = formatInt(summary.duelMatches);
   if (dom.morpionMatches) dom.morpionMatches.textContent = formatInt(summary.morpionMatches);
+  if (dom.dameMatches) dom.dameMatches.textContent = formatInt(summary.dameMatches);
   if (dom.pongMatches) dom.pongMatches.textContent = formatInt(summary.pongMatches);
 
   if (dom.totalMatchesNote) dom.totalMatchesNote.textContent = `${formatInt(summary.avgMatchesPerBucket)} match(s) en moyenne par point`;
   if (dom.classicMatchesNote) dom.classicMatchesNote.textContent = `${formatInt(summary.classicWithBots)} avec bot sur domino classique`;
   if (dom.duelMatchesNote) dom.duelMatchesNote.textContent = `${formatInt(summary.duelWithBots)} avec bot sur le duel`;
   if (dom.morpionMatchesNote) dom.morpionMatchesNote.textContent = `${formatInt(summary.morpionWithBots)} avec bot sur Morpion`;
+  if (dom.dameMatchesNote) dom.dameMatchesNote.textContent = `${formatInt(summary.dameWithBots)} avec bot sur Dame`;
   if (dom.pongMatchesNote) dom.pongMatchesNote.textContent = `${formatInt(summary.pongWithBots)} avec bot sur Pong`;
 
   if (dom.avgMatches) dom.avgMatches.textContent = formatInt(summary.avgMatchesPerBucket);
   if (dom.peakMatches) dom.peakMatches.textContent = formatInt(summary.peakBucketMatches);
   if (dom.peakLabel) dom.peakLabel.textContent = summary.peakBucketLabel || "--";
   if (dom.botMix) {
-    dom.botMix.textContent = `Bots: classique ${formatInt(summary.classicWithBots)} • duel ${formatInt(summary.duelWithBots)} • Morpion ${formatInt(summary.morpionWithBots)} • Pong ${formatInt(summary.pongWithBots)}`;
+    dom.botMix.textContent = `Bots: classique ${formatInt(summary.classicWithBots)} • duel ${formatInt(summary.duelWithBots)} • Morpion ${formatInt(summary.morpionWithBots)} • Dame ${formatInt(summary.dameWithBots)} • Pong ${formatInt(summary.pongWithBots)}`;
   }
 
   if (dom.coverage) {
@@ -206,6 +210,15 @@ function renderCharts(snapshot = {}) {
             borderWidth: 2,
           },
           {
+            label: "Dame",
+            data: trend.map((item) => safeInt(item.dameMatches)),
+            borderColor: "#ff7d8d",
+            backgroundColor: "rgba(255, 125, 141, 0.12)",
+            fill: false,
+            tension: 0.24,
+            borderWidth: 2,
+          },
+          {
             label: "Pong",
             data: trend.map((item) => safeInt(item.pongMatches)),
             borderColor: "#ffd166",
@@ -235,7 +248,7 @@ function renderCharts(snapshot = {}) {
         labels: mix.map((item) => item.label),
         datasets: [{
           data: mix.map((item) => safeInt(item.count)),
-          backgroundColor: ["#7c5cff", "#ff9c5f", "#4be7b8", "#ffd166"],
+          backgroundColor: ["#7c5cff", "#ff9c5f", "#4be7b8", "#ff7d8d", "#ffd166"],
           borderWidth: 1,
         }],
       },
@@ -264,6 +277,7 @@ function renderCharts(snapshot = {}) {
             "rgba(124, 92, 255, 0.78)",
             "rgba(255, 156, 95, 0.78)",
             "rgba(75, 231, 184, 0.78)",
+            "rgba(255, 125, 141, 0.78)",
             "rgba(255, 209, 102, 0.78)",
           ],
           borderRadius: 14,

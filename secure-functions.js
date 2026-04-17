@@ -149,6 +149,10 @@ export async function getPongAnalyticsSnapshotSecure(payload = {}) {
   return invokeCallable("getPongAnalyticsSnapshot", payload, "Impossible de charger les analytics Pong.");
 }
 
+export async function getDameAnalyticsSnapshotSecure(payload = {}) {
+  return invokeCallable("getDameAnalyticsSnapshot", payload, "Impossible de charger les analytics Dame.");
+}
+
 export async function getRecruitmentAnalyticsSnapshotSecure(payload = {}) {
   return invokeCallable("getRecruitmentAnalyticsSnapshot", payload, "Impossible de charger les analytics recrutement.");
 }
