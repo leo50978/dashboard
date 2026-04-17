@@ -24,6 +24,45 @@ export const ORDER_STATUS_META = {
   },
 };
 
+function getErrorCode(error) {
+  const rawCode = String(error?.code || "").trim().toLowerCase();
+  if (!rawCode) return "";
+  if (rawCode.includes("/")) {
+    const parts = rawCode.split("/");
+    return parts[parts.length - 1] || rawCode;
+  }
+  return rawCode;
+}
+
+function shouldFallbackPerClient(error) {
+  const code = getErrorCode(error);
+  if (!code) return true;
+  if (code === "permission-denied") return false;
+  if (code === "resource-exhausted") return false;
+  if (code === "unauthenticated") return false;
+  return true;
+}
+
+async function mapWithConcurrency(items, mapper, concurrency = 4) {
+  const safeItems = Array.isArray(items) ? items : [];
+  if (!safeItems.length) return [];
+  const limit = Math.max(1, Number(concurrency) || 1);
+  const results = new Array(safeItems.length);
+  let cursor = 0;
+
+  const workers = Array.from({ length: Math.min(limit, safeItems.length) }, async () => {
+    while (true) {
+      const currentIndex = cursor;
+      cursor += 1;
+      if (currentIndex >= safeItems.length) return;
+      results[currentIndex] = await mapper(safeItems[currentIndex], currentIndex);
+    }
+  });
+
+  await Promise.all(workers);
+  return results;
+}
+
 function toMs(value) {
   if (!value) return 0;
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -139,10 +178,19 @@ export async function loadOrders(status = "all") {
       .filter((order) => normalizedStatus === "all" || order.status === normalizedStatus)
       .sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
   } catch (error) {
-    console.warn("[ORDERS_DATA] fallback loadOrders per-client", error);
+    if (!shouldFallbackPerClient(error)) {
+      console.error("[ORDERS_DATA] loadOrders blocked (no fallback)", error);
+      throw error;
+    }
+
+    console.warn("[ORDERS_DATA] fallback loadOrders per-client (limited concurrency)", error);
     const clientsSnapshot = await getDocs(collection(db, "clients"));
     const clientIds = clientsSnapshot.docs.map((docSnap) => docSnap.id).filter(Boolean);
-    const perClientOrders = await Promise.all(clientIds.map((clientId) => loadClientOrders(clientId)));
+    const perClientOrders = await mapWithConcurrency(
+      clientIds,
+      (clientId) => loadClientOrders(clientId),
+      4,
+    );
     return perClientOrders
       .flat()
       .filter((order) => normalizedStatus === "all" || order.status === normalizedStatus)
