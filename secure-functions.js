@@ -324,3 +324,11 @@ export async function deleteSurveySecure(payload = {}) {
 export async function getSurveyResponsesSecure(payload = {}) {
   return invokeCallable("getSurveyResponsesSecure", payload, "Impossible de charger les réponses du sondage.");
 }
+
+export async function getPublicHomeHeroConfigSecure(payload = {}) {
+  return invokeCallable("getPublicHomeHeroConfigSecure", payload, "Impossible de charger la configuration du hero.");
+}
+
+export async function setHomeHeroConfigSecure(payload = {}) {
+  return invokeCallable("setHomeHeroConfigSecure", payload, "Impossible de mettre a jour la configuration du hero.");
+}

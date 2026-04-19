@@ -1,7 +1,9 @@
-const STATIC_CACHE = "dlk-dashboard-static-v1";
+const STATIC_CACHE = "dlk-dashboard-static-v2";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
+  "./Dhero.html",
+  "./Dhero.js",
   "./site.webmanifest",
   "./favicon.ico",
   "./favicon-96x96.png",
