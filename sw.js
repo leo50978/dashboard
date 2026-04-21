@@ -1,7 +1,14 @@
-const STATIC_CACHE = "dlk-dashboard-static-v2";
+const STATIC_CACHE = "dlk-dashboard-static-v4";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
+  "./championnat.html",
+  "./championnat.js",
+  "./championnat-salle.html",
+  "./Dchampionnat.html",
+  "./Dchampionnat.js",
+  "./dashboard-nav-bubble.js",
+  "./secure-functions.js",
   "./Dhero.html",
   "./Dhero.js",
   "./site.webmanifest",

@@ -17,6 +17,7 @@
     { href: "./Ddepositflow.html", label: "Flux depots", key: "ddepositflow.html" },
     { href: "./pilotagebot.html", label: "Pilotage bots", key: "pilotagebot.html" },
     { href: "./pilotagebot-morpion.html", label: "File Morpion", key: "pilotagebot-morpion.html" },
+    { href: "./Dchampionnat.html", label: "Championnat", key: "dchampionnat.html" },
     { href: "./Dacquisition.html", label: "Acquisition", key: "dacquisition.html" },
     { href: "./sondage.html", label: "Sondages", key: "sondage.html" },
     { href: "./Danalytics.html", label: "Analytics", key: "danalytics.html" },

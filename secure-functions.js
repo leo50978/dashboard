@@ -332,3 +332,83 @@ export async function getPublicHomeHeroConfigSecure(payload = {}) {
 export async function setHomeHeroConfigSecure(payload = {}) {
   return invokeCallable("setHomeHeroConfigSecure", payload, "Impossible de mettre a jour la configuration du hero.");
 }
+
+export async function getPublicChampionnatSnapshotSecure(payload = {}) {
+  return invokeCallable(
+    "getPublicChampionnatSnapshotSecure",
+    payload,
+    "Impossible de charger le championnat public."
+  );
+}
+
+export async function getChampionnatDashboardSnapshotSecure(payload = {}) {
+  return invokeCallable(
+    "getChampionnatDashboardSnapshotSecure",
+    payload,
+    "Impossible de charger le dashboard championnat."
+  );
+}
+
+export async function searchChampionnatUsersSecure(payload = {}) {
+  return invokeCallable(
+    "searchChampionnatUsersSecure",
+    payload,
+    "Impossible de rechercher un utilisateur pour le championnat."
+  );
+}
+
+export async function registerChampionnatParticipantSecure(payload = {}) {
+  return invokeCallable(
+    "registerChampionnatParticipantSecure",
+    payload,
+    "Impossible d'inscrire ce participant."
+  );
+}
+
+export async function updateChampionnatParticipantSecure(payload = {}) {
+  return invokeCallable(
+    "updateChampionnatParticipantSecure",
+    payload,
+    "Impossible de mettre à jour ce participant."
+  );
+}
+
+export async function listChampionnatParticipantsSecure(payload = {}) {
+  return invokeCallable(
+    "listChampionnatParticipantsSecure",
+    payload,
+    "Impossible de charger la liste des participants."
+  );
+}
+
+export async function listChampionnatMatchesSecure(payload = {}) {
+  return invokeCallable(
+    "listChampionnatMatchesSecure",
+    payload,
+    "Impossible de charger les matchs du championnat."
+  );
+}
+
+export async function upsertChampionnatMatchSecure(payload = {}) {
+  return invokeCallable(
+    "upsertChampionnatMatchSecure",
+    payload,
+    "Impossible d'enregistrer le match du championnat."
+  );
+}
+
+export async function updateChampionnatMatchSecure(payload = {}) {
+  return invokeCallable(
+    "updateChampionnatMatchSecure",
+    payload,
+    "Impossible de mettre à jour ce match."
+  );
+}
+
+export async function updateChampionnatLiveStateSecure(payload = {}) {
+  return invokeCallable(
+    "updateChampionnatLiveStateSecure",
+    payload,
+    "Impossible de mettre à jour l'état live du championnat."
+  );
+}

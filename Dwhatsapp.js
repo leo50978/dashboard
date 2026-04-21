@@ -16,6 +16,7 @@ const dom = {
     withdrawal_assistance: document.getElementById("wa_withdrawal_assistance"),
     welcome_deposit_modal: document.getElementById("wa_welcome_deposit_modal"),
     recruitment_modal: document.getElementById("wa_recruitment_modal"),
+    championnat_mopyon: document.getElementById("wa_championnat_mopyon"),
   },
 };
 
