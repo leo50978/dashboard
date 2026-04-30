@@ -1,4 +1,4 @@
-const STATIC_CACHE = "dlk-dashboard-static-v4";
+const STATIC_CACHE = "dlk-dashboard-static-v10";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -9,6 +9,10 @@ const STATIC_ASSETS = [
   "./Dchampionnat.js",
   "./dashboard-nav-bubble.js",
   "./secure-functions.js",
+  "./Dclient-review.html",
+  "./Dclient-review.js",
+  "./Dagentwithdrawal.html",
+  "./Dagentwithdrawal.js",
   "./Dhero.html",
   "./Dhero.js",
   "./site.webmanifest",

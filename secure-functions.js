@@ -105,6 +105,22 @@ export async function createWithdrawalSecure(payload = {}) {
   return invokeCallable("createWithdrawalSecure", payload, "Impossible de créer le retrait.");
 }
 
+export async function searchTransferRecipientsSecure(payload = {}) {
+  return invokeCallable("searchTransferRecipientsSecure", payload, "Impossible de rechercher un destinataire.");
+}
+
+export async function createTransferSecure(payload = {}) {
+  return invokeCallable("createTransferSecure", payload, "Impossible d'envoyer le transfert.");
+}
+
+export async function listTransferHistorySecure(payload = {}) {
+  return invokeCallable("listTransferHistorySecure", payload, "Impossible de charger l'historique des transferts.");
+}
+
+export async function getTransferAnalyticsSecure(payload = {}) {
+  return invokeCallable("getTransferAnalyticsSecure", payload, "Impossible de charger les statistiques de transfert.");
+}
+
 export async function orderClientActionSecure(payload = {}) {
   return invokeCallable("orderClientActionSecure", payload, "Impossible de mettre à jour la demande.");
 }
@@ -177,8 +193,36 @@ export async function getAgentDepositClientContextSecure(payload = {}) {
   return invokeCallable("getAgentDepositClientContextSecure", payload, "Impossible de charger le contexte client.");
 }
 
+export async function getClientPendingDepositOrdersSecure(payload = {}) {
+  return invokeCallable("getClientPendingDepositOrdersSecure", payload, "Impossible de charger les commandes en attente.");
+}
+
+export async function getClientOrdersSecure(payload = {}) {
+  return invokeCallable("getClientOrdersSecure", payload, "Impossible de charger les commandes.");
+}
+
+export async function getClientGameHistorySecure(payload = {}) {
+  return invokeCallable("getClientGameHistorySecure", payload, "Impossible de charger l'historique de jeu.");
+}
+
+export async function getClientFraudAnalysisSecure(payload = {}) {
+  return invokeCallable("getClientFraudAnalysisSecure", payload, "Impossible de charger l'analyse antifraude.");
+}
+
+export async function repairResolvedDepositResiduesSecure(payload = {}) {
+  return invokeCallable("repairResolvedDepositResiduesSecure", payload, "Impossible de reparer les commandes resolues.");
+}
+
+export async function approveClientPendingBalancesSecure(payload = {}) {
+  return invokeCallable("approveClientPendingBalancesSecure", payload, "Impossible d'approuver les soldes en attente.");
+}
+
 export async function creditAgentDepositSecure(payload = {}) {
   return invokeCallable("creditAgentDepositSecure", payload, "Impossible de crediter le compte client.");
+}
+
+export async function adminCreateAutomaticWithdrawalSecure(payload = {}) {
+  return invokeCallable("adminCreateAutomaticWithdrawalSecure", payload, "Impossible de retirer le HTG du compte client.");
 }
 
 export async function adminSetClientPasswordSecure(payload = {}) {
