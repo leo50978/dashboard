@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <script src="./runtime-config.js"></script>
+  <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="shortcut icon" href="./favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+  <link rel="manifest" href="./site.webmanifest" />
+  <title>Kobposh V2 · Pilotage Domino classique</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07110d;
+      --bg-soft: #0c1a15;
+      --panel: rgba(12, 28, 22, 0.88);
+      --line: rgba(148, 163, 184, 0.16);
+      --text: #edf9f3;
+      --muted: #9ab9ad;
+      --mint: #34d399;
+      --lime: #bef264;
+      --amber: #f59e0b;
+      --danger: #fb7185;
+      --sky: #38bdf8;
+      --violet: #a78bfa;
+    }
+
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Manrope", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(52, 211, 153, 0.16), transparent 28%),
+        radial-gradient(circle at top right, rgba(245, 158, 11, 0.12), transparent 24%),
+        linear-gradient(180deg, #04100c 0%, var(--bg) 52%, #030a08 100%);
+    }
+
+    .shell {
+      width: min(1240px, 100%);
+      margin: 0 auto;
+      padding:
+        calc(16px + env(safe-area-inset-top, 0px))
+        max(14px, env(safe-area-inset-left, 0px))
+        calc(34px + env(safe-area-inset-bottom, 0px))
+        max(14px, env(safe-area-inset-right, 0px));
+    }
+
+    .hero,
+    .panel,
+    .metric,
+    .mix-card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.26);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .hero {
+      border-radius: 28px;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    .eyebrow {
+      margin: 0;
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: #8ff5d0;
+      font-weight: 800;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      font-family: "Space Grotesk", "Manrope", sans-serif;
+    }
+
+    h1 {
+      margin-top: 12px;
+      font-size: clamp(2.1rem, 5vw, 4rem);
+      line-height: 0.98;
+      max-width: 12ch;
+    }
+
+    .hero-copy,
+    .section-copy,
+    .empty-copy,
+    .helper-copy,
+    .metric small,
+    .trend-meta span,
+    .mix-card span,
+    .field label,
+    .status-copy {
+      color: var(--muted);
+    }
+
+    .hero-copy,
+    .section-copy,
+    .empty-copy,
+    .helper-copy,
+    .status-copy {
+      margin: 0;
+      font-size: 0.95rem;
+      line-height: 1.72;
+    }
+
+    .hero-copy {
+      margin-top: 14px;
+      max-width: 65ch;
+    }
+
+    .hero-top,
+    .section-head {
+      display: grid;
+      gap: 12px;
+    }
+
+    .admin-chip,
+    .back-link,
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      width: fit-content;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05);
+      padding: 10px 14px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .admin-chip { color: #d8fff2; }
+    .back-link { color: #f4fbc7; }
+
+    .metric-grid,
+    .chart-grid,
+    .control-grid,
+    .mix-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .metric-grid {
+      margin-top: 20px;
+      grid-template-columns: 1fr;
+    }
+
+    .metric {
+      border-radius: 22px;
+      padding: 16px;
+      min-width: 0;
+    }
+
+    .metric label,
+    .field label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 10px;
+      font-size: clamp(1.3rem, 4vw, 2rem);
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .metric small {
+      display: block;
+      margin-top: 8px;
+      font-size: 0.86rem;
+      line-height: 1.55;
+    }
+
+    .panel {
+      margin-top: 18px;
+      border-radius: 24px;
+      padding: 18px;
+    }
+
+    .control-grid,
+    .chart-grid,
+    .mix-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .control-card,
+    .chart-card {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(5, 13, 10, 0.4);
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .field select {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      background: rgba(3, 10, 8, 0.55);
+      color: var(--text);
+      padding: 14px 15px;
+      font: inherit;
+      outline: none;
+    }
+
+    .field select:focus {
+      border-color: rgba(52, 211, 153, 0.45);
+      box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.1);
+    }
+
+    .segmented,
+    .level-grid,
+    .action-row,
+    .status-row,
+    .equity-meta-grid,
+    .mix-inline,
+    .mix-head {
+      display: grid;
+      gap: 10px;
+    }
+
+    .segmented { grid-template-columns: 1fr 1fr; }
+    .level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    button {
+      appearance: none;
+      border: none;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .segmented button,
+    .level-grid button,
+    .action-row button {
+      min-height: 48px;
+      border-radius: 16px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      font-weight: 800;
+      border: 1px solid rgba(255,255,255,0.08);
+      transition: 160ms ease;
+    }
+
+    .segmented button.is-active,
+    .level-grid button.is-active,
+    .action-row button:hover {
+      background: linear-gradient(135deg, rgba(52, 211, 153, 0.24), rgba(190, 242, 100, 0.18));
+      border-color: rgba(52, 211, 153, 0.42);
+      transform: translateY(-1px);
+    }
+
+    .action-row button {
+      background: linear-gradient(135deg, rgba(52, 211, 153, 0.88), rgba(22, 163, 74, 0.92));
+      color: #03210f;
+    }
+
+    .status-row,
+    .equity-meta-grid,
+    .mix-inline,
+    .mix-head { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .badge-pill[data-tone="danger"] { color: #ffe0e8; border-color: rgba(251, 113, 133, 0.32); }
+    .badge-pill[data-tone="defense"] { color: #ffe7ba; border-color: rgba(245, 158, 11, 0.32); }
+    .badge-pill[data-tone="comfort"] { color: #d7ffe9; border-color: rgba(52, 211, 153, 0.32); }
+    .badge-pill[data-tone="equilibrium"] { color: #dff6ff; border-color: rgba(56, 189, 248, 0.3); }
+
+    .equity-shell {
+      overflow: hidden;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(3, 10, 8, 0.45);
+      padding: 12px;
+    }
+
+    .equity-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .equity-axis-row,
+    .trend-row {
+      display: grid;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .equity-axis-row {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 8px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .trend-row { grid-template-columns: minmax(0, 140px) 1fr auto; }
+    .trend-track,
+    .mix-track {
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.06);
+    }
+
+    .trend-bar,
+    .mix-fill {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+    }
+
+    .positive { color: #86efac; }
+    .negative { color: #fda4af; }
+    .trend-bar.positive,
+    .mix-fill.positive { background: linear-gradient(90deg, #34d399, #bef264); }
+    .trend-bar.negative,
+    .mix-fill.negative { background: linear-gradient(90deg, #fb7185, #f59e0b); }
+
+    .equity-grid-line,
+    .equity-zero-line,
+    .equity-peak-line {
+      stroke: rgba(255,255,255,0.08);
+      stroke-width: 1;
+    }
+
+    .equity-line {
+      fill: none;
+      stroke: #34d399;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .equity-area { fill: url(#dominoPilotEquityAreaGradient); }
+    .equity-dot { fill: #bef264; stroke: rgba(3,10,8,0.9); stroke-width: 2; }
+
+    @media (min-width: 900px) {
+      .metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .control-grid { grid-template-columns: 1.2fr 0.8fr; }
+      .chart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-top">
+        <a class="back-link" href="./index.html">Retour dashboard</a>
+        <span class="admin-chip" id="dominoPilotAdminEmail">Session admin en cours...</span>
+      </div>
+      <p class="eyebrow">Pilotage bots</p>
+      <h1>Domino classique V2</h1>
+      <p class="hero-copy">
+        Ce panneau pilote les bots locaux du `Domino classique` V2. L'admin peut forcer un niveau manuel,
+        ou laisser le moteur auto suivre les vraies archives `HTG` du jeu pour ajuster `userpro`, `amateur`,
+        `expert` ou `ultra`.
+      </p>
+
+      <div class="metric-grid">
+        <article class="metric">
+          <label>Net Domino</label>
+          <strong id="dominoPilotNetValue">-</strong>
+          <small id="dominoPilotNetCopy">Lecture du profit net sur les parties archivees.</small>
+        </article>
+        <article class="metric">
+          <label>Marge</label>
+          <strong id="dominoPilotMarginValue">-</strong>
+          <small id="dominoPilotMarginCopy">Rapport entre encaisse et payout humain.</small>
+        </article>
+        <article class="metric">
+          <label>Parties archivees</label>
+          <strong id="dominoPilotRoomsValue">-</strong>
+          <small id="dominoPilotRoomsCopy">Volume pris en compte sur la fenetre choisie.</small>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <h2>Controle du niveau</h2>
+        <p class="section-copy">
+          Mode manuel pour figer le bot sur un niveau, ou mode auto pour suivre la courbe de profit du
+          `Domino classique` V2 sans quitter l'environnement `HTG`.
+        </p>
+      </div>
+
+      <div class="control-grid">
+        <article class="control-card">
+          <div class="field">
+            <label>Mode</label>
+            <div class="segmented">
+              <button type="button" id="dominoPilotModeManualBtn">Manuel</button>
+              <button type="button" id="dominoPilotModeAutoBtn">Auto</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Fenetre</label>
+            <select id="dominoPilotWindowSelect">
+              <option value="today">Aujourd'hui</option>
+              <option value="24h">Dernieres 24h</option>
+              <option value="7d">Derniers 7 jours</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Niveau manuel</label>
+            <div class="level-grid" id="dominoPilotLevelGrid">
+              <button type="button" data-level="userpro">UserPro</button>
+              <button type="button" data-level="amateur">Amateur</button>
+              <button type="button" data-level="expert">Expert</button>
+              <button type="button" data-level="ultra">Ultra</button>
+            </div>
+          </div>
+
+          <div class="action-row">
+            <button type="button" id="dominoPilotApplyBtn">Appliquer le pilotage Domino</button>
+          </div>
+        </article>
+
+        <article class="control-card">
+          <div class="status-row">
+            <span class="badge-pill" id="dominoPilotBandBadge">Bande -</span>
+            <span class="badge-pill" id="dominoPilotAppliedBadge">Niveau applique -</span>
+          </div>
+          <p class="status-copy" id="dominoPilotReasonCopy">
+            Le systeme expliquera ici pourquoi il recommande un niveau et quand il a fait son dernier calcul.
+          </p>
+          <p class="helper-copy" id="dominoPilotFetchMeta">
+            Les donnees viennent de l'archive fiable `dominoClassicMatchResults`, sans toucher aux parties runtime.
+          </p>
+          <div class="metric-grid">
+            <article class="metric">
+              <label>Encaisse HTG</label>
+              <strong id="dominoPilotCollectedValue">-</strong>
+              <small>Somme des mises HTG prises dans les parties Domino classiques archivees.</small>
+            </article>
+            <article class="metric">
+              <label>Payout HTG</label>
+              <strong id="dominoPilotPayoutValue">-</strong>
+              <small>Ce qui a ete repaye aux humains gagnants.</small>
+            </article>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <h2>Evolution du profit Domino</h2>
+        <p class="section-copy">
+          La courbe cumulative suit le profit `HTG` du Domino classique comme une equity curve. Le mode auto
+          se sert de cette courbe, de la marge et des victoires humaines pour durcir ou adoucir les bots.
+        </p>
+      </div>
+
+      <article class="chart-card">
+        <h3>Courbe cumulative live</h3>
+        <div class="equity-meta-grid">
+          <article class="metric">
+            <label>Niveau actuel</label>
+            <strong id="dominoPilotEquityValue">-</strong>
+            <small id="dominoPilotEquityCopy">La courbe part de zero au debut de la fenetre.</small>
+          </article>
+          <article class="metric">
+            <label>Dernier sommet</label>
+            <strong id="dominoPilotPeakValue">-</strong>
+            <small id="dominoPilotPeakCopy">Le plus haut niveau atteint sur la fenetre active.</small>
+          </article>
+          <article class="metric">
+            <label>Drawdown</label>
+            <strong id="dominoPilotDrawdownValue">-</strong>
+            <small id="dominoPilotDrawdownCopy">Distance actuelle sous le dernier sommet.</small>
+          </article>
+        </div>
+        <div class="equity-shell">
+          <svg class="equity-svg" id="dominoPilotEquitySvg" viewBox="0 0 720 240" role="img" aria-label="Courbe cumulative du profit Domino classique">
+            <defs>
+              <linearGradient id="dominoPilotEquityAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#34d399" stop-opacity="0.38"></stop>
+                <stop offset="100%" stop-color="#34d399" stop-opacity="0"></stop>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="equity-axis-row" id="dominoPilotEquityAxis">
+            <span>-</span>
+            <span>-</span>
+            <span>-</span>
+          </div>
+        </div>
+        <p class="helper-copy" id="dominoPilotRecoveryCopy">
+          Le systeme analysera ici la distance au dernier pic et la capacite a repartir au-dessus.
+        </p>
+      </article>
+
+      <div class="chart-grid">
+        <article class="chart-card">
+          <h3>Variation par tranche</h3>
+          <div class="mix-grid" id="dominoPilotTrendList">
+            <p class="empty-copy">Chargement de la courbe...</p>
+          </div>
+        </article>
+
+        <article class="chart-card">
+          <h3>Impact selon le niveau bot</h3>
+          <div class="mix-grid" id="dominoPilotDifficultyMixGrid">
+            <p class="empty-copy">Chargement du mix niveaux...</p>
+          </div>
+        </article>
+      </div>
+
+      <article class="chart-card">
+        <h3>Impact selon la mise HTG</h3>
+        <div class="mix-grid" id="dominoPilotStakeMixGrid">
+          <p class="empty-copy">Chargement du mix mises...</p>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script src="./dashboard-nav-bubble.js"></script>
+  <script type="module" src="./pilotagebot-domino-classique.js"></script>
+</body>
+</html>

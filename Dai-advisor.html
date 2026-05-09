@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="shortcut icon" href="./favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <link rel="manifest" href="./site.webmanifest" />
+    <script src="./runtime-config.js"></script>
+    <title>Kobposh V2 - Conseiller IA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Sora:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-0: #07111d;
+        --bg-1: #0d1b2d;
+        --bg-2: #142940;
+        --panel: rgba(10, 19, 32, 0.74);
+        --panel-soft: rgba(255, 255, 255, 0.04);
+        --line: rgba(148, 163, 184, 0.16);
+        --line-strong: rgba(103, 232, 249, 0.24);
+        --text: #edf7ff;
+        --muted: #a4bdd4;
+        --accent: #67e8f9;
+        --accent-2: #7dd3fc;
+        --accent-3: #33d69f;
+        --warn: #ffd166;
+        --bad: #ff8ea1;
+        --good: #5ef0be;
+        --shadow-hard: 16px 16px 40px rgba(2, 8, 18, 0.74);
+        --shadow-soft: -12px -12px 28px rgba(40, 63, 97, 0.12);
+        --shadow-inset: inset 6px 6px 18px rgba(4, 9, 20, 0.7), inset -7px -7px 18px rgba(38, 57, 84, 0.24);
+      }
+
+      * { box-sizing: border-box; }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background:
+          radial-gradient(circle at top right, rgba(103, 232, 249, 0.12), transparent 28%),
+          radial-gradient(circle at 16% 20%, rgba(51, 214, 159, 0.12), transparent 32%),
+          radial-gradient(circle at bottom left, rgba(125, 211, 252, 0.1), transparent 30%),
+          linear-gradient(160deg, var(--bg-0) 0%, var(--bg-1) 46%, var(--bg-2) 100%);
+        color: var(--text);
+        font-family: "Space Grotesk", sans-serif;
+      }
+
+      body::before,
+      body::after {
+        content: "";
+        position: fixed;
+        border-radius: 999px;
+        pointer-events: none;
+        filter: blur(26px);
+        z-index: 0;
+      }
+
+      body::before {
+        width: 18rem;
+        height: 18rem;
+        top: -5rem;
+        right: -5rem;
+        background: rgba(103, 232, 249, 0.12);
+      }
+
+      body::after {
+        width: 24rem;
+        height: 24rem;
+        left: -8rem;
+        bottom: -8rem;
+        background: rgba(51, 214, 159, 0.12);
+      }
+
+      .page {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .shell {
+        max-width: 1480px;
+        margin: 0 auto;
+      }
+
+      .glass,
+      .neo {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        box-shadow: var(--shadow-hard), var(--shadow-soft);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+      }
+
+      .neo {
+        background: linear-gradient(180deg, rgba(16, 28, 46, 0.84), rgba(8, 15, 28, 0.84));
+        box-shadow: var(--shadow-hard), var(--shadow-soft), var(--shadow-inset);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+        gap: 18px;
+        padding: 24px;
+        border-radius: 30px;
+      }
+
+      .eyebrow {
+        margin: 0;
+        font-size: 0.74rem;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--accent);
+        font-weight: 700;
+      }
+
+      .hero-title {
+        margin: 12px 0 0;
+        font-family: "Sora", sans-serif;
+        font-size: clamp(2rem, 3.6vw, 3.6rem);
+        line-height: 1;
+        font-weight: 800;
+      }
+
+      .hero-copy {
+        margin: 14px 0 0;
+        max-width: 68ch;
+        color: var(--muted);
+        line-height: 1.65;
+        font-size: 0.98rem;
+      }
+
+      .hero-badges,
+      .hero-links,
+      .control-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .hero-badges {
+        margin-top: 22px;
+      }
+
+      .hero-badge,
+      .hero-link {
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        background: rgba(255, 255, 255, 0.05);
+        color: #dff7ff;
+        padding: 10px 14px;
+        font-size: 0.86rem;
+        text-decoration: none;
+      }
+
+      .hero-side {
+        display: grid;
+        gap: 16px;
+      }
+
+      .hero-links {
+        justify-content: flex-end;
+      }
+
+      .hero-link {
+        font-weight: 700;
+      }
+
+      .status-card,
+      .section,
+      .score-card,
+      .prompt-card,
+      .mini-card,
+      .list-card {
+        border-radius: 26px;
+      }
+
+      .status-card,
+      .section,
+      .score-card,
+      .prompt-card {
+        padding: 22px;
+      }
+
+      .status-title {
+        margin: 0;
+        font-size: 0.8rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .status-pill {
+        margin-top: 12px;
+        min-height: 48px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.04);
+        color: #e8f4ff;
+        display: flex;
+        align-items: center;
+        padding: 12px 14px;
+        line-height: 1.45;
+      }
+
+      .status-pill[data-tone="success"] {
+        border-color: rgba(94, 240, 190, 0.3);
+        background: rgba(94, 240, 190, 0.12);
+        color: #d6ffef;
+      }
+
+      .status-pill[data-tone="error"] {
+        border-color: rgba(255, 142, 161, 0.28);
+        background: rgba(255, 142, 161, 0.12);
+        color: #ffd9e0;
+      }
+
+      .status-pill[data-tone="warning"] {
+        border-color: rgba(255, 209, 102, 0.28);
+        background: rgba(255, 209, 102, 0.12);
+        color: #fff1c2;
+      }
+
+      .status-note {
+        margin: 12px 0 0;
+        color: var(--muted);
+        line-height: 1.55;
+        font-size: 0.9rem;
+      }
+
+      .section {
+        margin-top: 18px;
+      }
+
+      .section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+
+      .section-title {
+        margin: 0;
+        font-family: "Sora", sans-serif;
+        font-size: 1.2rem;
+      }
+
+      .section-copy {
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .control-grid {
+        display: grid;
+        grid-template-columns: 1.15fr 1fr 1fr auto auto;
+        gap: 12px;
+        align-items: end;
+      }
+
+      .field {
+        display: grid;
+        gap: 8px;
+      }
+
+      .field label {
+        font-size: 0.78rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .field select,
+      .field input,
+      textarea {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(6, 13, 24, 0.78);
+        color: var(--text);
+        padding: 13px 14px;
+        font: inherit;
+        outline: none;
+        box-shadow: var(--shadow-inset);
+      }
+
+      .action-btn {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 13px 18px;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+        transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, opacity 140ms ease;
+      }
+
+      .action-btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .action-btn:disabled {
+        cursor: default;
+        opacity: 0.66;
+        transform: none;
+      }
+
+      .action-btn.primary {
+        color: #031018;
+        border-color: rgba(103, 232, 249, 0.32);
+        background: linear-gradient(135deg, var(--accent) 0%, #d3fbff 100%);
+      }
+
+      .action-btn.secondary {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .runtime-strip {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 14px;
+        align-items: center;
+        padding: 14px 16px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .runtime-title {
+        margin: 0;
+        font-size: 0.8rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .runtime-note {
+        margin: 6px 0 0;
+        color: var(--muted);
+        line-height: 1.5;
+        font-size: 0.92rem;
+      }
+
+      .score-grid {
+        display: grid;
+        grid-template-columns: minmax(300px, 0.72fr) minmax(0, 1.28fr);
+        gap: 16px;
+        margin-top: 18px;
+      }
+
+      .score-card {
+        display: grid;
+        align-content: start;
+        gap: 14px;
+      }
+
+      .score-orb {
+        width: 148px;
+        height: 148px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.22), transparent 38%),
+          linear-gradient(135deg, rgba(103, 232, 249, 0.32), rgba(51, 214, 159, 0.22));
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .score-orb strong {
+        display: block;
+        font-family: "Sora", sans-serif;
+        font-size: 2.5rem;
+        line-height: 1;
+      }
+
+      .score-orb span {
+        display: block;
+        margin-top: 6px;
+        font-size: 0.82rem;
+        color: rgba(236, 248, 255, 0.8);
+        text-align: center;
+      }
+
+      .level-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .level-chip.good {
+        border-color: rgba(94, 240, 190, 0.34);
+        color: #d6ffef;
+        background: rgba(94, 240, 190, 0.1);
+      }
+
+      .level-chip.watch {
+        border-color: rgba(125, 211, 252, 0.34);
+        color: #d9f6ff;
+        background: rgba(125, 211, 252, 0.1);
+      }
+
+      .level-chip.warning {
+        border-color: rgba(255, 209, 102, 0.34);
+        color: #fff0bf;
+        background: rgba(255, 209, 102, 0.1);
+      }
+
+      .level-chip.critical {
+        border-color: rgba(255, 142, 161, 0.34);
+        color: #ffd8e0;
+        background: rgba(255, 142, 161, 0.1);
+      }
+
+      .health-copy,
+      .generated-at {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .dimension-stack,
+      .list-stack,
+      .metrics-grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .dimension-row {
+        border-radius: 18px;
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .dimension-labels {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .dimension-labels strong {
+        font-size: 0.98rem;
+      }
+
+      .dimension-labels span {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .dimension-track {
+        margin-top: 12px;
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        overflow: hidden;
+      }
+
+      .dimension-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-3) 100%);
+      }
+
+      .signal-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .list-card {
+        padding: 20px;
+      }
+
+      .list-card h3 {
+        margin: 0;
+        font-family: "Sora", sans-serif;
+        font-size: 1rem;
+      }
+
+      .list-card p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.5;
+        font-size: 0.92rem;
+      }
+
+      .list-stack {
+        margin: 16px 0 0;
+        padding-left: 18px;
+      }
+
+      .list-stack li {
+        color: #edf7ff;
+        line-height: 1.58;
+      }
+
+      .metrics-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .mini-card {
+        padding: 18px;
+      }
+
+      .metric-label {
+        margin: 0;
+        font-size: 0.78rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .metric-value {
+        margin: 12px 0 0;
+        font-family: "Sora", sans-serif;
+        font-size: clamp(1.5rem, 2.8vw, 2.2rem);
+        line-height: 1.04;
+      }
+
+      .metric-note {
+        margin: 12px 0 0;
+        color: var(--muted);
+        line-height: 1.55;
+        font-size: 0.92rem;
+      }
+
+      .prompt-card textarea {
+        min-height: 420px;
+        resize: vertical;
+        line-height: 1.65;
+      }
+
+      .prompt-meta {
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .empty-state {
+        border-radius: 18px;
+        border: 1px dashed rgba(148, 163, 184, 0.22);
+        background: rgba(255, 255, 255, 0.02);
+        padding: 20px;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      @media (max-width: 1080px) {
+        .hero,
+        .score-grid,
+        .signal-grid,
+        .metrics-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .hero-links {
+          justify-content: flex-start;
+        }
+
+        .control-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 760px) {
+        .page {
+          padding: 14px;
+        }
+
+        .hero,
+        .section,
+        .score-card,
+        .prompt-card {
+          padding: 18px;
+          border-radius: 22px;
+        }
+
+        .control-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .runtime-strip {
+          grid-template-columns: 1fr;
+        }
+
+        .control-actions {
+          width: 100%;
+        }
+
+        .control-actions .action-btn {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <div class="shell">
+        <section class="hero glass">
+          <div>
+            <p class="eyebrow">Conseiller IA</p>
+            <h1 class="hero-title">Lecture executive du site V2</h1>
+            <p class="hero-copy">
+              Cette page consolide le trafic, la presence, les parties, l'acquisition, les depots et la pression
+              operations pour te sortir un diagnostic clair, des signaux prioritaires et un prompt pret a envoyer a un LLM.
+            </p>
+            <div class="hero-badges">
+              <span class="hero-badge">Vercel first</span>
+              <span class="hero-badge">Admin finance uniquement</span>
+              <span class="hero-badge">Prompt copilote pret a copier</span>
+            </div>
+          </div>
+          <div class="hero-side">
+            <div class="hero-links">
+              <a class="hero-link" href="./index.html">Hub dashboard</a>
+              <a class="hero-link" href="./Dsite-visits.html">Visites site</a>
+              <a class="hero-link" href="./Dgames-volume.html">Volume jeux</a>
+            </div>
+            <article class="neo status-card">
+              <p class="status-title">Etat du rapport</p>
+              <div class="status-pill" id="aiAdvisorStatus">Choisis un mode de lecture puis genere le rapport.</div>
+              <p class="status-note">
+                Le rapport suit le nouvel environnement V2: HTTP dashboard vers Vercel, auth admin via Firebase et base
+                Firestore partagee avec le site.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section glass">
+          <div class="section-head">
+            <div>
+              <h2 class="section-title">Generation du rapport</h2>
+              <p class="section-copy">
+                Tu peux rester en lecture rapide ou forcer une periode personnalisee. Le prompt final se base uniquement sur les chiffres remontes.
+              </p>
+            </div>
+          </div>
+          <div class="control-grid">
+            <div class="field">
+              <label for="aiAdvisorReportType">Mode de rapport</label>
+              <select id="aiAdvisorReportType">
+                <option value="daily">Lecture quotidienne</option>
+                <option value="global">Lecture globale recente</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="aiAdvisorDateFrom">Date debut</label>
+              <input id="aiAdvisorDateFrom" type="date" />
+            </div>
+            <div class="field">
+              <label for="aiAdvisorDateTo">Date fin</label>
+              <input id="aiAdvisorDateTo" type="date" />
+            </div>
+            <button class="action-btn primary" id="aiAdvisorGenerateBtn" type="button">Generer le rapport</button>
+            <button class="action-btn secondary" id="aiAdvisorCopyBtn" type="button" disabled>Copier le prompt</button>
+          </div>
+          <div class="runtime-strip">
+            <div>
+              <p class="runtime-title">Fenetre active</p>
+              <p class="runtime-note">
+                Sans dates, le mode `quotidien` lit aujourd'hui et le mode `global` lit les 30 derniers jours. Avec des dates,
+                la periode personnalisee prend la main jusqu'a 180 jours.
+              </p>
+            </div>
+            <p class="runtime-note" id="aiAdvisorGeneratedAt">Dernier rapport: --</p>
+          </div>
+        </section>
+
+        <section class="score-grid">
+          <article class="neo score-card">
+            <p class="eyebrow">Sante du site</p>
+            <div class="score-orb">
+              <div>
+                <strong id="aiAdvisorHealthScore">--</strong>
+                <span>score global / 100</span>
+              </div>
+            </div>
+            <span class="level-chip watch" id="aiAdvisorHealthLevel">En attente</span>
+            <p class="health-copy" id="aiAdvisorHealthCopy">
+              Le score apparaitra apres la premiere lecture du snapshot conseiller IA.
+            </p>
+          </article>
+
+          <article class="neo score-card">
+            <div class="section-head" style="margin:0 0 8px;">
+              <div>
+                <h2 class="section-title">Dimensions observees</h2>
+                <p class="section-copy">Trafic, engagement, monetisation, retention et operations.</p>
+              </div>
+            </div>
+            <div class="dimension-stack" id="aiAdvisorDimensions">
+              <div class="empty-state">Les dimensions calculees apparaitront ici apres generation du rapport.</div>
+            </div>
+          </article>
+        </section>
+
+        <section class="section glass">
+          <div class="section-head">
+            <div>
+              <h2 class="section-title">Signaux prioritaires</h2>
+              <p class="section-copy">Les cartes ci-dessous servent de lecture rapide avant meme de copier le prompt complet.</p>
+            </div>
+          </div>
+          <div class="signal-grid">
+            <article class="neo list-card">
+              <h3>Forces</h3>
+              <p>Ce qui tient deja bien sur la fenetre choisie.</p>
+              <ul class="list-stack" id="aiAdvisorStrengths">
+                <li>Aucun point fort remonte pour l'instant.</li>
+              </ul>
+            </article>
+            <article class="neo list-card">
+              <h3>Alertes</h3>
+              <p>Les risques visibles a traiter vite.</p>
+              <ul class="list-stack" id="aiAdvisorAlerts">
+                <li>Aucune alerte remontee pour l'instant.</li>
+              </ul>
+            </article>
+            <article class="neo list-card">
+              <h3>Priorites</h3>
+              <p>Les prochaines decisions a pousser cote produit, croissance et operations.</p>
+              <ul class="list-stack" id="aiAdvisorPriorities">
+                <li>Aucune priorite remontee pour l'instant.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="section glass">
+          <div class="section-head">
+            <div>
+              <h2 class="section-title">Chiffres utiles</h2>
+              <p class="section-copy">Vue compacte des points que le prompt va injecter dans la lecture executive.</p>
+            </div>
+          </div>
+          <div class="metrics-grid" id="aiAdvisorMetrics">
+            <div class="empty-state">Les cartes de chiffres apparaitront ici apres le premier rapport.</div>
+          </div>
+        </section>
+
+        <section class="section glass prompt-card">
+          <div class="section-head">
+            <div>
+              <h2 class="section-title">Prompt pret a copier</h2>
+              <p class="section-copy">Le prompt est deja formule pour une reponse directe, concrete et decisionnelle.</p>
+            </div>
+          </div>
+          <textarea id="aiAdvisorPromptOutput" spellcheck="false" readonly>Le prompt sera genere ici.</textarea>
+          <p class="prompt-meta" id="aiAdvisorPromptMeta">Aucune periode active pour l'instant.</p>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="./dashboard-nav-bubble.js"></script>
+    <script type="module" src="./Dai-advisor.js"></script>
+  </body>
+</html>

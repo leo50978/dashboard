@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kobposh V2 - WhatsApp</title>
+    <script src="./runtime-config.js"></script>
+    <style>
+      :root {
+        --bg: #060c18;
+        --panel: #101b33;
+        --line: rgba(153, 176, 227, 0.25);
+        --text: #eef3ff;
+        --muted: #9db1de;
+        --accent: #2bc48a;
+        --danger: #ff6a6a;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at top right, rgba(43, 196, 138, 0.12), transparent 30%), var(--bg);
+        color: var(--text);
+        font-family: "Space Grotesk", Arial, sans-serif;
+      }
+
+      .wrap {
+        width: min(1100px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 28px 0 42px;
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 22px;
+        padding: 18px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(1.4rem, 3vw, 2rem);
+      }
+
+      p {
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 16px;
+      }
+
+      .field {
+        border: 1px solid rgba(153, 176, 227, 0.18);
+        background: #081223;
+        border-radius: 16px;
+        padding: 14px;
+      }
+
+      .field label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #d8e6ff;
+      }
+
+      .field__help {
+        margin: 0 0 10px;
+        font-size: 0.84rem;
+        color: var(--muted);
+      }
+
+      .field__usage {
+        margin-top: 12px;
+        border-top: 1px solid rgba(153, 176, 227, 0.12);
+        padding-top: 12px;
+      }
+
+      .field__usage-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .field__badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(43, 196, 138, 0.25);
+        background: rgba(43, 196, 138, 0.12);
+        color: #9af3cf;
+        font-size: 0.74rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .field__summary {
+        color: #d8e6ff;
+        font-size: 0.83rem;
+      }
+
+      .field__usage-title {
+        margin-top: 10px;
+        color: #d8e6ff;
+        font-size: 0.76rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .field__locations {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        color: var(--muted);
+        font-size: 0.84rem;
+        line-height: 1.55;
+      }
+
+      .field__locations li + li {
+        margin-top: 6px;
+      }
+
+      .field input {
+        width: 100%;
+        border: 1px solid var(--line);
+        background: #0a1326;
+        color: var(--text);
+        border-radius: 12px;
+        padding: 11px 12px;
+        font: inherit;
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 18px;
+      }
+
+      button,
+      a.btn {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 14px;
+        color: var(--text);
+        background: #132443;
+        font: inherit;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      button.primary {
+        background: linear-gradient(135deg, #19a871 0%, #2bc48a 100%);
+        color: #042417;
+        font-weight: 700;
+      }
+
+      .status {
+        min-height: 22px;
+        margin-top: 12px;
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+
+      .status.error { color: var(--danger); }
+      .status.success { color: var(--accent); }
+
+      .preview {
+        margin-top: 16px;
+        border-top: 1px solid rgba(153, 176, 227, 0.16);
+        padding-top: 14px;
+      }
+
+      .preview__list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .preview__item {
+        border: 1px solid rgba(153, 176, 227, 0.18);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.03);
+        padding: 10px 12px;
+      }
+
+      .preview__item strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .preview__item span {
+        color: #d8e6ff;
+        font-size: 0.92rem;
+      }
+
+      .preview__item small {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      @media (max-width: 800px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="card">
+        <h1>Contacts WhatsApp du site par emplacement</h1>
+        <p>
+          Cette page pilote les numeros WhatsApp utilises par les boutons et modales du site V2.
+          Chaque bloc ci-dessous indique maintenant l'emplacement exact dans le site ou la cle est utilisee.
+        </p>
+
+        <form id="whatsappConfigForm" autocomplete="off">
+          <div class="grid">
+            <div class="field" data-whatsapp-field="support_default">
+              <label for="wa_support_default">Support par defaut</label>
+              <p class="field__help">Utilise pour l'assistance generale quand aucun contact plus specifique n'est defini.</p>
+              <input id="wa_support_default" name="support_default" placeholder="50940507232" />
+            </div>
+
+            <div class="field" data-whatsapp-field="agent_deposit">
+              <label for="wa_agent_deposit">Depot via agent</label>
+              <p class="field__help">Utilise pour les gros depots et les parcours qui demandent un agent depot.</p>
+              <input id="wa_agent_deposit" name="agent_deposit" placeholder="50940507232" />
+            </div>
+
+            <div class="field" data-whatsapp-field="withdrawal_assistance">
+              <label for="wa_withdrawal_assistance">Assistance retrait</label>
+              <p class="field__help">Utilise quand un utilisateur a besoin d'aide pour un retrait ou un blocage retrait.</p>
+              <input id="wa_withdrawal_assistance" name="withdrawal_assistance" placeholder="50940507232" />
+            </div>
+
+            <div class="field" data-whatsapp-field="rejected_order">
+              <label for="wa_rejected_order">Depot rejete</label>
+              <p class="field__help">Utilise pour accompagner les utilisateurs apres un rejet de depot ou un compte gele.</p>
+              <input id="wa_rejected_order" name="rejected_order" placeholder="50940507232" />
+            </div>
+
+            <div class="field" data-whatsapp-field="welcome_deposit_modal">
+              <label for="wa_welcome_deposit_modal">Modal depot bienvenue</label>
+              <p class="field__help">Utilise si le flux bonus / bienvenue demande un contact WhatsApp dedie.</p>
+              <input id="wa_welcome_deposit_modal" name="welcome_deposit_modal" placeholder="50940507232" />
+            </div>
+
+            <div class="field" data-whatsapp-field="recruitment_modal">
+              <label for="wa_recruitment_modal">Modal recrutement</label>
+              <p class="field__help">Utilise pour les boutons de recrutement ou les modales liees a l'affiliation.</p>
+              <input id="wa_recruitment_modal" name="recruitment_modal" placeholder="50940507232" />
+            </div>
+
+            <div class="field" data-whatsapp-field="championnat_mopyon">
+              <label for="wa_championnat_mopyon">Championnat Mopyon</label>
+              <p class="field__help">Reserve aux ecrans ou modales championnat Mopyon si ce contact doit etre separe.</p>
+              <input id="wa_championnat_mopyon" name="championnat_mopyon" placeholder="50940507232" />
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="primary" id="whatsappSaveBtn">Enregistrer</button>
+            <button type="button" id="whatsappReloadBtn">Recharger</button>
+            <a class="btn" href="./Dhero.html">Retour dashboard</a>
+          </div>
+          <div id="whatsappStatus" class="status"></div>
+        </form>
+
+        <div class="preview">
+          <p style="margin:0 0 10px;">Apercu rapide des numeros actifs</p>
+          <div id="whatsappPreview" class="preview__list"></div>
+        </div>
+      </section>
+    </main>
+    <script src="./dashboard-nav-bubble.js"></script>
+    <script type="module" src="./Dwhatsapp.js?v=dwhatsapp-v2"></script>
+  </body>
+</html>

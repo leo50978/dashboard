@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kobposh V2 · Paiement</title>
+    <script src="./runtime-config.js"></script>
+    <style>
+      :root {
+        --bg: #07111f;
+        --panel: #0d1a2f;
+        --panel-2: #12223e;
+        --line: rgba(148, 163, 184, 0.18);
+        --text: #eff6ff;
+        --muted: #9db1de;
+        --accent: #2bc48a;
+        --accent-2: #38bdf8;
+        --danger: #ff6a6a;
+        --warning: #f59e0b;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at top right, rgba(56, 189, 248, 0.12), transparent 28%),
+          radial-gradient(circle at top left, rgba(43, 196, 138, 0.12), transparent 26%),
+          var(--bg);
+        color: var(--text);
+        font-family: "Inter", Arial, sans-serif;
+      }
+
+      .wrap {
+        width: min(1240px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 26px 0 40px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+        gap: 18px;
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+        border-radius: 24px;
+        padding: 20px;
+        box-shadow: 0 18px 48px rgba(2, 6, 23, 0.22);
+      }
+
+      .eyebrow {
+        margin: 0;
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #7dd3fc;
+      }
+
+      h1 {
+        margin: 10px 0 8px;
+        font-size: clamp(1.8rem, 3vw, 2.5rem);
+        line-height: 1.05;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .stat {
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        background: rgba(255,255,255,0.04);
+        border-radius: 18px;
+        padding: 14px;
+      }
+
+      .stat__label {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+      }
+
+      .stat__value {
+        display: block;
+        margin-top: 10px;
+        font-size: 1.35rem;
+        font-weight: 800;
+      }
+
+      .tools {
+        display: grid;
+        gap: 12px;
+      }
+
+      .tool {
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        border-radius: 18px;
+        padding: 14px 16px;
+        background: rgba(255,255,255,0.03);
+      }
+
+      .tool strong {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 1rem;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(340px, 0.9fr) minmax(0, 1.1fr);
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .section-title {
+        margin: 0 0 14px;
+        font-size: 1.1rem;
+        font-weight: 800;
+      }
+
+      .form-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .field {
+        display: grid;
+        gap: 6px;
+      }
+
+      .field label {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #d8e6ff;
+      }
+
+      .field input,
+      .field textarea {
+        width: 100%;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 14px;
+        background: #091425;
+        color: var(--text);
+        padding: 12px 14px;
+        font: inherit;
+        outline: none;
+      }
+
+      .field textarea {
+        min-height: 108px;
+        resize: vertical;
+      }
+
+      .field input:focus,
+      .field textarea:focus {
+        border-color: rgba(56, 189, 248, 0.6);
+        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
+      }
+
+      .field__hint {
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+
+      .inline {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .checkbox {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.92rem;
+        color: #d8e6ff;
+      }
+
+      .checkbox input {
+        width: 18px;
+        height: 18px;
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 6px;
+      }
+
+      button {
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        border-radius: 14px;
+        padding: 11px 16px;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        color: var(--text);
+        background: #12223e;
+      }
+
+      button.primary {
+        background: linear-gradient(135deg, #2bc48a 0%, #38bdf8 100%);
+        color: #042417;
+        border-color: transparent;
+      }
+
+      button.ghost {
+        background: rgba(255,255,255,0.04);
+      }
+
+      button.danger {
+        background: rgba(239, 68, 68, 0.14);
+        color: #fecaca;
+        border-color: rgba(239, 68, 68, 0.24);
+      }
+
+      .status {
+        min-height: 22px;
+        margin-top: 12px;
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+
+      .status.success { color: var(--accent); }
+      .status.error { color: var(--danger); }
+
+      .list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .method {
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        border-radius: 18px;
+        background: rgba(255,255,255,0.03);
+        padding: 16px;
+      }
+
+      .method__top {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: start;
+      }
+
+      .method__title {
+        margin: 0;
+        font-size: 1.02rem;
+        font-weight: 800;
+      }
+
+      .method__meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 0.75rem;
+        font-weight: 700;
+      }
+
+      .pill.active {
+        background: rgba(16, 185, 129, 0.14);
+        color: #86efac;
+      }
+
+      .pill.inactive {
+        background: rgba(148, 163, 184, 0.14);
+        color: #cbd5e1;
+      }
+
+      .pill.file {
+        background: rgba(56, 189, 248, 0.12);
+        color: #bae6fd;
+      }
+
+      .method__copy {
+        margin-top: 12px;
+        font-size: 0.9rem;
+      }
+
+      .method__copy strong {
+        color: #e2e8f0;
+      }
+
+      .method__actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+
+      .empty {
+        border: 1px dashed rgba(148, 163, 184, 0.22);
+        border-radius: 18px;
+        padding: 22px;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      @media (max-width: 980px) {
+        .hero,
+        .layout {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 680px) {
+        .wrap {
+          width: min(100% - 20px, 1240px);
+        }
+
+        .stats,
+        .inline {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="hero">
+        <article class="card">
+          <p class="eyebrow">Paiement</p>
+          <h1>Methodes et outils</h1>
+          <p>
+            Paj sa la se selman pou jere metod depo ki parèt nan <strong>Paiement sécurisé</strong> sou sit
+            `kobposhv2`. Nou retire tout lot bagay yo pou paj la rete klè.
+          </p>
+          <div class="stats">
+            <div class="stat">
+              <span class="stat__label">Total</span>
+              <span class="stat__value" id="methodsTotalValue">0</span>
+            </div>
+            <div class="stat">
+              <span class="stat__label">Aktif</span>
+              <span class="stat__value" id="methodsActiveValue">0</span>
+            </div>
+            <div class="stat">
+              <span class="stat__label">Inaktif</span>
+              <span class="stat__value" id="methodsInactiveValue">0</span>
+            </div>
+          </div>
+        </article>
+
+        <aside class="card">
+          <p class="eyebrow">Ouvrir</p>
+          <h2 class="section-title" style="margin-top:8px;">Methodes, PDFs, parametres et notifications admin.</h2>
+          <div class="tools">
+            <div class="tool">
+              <strong>Metod depo</strong>
+              <p>Sa se pati aktif la pou kounye a. Li alimante koleksyon `paymentMethods` sou nouvo Firebase la.</p>
+            </div>
+            <div class="tool">
+              <strong>Rès zouti yo</strong>
+              <p>PDF, paramet ak notifikasyon admin yo ap rete pou pita si nou bezwen yo, men yo pa ankonbre paj sa a ankò.</p>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="layout">
+        <article class="card">
+          <h2 class="section-title" id="formTitle">Ajoute yon metod depo</h2>
+          <form id="paymentMethodForm" class="form-grid" autocomplete="off">
+            <div class="field">
+              <label for="methodName">Non metod la</label>
+              <input id="methodName" name="name" type="text" placeholder="MonCash" required />
+            </div>
+
+            <div class="inline">
+              <div class="field">
+                <label for="methodAccountName">Non kont</label>
+                <input id="methodAccountName" name="accountName" type="text" placeholder="Jean Pierre" />
+              </div>
+              <div class="field">
+                <label for="methodPhone">Numero</label>
+                <input id="methodPhone" name="phoneNumber" type="text" placeholder="+509..." />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="methodInstructions">Ti eksplikasyon</label>
+              <textarea id="methodInstructions" name="instructions" placeholder="Ekri kijan kliyan an dwe peye ak ki sa li dwe voye apre sa."></textarea>
+            </div>
+
+            <div class="inline">
+              <div class="field">
+                <label for="methodImage">Imaj metod</label>
+                <input id="methodImage" name="image" type="text" placeholder="moncash.png" />
+                <span class="field__hint">Mete selman non fichye a si li egziste sou sit la.</span>
+              </div>
+              <div class="field">
+                <label for="methodQrCode">QR code</label>
+                <input id="methodQrCode" name="qrCode" type="text" placeholder="qrmoncash.jpeg" />
+                <span class="field__hint">Opsyonèl. Moun nan ap wè l nan etap peman an.</span>
+              </div>
+            </div>
+
+            <label class="checkbox">
+              <input id="methodActive" name="isActive" type="checkbox" checked />
+              <span>Metod sa a aktif sou sit la</span>
+            </label>
+
+            <div class="actions">
+              <button type="submit" class="primary" id="saveMethodBtn">Anrejistre</button>
+              <button type="button" class="ghost" id="resetMethodBtn">Netwaye</button>
+            </div>
+            <div id="paymentMethodStatus" class="status"></div>
+          </form>
+        </article>
+
+        <article class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <h2 class="section-title" style="margin:0;">Metod ki anrejistre yo</h2>
+            <button type="button" class="ghost" id="reloadMethodsBtn">Rechaje</button>
+          </div>
+          <div id="paymentMethodsList" class="list" style="margin-top:14px;"></div>
+        </article>
+      </section>
+    </main>
+
+    <script type="module" src="./Dpayment.js?v=dpayment-v2-minimal"></script>
+    <script src="./dashboard-nav-bubble.js"></script>
+  </body>
+</html>

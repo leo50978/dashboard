@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <script src="./runtime-config.js"></script>
+  <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="shortcut icon" href="./favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+  <title>Kobposh V2 · Depots approuves</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root { --page-accent: #059669; --bg:#ecfdf5; --text:#052e16; --muted:#166534; --line:rgba(5,150,105,.18); --line-2:rgba(15,23,42,.08); }
+    * { box-sizing:border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin:0;
+      min-height:100dvh;
+      min-height:100vh;
+      overflow-x:hidden;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      font-family: Inter, system-ui, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top right, rgba(16,185,129,.12), transparent 28%),
+        linear-gradient(180deg,var(--bg),#f8fafc);
+    }
+    .shell {
+      width:min(100%,1240px);
+      margin:0 auto;
+      padding:
+        calc(12px + env(safe-area-inset-top, 0px))
+        max(14px, env(safe-area-inset-left, 0px))
+        calc(34px + env(safe-area-inset-bottom, 0px))
+        max(14px, env(safe-area-inset-right, 0px));
+    }
+    .panel {
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.95);
+      border-radius:24px;
+      box-shadow:0 18px 38px rgba(15,23,42,.08);
+      padding:16px;
+      overflow:hidden;
+    }
+    .topbar, .actions, .controls, .stats, .mix-grid {
+      display:grid;
+      gap:12px;
+    }
+    .topbar {
+      grid-template-columns:1fr;
+      align-items:start;
+    }
+    .chip {
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      width:fit-content;
+      border:1px solid var(--line);
+      background:white;
+      border-radius:999px;
+      color:var(--muted);
+      padding:12px 14px;
+      font-size:14px;
+      font-weight:700;
+      overflow-wrap:anywhere;
+    }
+    .actions {
+      grid-template-columns:1fr;
+      margin-top:18px;
+    }
+    .btn {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      width:100%;
+      min-height:48px;
+      border-radius:14px;
+      padding:12px 16px;
+      text-decoration:none;
+      font-weight:800;
+      text-align:center;
+      border:1px solid var(--line);
+      background:white;
+      color:var(--text);
+    }
+    .btn-primary { background:var(--page-accent); color:white; }
+    .controls {
+      grid-template-columns:1fr;
+      margin-top:18px;
+      padding:16px;
+      border:1px solid var(--line);
+      border-radius:20px;
+      background:linear-gradient(180deg, rgba(236,253,245,.95), white);
+    }
+    .field {
+      display:grid;
+      gap:6px;
+    }
+    .field label {
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.14em;
+      color:var(--muted);
+      font-weight:800;
+    }
+    .field input, .field select {
+      min-height:46px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:white;
+      color:var(--text);
+      padding:12px 14px;
+      font:inherit;
+    }
+    .field input:disabled {
+      opacity:.6;
+      cursor:not-allowed;
+      background:#f0fdf4;
+    }
+    .stats, .mix-grid {
+      margin-top:18px;
+      grid-template-columns:1fr;
+    }
+    .stat, .mix-card {
+      border:1px solid var(--line);
+      background:white;
+      border-radius:18px;
+      padding:16px;
+      min-width:0;
+    }
+    .stat p, .mix-card p {
+      margin:0;
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.15em;
+      color:var(--muted);
+      font-weight:800;
+    }
+    .stat strong, .mix-card strong {
+      display:block;
+      margin-top:10px;
+      font-size:2rem;
+      font-weight:900;
+      overflow-wrap:anywhere;
+    }
+    .stat small, .mix-card small {
+      display:block;
+      margin-top:8px;
+      color:var(--muted);
+      line-height:1.6;
+    }
+    .source-note {
+      margin-top:18px;
+      padding:14px 16px;
+      border-radius:18px;
+      border:1px dashed var(--line);
+      background:#f6fffb;
+      color:var(--muted);
+      line-height:1.7;
+    }
+    .status {
+      margin-top:18px;
+      color:var(--muted);
+      font-weight:700;
+      min-height:22px;
+    }
+    .status[data-tone="error"] { color:#b91c1c; }
+    .status[data-tone="success"] { color:#047857; }
+    .table-shell {
+      margin-top:20px;
+      overflow:visible;
+    }
+    table { width:100%; border-collapse:separate; border-spacing:0; }
+    th,td {
+      padding:14px 12px;
+      text-align:left;
+      border-bottom:1px solid var(--line-2);
+      font-size:14px;
+      vertical-align:top;
+    }
+    th {
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.12em;
+      color:var(--muted);
+    }
+    .source-pill {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:12px;
+      font-weight:800;
+      max-width:100%;
+      border:1px solid transparent;
+    }
+    .source-direct {
+      background:rgba(5,150,105,.08);
+      color:#047857;
+      border-color:rgba(5,150,105,.14);
+    }
+    .source-agent {
+      background:rgba(59,130,246,.08);
+      color:#1d4ed8;
+      border-color:rgba(59,130,246,.14);
+    }
+    .hidden { display:none !important; }
+
+    @media (max-width: 899px) {
+      thead { display:none; }
+      table, tbody { display:block; width:100%; }
+      tbody { display:grid; gap:12px; }
+      tr {
+        display:block;
+        border:1px solid rgba(148,163,184,.16);
+        border-radius:16px;
+        padding:12px 14px;
+        background:white;
+        box-shadow:0 8px 20px rgba(15,23,42,.05);
+      }
+      td {
+        display:flex;
+        flex-direction:column;
+        gap:6px;
+        width:100%;
+        padding:8px 0;
+        border-bottom:1px solid rgba(148,163,184,.12);
+        overflow-wrap:anywhere;
+        word-break:break-word;
+      }
+      td:last-child { border-bottom:none; padding-bottom:0; }
+      td::before {
+        content: attr(data-label);
+        font-size:11px;
+        line-height:1.4;
+        text-transform:uppercase;
+        letter-spacing:.12em;
+        color:var(--muted);
+        font-weight:800;
+      }
+    }
+
+    @media (min-width: 640px) {
+      .panel { padding:22px; }
+      .actions { grid-template-columns:repeat(3,minmax(0,1fr)); }
+      .controls { grid-template-columns:repeat(4,minmax(0,1fr)); align-items:end; }
+      .stats { grid-template-columns:repeat(4,minmax(0,1fr)); }
+      .mix-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    }
+
+    @media (min-width: 900px) {
+      .shell {
+        padding:
+          calc(28px + env(safe-area-inset-top, 0px))
+          max(18px, env(safe-area-inset-left, 0px))
+          calc(56px + env(safe-area-inset-bottom, 0px))
+          max(18px, env(safe-area-inset-right, 0px));
+      }
+      .panel { border-radius:30px; padding:26px; }
+      .topbar { grid-template-columns:1fr auto; align-items:center; }
+      .table-shell { overflow:auto; -webkit-overflow-scrolling:touch; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="panel">
+      <div class="topbar">
+        <div>
+          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.18em;color:var(--muted);font-weight:800;">Depots</p>
+          <h1 style="margin:10px 0 0;font-size:clamp(2rem,4vw,3.2rem);line-height:1.05;">Depots approuves</h1>
+          <p style="margin:14px 0 0;max-width:760px;color:var(--muted);line-height:1.8;">Vue V2 des depots valides, avec total global HTG et distinction claire entre depots directs et depots credites par agent.</p>
+        </div>
+        <div class="chip"><span style="width:10px;height:10px;border-radius:999px;background:var(--page-accent);"></span><span id="approvedDepositsGeneratedAt">Snapshot en attente...</span></div>
+      </div>
+
+      <div class="actions">
+        <a class="btn" href="./Dpayment.html"><i class="fas fa-arrow-left"></i>Retour paiement</a>
+        <a class="btn" href="./Dorders-pending.html"><i class="fas fa-list"></i>Depots en attente</a>
+        <a class="btn btn-primary" href="./Dagentdeposit.html"><i class="fas fa-user-tie"></i>Depot agent</a>
+      </div>
+
+      <div class="controls">
+        <div class="field">
+          <label for="approvedDepositsWindow">Fenetre</label>
+          <select id="approvedDepositsWindow">
+            <option value="global" selected>Tout l'historique</option>
+            <option value="30d">30 jours</option>
+            <option value="7d">7 jours</option>
+            <option value="today">Aujourd'hui</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="approvedDepositsDateFrom">Date debut</label>
+          <input id="approvedDepositsDateFrom" type="date" disabled>
+        </div>
+        <div class="field">
+          <label for="approvedDepositsDateTo">Date fin</label>
+          <input id="approvedDepositsDateTo" type="date" disabled>
+        </div>
+        <button id="approvedDepositsRefreshBtn" type="button" class="btn btn-primary" style="width:100%;min-height:46px;">Refresh</button>
+      </div>
+
+      <p id="approvedDepositsCoverage" class="status">Couverture en attente...</p>
+      <p id="approvedDepositsStatus" class="status">Chargement des depots approuves...</p>
+
+      <div class="stats">
+        <div class="stat"><p>Total approuves</p><strong id="approvedDepositsTotalCount">0</strong><small>Nombre de depots valides dans la fenetre.</small></div>
+        <div class="stat"><p>Montant total</p><strong id="approvedDepositsTotalAmount">0 HTG</strong><small>Somme HTG reellement approuvee.</small></div>
+        <div class="stat"><p>Depots directs</p><strong id="approvedDepositsDirectCount">0</strong><small id="approvedDepositsDirectAmount">0 HTG</small></div>
+        <div class="stat"><p>Depots agent</p><strong id="approvedDepositsAgentCount">0</strong><small id="approvedDepositsAgentAmount">0 HTG</small></div>
+      </div>
+
+      <div class="mix-grid">
+        <div class="mix-card"><p>Part agent</p><strong id="approvedDepositsAgentShare">0%</strong><small>Poids HTG des credits agent dans le total approuve.</small></div>
+        <div class="mix-card"><p>Ticket moyen</p><strong id="approvedDepositsAvgTicket">0 HTG</strong><small>Moyenne par depot approuve.</small></div>
+        <div class="mix-card"><p>Mix methodes</p><strong id="approvedDepositsMoncash">0 HTG · 0 depot(s)</strong><small id="approvedDepositsNatcash">0 HTG · 0 depot(s)</small><small id="approvedDepositsOther">0 HTG · 0 depot(s)</small></div>
+      </div>
+
+      <div class="source-note" id="approvedDepositsSource">Source en attente...</div>
+
+      <div class="table-shell">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Client</th>
+              <th>Contact</th>
+              <th>Montant</th>
+              <th>Methode</th>
+              <th>Source</th>
+              <th>Code</th>
+            </tr>
+          </thead>
+          <tbody id="approvedDepositsTableBody"></tbody>
+        </table>
+      </div>
+      <div id="approvedDepositsEmpty" class="hidden" style="margin-top:24px;border:1px dashed var(--line);border-radius:20px;padding:28px;text-align:center;color:var(--muted);font-weight:700;">Aucun depot approuve trouve pour cette fenetre.</div>
+    </section>
+  </main>
+  <script type="module" src="./Dorders-approved.js"></script>
+  <script src="./dashboard-nav-bubble.js"></script>
+</body>
+</html>

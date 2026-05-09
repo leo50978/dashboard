@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="./runtime-config.js"></script>
+    <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="shortcut icon" href="./favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <link rel="manifest" href="./site.webmanifest" />
+    <title>Depot via agent · Kobposh V2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg-0: #060a16;
+        --bg-1: #0c1325;
+        --bg-2: #15203c;
+        --panel: rgba(14, 24, 44, 0.78);
+        --line: rgba(148, 163, 184, 0.16);
+        --text: #eef4ff;
+        --muted: #9db0d5;
+        --accent: #40c4ff;
+        --accent-2: #34d399;
+        --accent-3: #ff9f59;
+        --danger: #ff8ea1;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Space Grotesk", "Sora", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(64, 196, 255, 0.22), transparent 28%),
+          radial-gradient(circle at top right, rgba(255, 159, 89, 0.18), transparent 24%),
+          linear-gradient(160deg, var(--bg-0) 0%, var(--bg-1) 46%, var(--bg-2) 100%);
+      }
+
+      .shell {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 44px 0 64px;
+      }
+
+      .hero,
+      .panel,
+      .result-card,
+      .metric {
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background: var(--panel);
+        box-shadow: 0 28px 64px rgba(4, 10, 24, 0.34);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+      }
+
+      .hero {
+        padding: 32px;
+      }
+
+      .eyebrow {
+        margin: 0 0 14px;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        color: #89d8ff;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2.2rem, 4vw, 3.7rem);
+        line-height: 0.98;
+        font-weight: 800;
+      }
+
+      .hero-copy {
+        margin: 16px 0 0;
+        max-width: 48rem;
+        line-height: 1.75;
+        color: var(--muted);
+      }
+
+      .hero-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 24px;
+      }
+
+      .badge {
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 10px 14px;
+        font-size: 0.84rem;
+        color: #dbeafe;
+      }
+
+      .panel {
+        margin-top: 22px;
+        padding: 28px;
+      }
+
+      .search-stack {
+        display: grid;
+        gap: 14px;
+        justify-items: center;
+      }
+
+      .search-label {
+        font-size: 0.86rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #9fd8ff;
+        font-weight: 700;
+      }
+
+      .search-box {
+        width: min(100%, 720px);
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+      }
+
+      .search-input,
+      .field-input,
+      .field-select,
+      .field-textarea {
+        width: 100%;
+        border-radius: 18px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text);
+        padding: 15px 18px;
+        font: inherit;
+        outline: none;
+      }
+
+      .field-textarea {
+        min-height: 88px;
+        resize: vertical;
+      }
+
+      .search-button,
+      .primary-btn,
+      .secondary-btn {
+        border: none;
+        border-radius: 18px;
+        padding: 15px 18px;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .search-button,
+      .primary-btn {
+        color: #082032;
+        background: linear-gradient(135deg, #40c4ff 0%, #9ce4ff 100%);
+      }
+
+      .secondary-btn {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+      }
+
+      .status {
+        margin-top: 14px;
+        text-align: center;
+        color: var(--muted);
+        min-height: 20px;
+      }
+
+      .metrics {
+        margin-top: 22px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .metric {
+        padding: 18px;
+      }
+
+      .metric p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
+      .metric strong {
+        display: block;
+        margin-top: 10px;
+        font-size: 1.5rem;
+      }
+
+      .results {
+        margin-top: 24px;
+        display: grid;
+        gap: 16px;
+      }
+
+      .result-card {
+        padding: 22px;
+      }
+
+      .result-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: flex-start;
+      }
+
+      .result-title {
+        margin: 0;
+        font-size: 1.2rem;
+      }
+
+      .result-copy {
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+
+      .result-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .result-grid div {
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        padding: 12px 14px;
+      }
+
+      .result-grid span {
+        display: block;
+        font-size: 0.78rem;
+        color: var(--muted);
+      }
+
+      .result-grid strong {
+        display: block;
+        margin-top: 7px;
+        font-size: 1rem;
+      }
+
+      .result-actions {
+        margin-top: 18px;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .empty {
+        margin-top: 24px;
+        padding: 32px;
+        text-align: center;
+        border-radius: 24px;
+        border: 1px dashed rgba(148, 163, 184, 0.22);
+        color: var(--muted);
+      }
+
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(2, 6, 23, 0.76);
+        backdrop-filter: blur(10px);
+        padding: 16px;
+      }
+
+      .modal-overlay.is-open {
+        display: flex;
+      }
+
+      .modal-card {
+        width: min(100%, 920px);
+        max-height: min(92vh, 860px);
+        overflow: auto;
+        border-radius: 28px;
+        border: 1px solid var(--line);
+        background: rgba(10, 16, 32, 0.96);
+        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.45);
+        padding: 26px;
+      }
+
+      .modal-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .modal-title {
+        margin: 0;
+        font-size: 1.6rem;
+      }
+
+      .modal-copy {
+        margin: 10px 0 0;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .modal-grid {
+        margin-top: 20px;
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 18px;
+      }
+
+      .history-list,
+      .credit-panel {
+        border-radius: 22px;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 18px;
+      }
+
+      .history-list ul {
+        list-style: none;
+        padding: 0;
+        margin: 16px 0 0;
+        display: grid;
+        gap: 12px;
+      }
+
+      .history-item {
+        border-radius: 18px;
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 14px;
+      }
+
+      .history-item small {
+        color: var(--muted);
+      }
+
+      .history-item strong {
+        display: block;
+        margin-top: 7px;
+      }
+
+      .credit-panel form {
+        display: grid;
+        gap: 14px;
+        margin-top: 14px;
+      }
+
+      .field-label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 0.88rem;
+        color: #d5e4ff;
+        font-weight: 700;
+      }
+
+      .modal-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 18px;
+      }
+
+      @media (max-width: 900px) {
+        .metrics,
+        .result-grid,
+        .modal-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .search-box {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <section class="hero">
+        <p class="eyebrow">Canal assisté</p>
+        <h1>Crédit agent</h1>
+        <p class="hero-copy">
+          Recherche un client, vérifie rapidement son historique de dépôts, puis crédite son compte directement en HTG comme un dépôt approuvé réel. Les règles comptables doivent rester alignées sur le moteur V2.
+        </p>
+        <div class="hero-badges">
+          <span class="badge">Recherche ciblée</span>
+          <span class="badge">Audit agent</span>
+          <span class="badge">Flux 100% HTG</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="search-stack">
+          <label class="search-label" for="agentDepositSearchInput">Rechercher un client</label>
+          <div class="search-box">
+            <input id="agentDepositSearchInput" class="search-input" type="search" placeholder="UID, email, téléphone ou username" />
+            <button id="agentDepositSearchBtn" class="search-button" type="button">Chercher</button>
+          </div>
+          <div id="agentDepositStatus" class="status">Connexion admin en cours...</div>
+        </div>
+
+        <div class="metrics">
+          <div class="metric">
+            <p>Résultats</p>
+            <strong id="agentDepositResultsCount">0</strong>
+          </div>
+          <div class="metric">
+            <p>Recherche</p>
+            <strong id="agentDepositQueryEcho">-</strong>
+          </div>
+          <div class="metric">
+            <p>Admin</p>
+            <strong id="agentDepositAdminEmail">-</strong>
+          </div>
+        </div>
+
+        <div id="agentDepositResults" class="results"></div>
+        <div id="agentDepositEmpty" class="empty">Entre un identifiant client pour commencer.</div>
+      </section>
+    </div>
+
+    <div id="agentDepositModalOverlay" class="modal-overlay" aria-hidden="true">
+      <div class="modal-card">
+        <div class="modal-head">
+          <div>
+            <h2 id="agentDepositModalTitle" class="modal-title">Chargement...</h2>
+            <p id="agentDepositModalCopy" class="modal-copy">Préparation du dossier client.</p>
+          </div>
+          <button id="agentDepositModalClose" class="secondary-btn" type="button">Fermer</button>
+        </div>
+
+        <div class="modal-grid">
+          <section class="history-list">
+            <h3 style="margin:0;">Historique commandes</h3>
+            <p style="margin:10px 0 0;color:var(--muted);line-height:1.6;">Dernières commandes du client pour vérifier son contexte avant crédit.</p>
+            <ul id="agentDepositHistoryList"></ul>
+          </section>
+
+          <section class="credit-panel">
+            <h3 style="margin:0;">Créditer le compte</h3>
+            <p style="margin:10px 0 0;color:var(--muted);line-height:1.6;">Ce crédit doit créer un dépôt approuvé réel et mettre à jour uniquement les soldes HTG du client.</p>
+
+            <form id="agentDepositCreditForm">
+              <div>
+                <label class="field-label" for="agentDepositAmountInput">Montant HTG</label>
+                <input id="agentDepositAmountInput" class="field-input" type="number" min="25" step="1" placeholder="100" />
+              </div>
+              <div>
+                <label class="field-label" for="agentDepositMethodSelect">Méthode constatée</label>
+                <select id="agentDepositMethodSelect" class="field-select">
+                  <option value="agent_assisted">Dépôt via agent</option>
+                  <option value="moncash">MonCash</option>
+                  <option value="natcash">NatCash</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label" for="agentDepositNoteInput">Note interne</label>
+                <textarea id="agentDepositNoteInput" class="field-textarea" placeholder="Ex: capture validée sur WhatsApp par l’agent."></textarea>
+              </div>
+              <div id="agentDepositModalStatus" class="status"></div>
+              <div class="modal-actions">
+                <button class="secondary-btn" id="agentDepositCancelBtn" type="button">Annuler</button>
+                <button class="primary-btn" id="agentDepositSubmitBtn" type="submit">Créditer</button>
+              </div>
+            </form>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <script src="./dashboard-nav-bubble.js"></script>
+    <script type="module" src="./Dagentdeposit.js"></script>
+  </body>
+</html>

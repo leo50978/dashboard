@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kobposh V2 Dashboard Hub</title>
+    <script src="./runtime-config.js"></script>
+    <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="shortcut icon" href="./favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <link rel="manifest" href="./site.webmanifest" />
+    <style>
+      :root {
+        --bg-0: #04111b;
+        --bg-1: #0b1f32;
+        --bg-2: #122b3f;
+        --panel: rgba(7, 18, 31, 0.76);
+        --panel-soft: rgba(10, 25, 41, 0.64);
+        --line: rgba(148, 163, 184, 0.18);
+        --text: #edf7ff;
+        --muted: #a6bfd3;
+        --accent: #2bc48a;
+        --accent-2: #2eb7ff;
+        --accent-3: #f7c95f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Space Grotesk", Arial, sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(46, 183, 255, 0.18), transparent 26%),
+          radial-gradient(circle at top right, rgba(43, 196, 138, 0.16), transparent 24%),
+          linear-gradient(160deg, var(--bg-0) 0%, var(--bg-1) 46%, var(--bg-2) 100%);
+      }
+
+      .shell {
+        width: min(1220px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 32px 0 56px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+        gap: 22px;
+        align-items: stretch;
+      }
+
+      .hero-card,
+      .summary-card,
+      .section-card,
+      .tile {
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background: var(--panel);
+        box-shadow: 0 28px 64px rgba(3, 10, 20, 0.3);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+      }
+
+      .hero-card,
+      .summary-card,
+      .section-card {
+        padding: 28px;
+      }
+
+      .eyebrow {
+        margin: 0 0 12px;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        color: #89d8ff;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 3.6vw, 3.7rem);
+        line-height: 0.98;
+      }
+
+      .hero-copy,
+      .section-copy,
+      .summary-card p,
+      .tile p {
+        color: var(--muted);
+        line-height: 1.68;
+      }
+
+      .hero-copy {
+        max-width: 46rem;
+        margin-top: 18px;
+      }
+
+      .hero-badges,
+      .quick-links,
+      .section-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .hero-badges {
+        margin-top: 24px;
+      }
+
+      .badge,
+      .mini-link {
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 10px 14px;
+      }
+
+      .badge {
+        font-size: 0.84rem;
+        color: #dbeafe;
+      }
+
+      .mini-link {
+        color: #f8fbff;
+        text-decoration: none;
+        font-size: 0.88rem;
+        font-weight: 700;
+      }
+
+      .summary-card {
+        display: grid;
+        gap: 18px;
+      }
+
+      .summary-grid,
+      .tiles-grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .mini-stat {
+        border-radius: 20px;
+        padding: 16px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(148, 163, 184, 0.14);
+      }
+
+      .mini-stat span {
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .mini-stat strong {
+        display: block;
+        margin-top: 10px;
+        font-size: 1.24rem;
+      }
+
+      .summary-status {
+        border-radius: 22px;
+        padding: 18px;
+        background: linear-gradient(135deg, rgba(46, 183, 255, 0.18), rgba(43, 196, 138, 0.12));
+        border: 1px solid rgba(108, 217, 255, 0.18);
+      }
+
+      .summary-status strong {
+        display: block;
+        margin-bottom: 10px;
+        font-size: 1rem;
+      }
+
+      .section-head {
+        margin: 28px 0 14px;
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: end;
+      }
+
+      .section-head h2 {
+        font-size: 1.35rem;
+      }
+
+      .section-card + .section-card {
+        margin-top: 18px;
+      }
+
+      .tiles-grid {
+        margin-top: 18px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .tile {
+        padding: 20px;
+        background: var(--panel-soft);
+      }
+
+      .tile-tag {
+        display: inline-flex;
+        border-radius: 999px;
+        padding: 7px 11px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        background: rgba(255, 255, 255, 0.05);
+        color: #d8ecff;
+      }
+
+      .tile h3 {
+        margin-top: 14px;
+        font-size: 1.08rem;
+      }
+
+      .tile p {
+        margin-top: 10px;
+        min-height: 72px;
+        font-size: 0.93rem;
+      }
+
+      .tile a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 18px;
+        min-height: 44px;
+        width: 100%;
+        border-radius: 16px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        text-decoration: none;
+        color: #06101d;
+        background: linear-gradient(135deg, #2bc48a 0%, #7de2bb 100%);
+        font-weight: 800;
+      }
+
+      .tile a.secondary {
+        color: #f8fbff;
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .footer-note {
+        margin-top: 24px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      @media (max-width: 1080px) {
+        .hero,
+        .tiles-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .shell {
+          width: min(100% - 22px, 100%);
+          padding-top: 22px;
+        }
+
+        .hero-card,
+        .summary-card,
+        .section-card,
+        .tile {
+          border-radius: 24px;
+        }
+
+        .summary-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .section-head {
+          flex-direction: column;
+          align-items: start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <article class="hero-card">
+          <p class="eyebrow">Dashboard V2</p>
+          <h1>Kobposh Admin Hub</h1>
+          <p class="hero-copy">
+            Cette page devient le point d'entree du dashboard V2. Elle regroupe les pages deja presentes dans
+            <strong>D:\dashboardkobposhv2</strong> et les expose avec des boutons simples, comme sur l'ancien dashboard,
+            mais en restant alignee sur l'environnement V2.
+          </p>
+          <div class="hero-badges">
+            <span class="badge">Base frontend V2</span>
+            <span class="badge">Navigation centralisee</span>
+            <span class="badge">Acces rapide admin</span>
+          </div>
+          <div class="section-links" style="margin-top:24px;">
+            <a class="mini-link" href="./Dwithdrawals-pending.html">Retraits en attente</a>
+            <a class="mini-link" href="./Dorders-pending.html">Depots en attente</a>
+            <a class="mini-link" href="./Dorders-approved.html">Depots approuves</a>
+            <a class="mini-link" href="./Dclient-review.html">Revue client</a>
+            <a class="mini-link" href="./Dwhatsapp.html">WhatsApp</a>
+          </div>
+        </article>
+
+        <aside class="summary-card">
+          <div>
+            <p class="eyebrow" style="margin-bottom:10px;">Etat rapide</p>
+            <h2>Accueil central du dashboard</h2>
+            <p style="margin-top:12px;">
+              L'auth admin du dashboard reste active ici aussi. Une fois connecte, tu peux sauter directement
+              vers la page qui t'interesse sans chercher les fichiers un par un.
+            </p>
+          </div>
+
+          <div class="summary-grid">
+            <div class="mini-stat">
+              <span>Pages principales</span>
+              <strong>16+</strong>
+            </div>
+            <div class="mini-stat">
+              <span>Jeux / analytics</span>
+              <strong>3</strong>
+            </div>
+            <div class="mini-stat">
+              <span>Finance / support</span>
+              <strong>8+</strong>
+            </div>
+            <div class="mini-stat">
+              <span>Projet frontend</span>
+              <strong>kobpoch-5db87</strong>
+            </div>
+          </div>
+
+          <div class="summary-status">
+            <strong id="dashboardHubSessionLabel">Verification de session admin...</strong>
+            <p id="dashboardHubSessionCopy">
+              La page verifie l'acces admin du dashboard avant de servir comme hub V2.
+            </p>
+          </div>
+        </aside>
+      </section>
+
+      <div class="section-head">
+        <div>
+          <h2>Pages disponibles</h2>
+          <p class="section-copy">Chaque bouton ouvre une page deja existante du dashboard V2.</p>
+        </div>
+      </div>
+
+      <section class="section-card">
+        <p class="eyebrow">Priorite quotidienne</p>
+        <h2>Finance et moderation</h2>
+        <p class="section-copy">
+          Les ecrans les plus utilises pour traiter les depots, retraits, transferts, revue client et correctifs compte.
+        </p>
+        <div class="tiles-grid">
+          <article class="tile">
+            <span class="tile-tag">Finance</span>
+            <h3>Retraits</h3>
+            <p>Centre principal des retraits avec navigation vers les statuts pending, approved et rejected.</p>
+            <a href="./Dwithdrawals.html">Ouvrir</a>
+          </article>
+          <article class="tile">
+            <span class="tile-tag">Finance</span>
+            <h3>Retraits en attente</h3>
+            <p>Va directement sur la file d'attente pour traiter les demandes de retrait sans detour.</p>
+            <a href="./Dwithdrawals-pending.html">Ouvrir</a>
+          </article>
+          <article class="tile">
+            <span class="tile-tag">Depots</span>
+            <h3>Depots en attente</h3>
+            <p>Liste rapide des depots a valider ou a rejeter dans le flux V2.</p>
+            <a href="./Dorders-pending.html">Ouvrir</a>
+          </article>
+          <article class="tile">
+            <span class="tile-tag">Depots</span>
+            <h3>Depots approuves</h3>
+            <p>Vue globale des depots valides avec detail direct vs agent dans l'environnement V2.</p>
+            <a href="./Dorders-approved.html">Ouvrir</a>
+          </article>
+          <article class="tile">
+            <span class="tile-tag">Support</span>
+            <h3>Revue client</h3>
+            <p>Recherche, lecture et revue manuelle d'un client sur la nouvelle base dashboard V2.</p>
+            <a href="./Dclient-review.html">Ouvrir</a>
+          </article>
+          <article class="tile">
+            <span class="tile-tag">Support</span>
+            <h3>Reset financier</h3>
+            <p>Reset complet des donnees financieres d'un client avec le flux backend V2 documente.</p>
+            <a href="./Dclient-reset.html">Ouvrir</a>
+          </article>
+          <article class="tile">
+            <span class="tile-tag">Support</span>
+            <h3>Debloquer compte</h3>
+            <p>Ouvre directement l'ecran de deblocage de compte client.</p>
+            <a href="./Dclient-unfreeze.html">Ouvrir</a>
+          </article>
+          <article class="tile">
+            <span class="tile-tag">Flux</span>
+            <h3>Flux depots</h3>
+            <p>Lecture et controle du flux depot V2 avec parcours pending et regles de traitement.</p>
+            <a href="./Ddepositflow.html">Ouvrir</a>
+          </article>
+          <article class="tile">
+            <span class="tile-tag">Flux</span>
+            <h3>Transferts</h3>
+            <p>Tableau des transferts et vue de circulation des montants entre comptes.</p>
+            <a href="./Dtransfers.html">Ouvrir</a>
+          </article>
+          <article class="tile">
+            <span class="tile-tag">Paiement</span>
+            <h3>Methodes depot</h3>
+            <p>Configuration et lecture des methodes de paiement visibles cote site et agents.</p>
+            <a href="./Dpayment.html">Ouvrir</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-card">
+        <p class="eyebrow">Pilotage produit</p>
+        <h2>Contenu, trafic et configuration</h2>
+        <p class="section-copy">
+          Les pages utiles pour piloter les contenus du site, les numeros WhatsApp, les visites et l'acquisition.
+        </p>
+        <div class="tiles-grid">
+          <article class="tile">
+            <span class="tile-tag">Contenu</span>
+            <h3>Hero site</h3>
+            <p>Gestion des visuels hero de la home V2 depuis le dashboard.</p>
+            <a href="./Dhero.html">Ouvrir</a>
+          </article>
+          <article class="tile">
+            <span class="tile-tag">WhatsApp</span>
+            <h3>Config WhatsApp</h3>
+            <p>Met a jour les numeros utilises par les modals de contact du site sans modifier le frontend.</p>
+            <a href="./Dwhatsapp.html">Ouvrir</a>
+          </article>
+          <article class="tile">
+            <span class="tile-tag">Support</span>
+            <h3>Recuperation mot de passe</h3>
+            <p>Centre de support pour les demandes de recuperation d'acces utilisateur.</p>
+            <a href="./Dpassword-recovery.html">Ouvrir</a>
+          </article>
+          <article class="tile">
+            <span class="tile-tag">Acquisition</span>
+            <h3>Acquisition clients</h3>
+            <p>Lecture des signaux d'inscription et de croissance sur la nouvelle base frontend.</p>
+            <a href="./Dacquisition.html">Ouvrir</a>
+          </article>
+          <article class="tile">
+            <span class="tile-tag">Trafic</span>
+            <h3>Visites du site</h3>
+            <p>Tableau de visites et lecture des periodes de trafic cote site V2.</p>
+            <a href="./Dsite-visits.html">Ouvrir</a>
+          </article>
+          <article class="tile">
+            <span class="tile-tag">Jeux</span>
+            <h3>Volume des parties</h3>
+            <p>Compare le volume des parties terminees sur Domino classique, Duel, Morpion, Dame et Pong.</p>
+            <a href="./Dgames-volume.html">Ouvrir</a>
+          </article>
+          <article class="tile">
+            <span class="tile-tag">Pilotage</span>
+            <h3>Conseiller IA</h3>
+            <p>Snapshot executive V2 qui consolide trafic, parties, acquisition, depots et operations dans un prompt pret a copier.</p>
+            <a href="./Dai-advisor.html">Ouvrir</a>
+          </article>
+          <article class="tile">
+            <span class="tile-tag">Agents</span>
+            <h3>Depot agent</h3>
+            <p>Ecran dedie au traitement des depots pris en charge par agent.</p>
+            <a href="./Dagentdeposit.html">Ouvrir</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-card">
+        <p class="eyebrow">Jeux et analyse</p>
+        <h2>Jeux actifs dans la V2</h2>
+        <p class="section-copy">
+          Les pages de suivi deja branchees dans le dashboard V2 pour les jeux et les bots.
+        </p>
+        <div class="tiles-grid">
+          <article class="tile">
+            <span class="tile-tag">Jeu</span>
+            <h3>Analytics Morpion</h3>
+            <p>Vue de suivi Morpion pour l'historique V2 deja branche dans le dashboard.</p>
+            <a href="./Dmorpion.html">Ouvrir</a>
+          </article>
+          <article class="tile">
+            <span class="tile-tag">Bot</span>
+            <h3>Pilotage Pong</h3>
+            <p>Controle et lecture du bot Pong, avec le panneau deja present dans le dashboard V2.</p>
+            <a href="./pilotagebot-pong.html">Ouvrir</a>
+          </article>
+          <article class="tile">
+            <span class="tile-tag">Bot</span>
+            <h3>Pilotage Domino classique</h3>
+            <p>Controle les niveaux `userpro`, `amateur`, `expert` et `ultra` utilises par les bots du Domino classique V2.</p>
+            <a href="./pilotagebot-domino-classique.html">Ouvrir</a>
+          </article>
+          <article class="tile">
+            <span class="tile-tag">Raccourci</span>
+            <h3>Retour home finance</h3>
+            <p>Un acces simple vers les pages de gestion deja en place, sans repasser par un fichier manuel.</p>
+            <a class="secondary" href="./Dwithdrawals-approved.html">Retraits approuves</a>
+          </article>
+        </div>
+      </section>
+
+      <p class="footer-note">
+        Cette page suit le contexte V2: le dashboard frontend est aligne sur le meme environnement que le site,
+        et sert maintenant de hub central comme dans l'ancien dashboard.
+      </p>
+    </main>
+
+    <script type="module" src="./dashboard-home.js"></script>
+  </body>
+</html>

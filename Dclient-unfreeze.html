@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="./runtime-config.js"></script>
+    <title>Kobposh V2 · Deblocage compte client</title>
+    <style>
+      :root {
+        --bg-0: #060a16;
+        --bg-1: #0c1325;
+        --bg-2: #15203c;
+        --panel: rgba(14, 24, 44, 0.78);
+        --line: rgba(148, 163, 184, 0.16);
+        --text: #eef4ff;
+        --muted: #9db0d5;
+        --accent: #40c4ff;
+        --accent-2: #34d399;
+        --danger: #ff9bab;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Space Grotesk", "Sora", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(64, 196, 255, 0.22), transparent 28%),
+          radial-gradient(circle at top right, rgba(255, 159, 89, 0.18), transparent 24%),
+          linear-gradient(160deg, var(--bg-0) 0%, var(--bg-1) 46%, var(--bg-2) 100%);
+      }
+
+      .shell {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 44px 0 64px;
+      }
+
+      .hero, .panel, .result-card, .metric {
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background: var(--panel);
+        box-shadow: 0 28px 64px rgba(4, 10, 24, 0.34);
+        backdrop-filter: blur(18px);
+      }
+
+      .hero, .panel { padding: 28px; }
+      .panel { margin-top: 22px; }
+
+      .eyebrow {
+        margin: 0 0 14px;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        color: #89d8ff;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2.2rem, 4vw, 3.7rem);
+        line-height: 0.98;
+        font-weight: 800;
+      }
+
+      .hero-copy {
+        margin: 16px 0 0;
+        max-width: 50rem;
+        line-height: 1.75;
+        color: var(--muted);
+      }
+
+      .hero-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 24px;
+      }
+
+      .badge {
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 10px 14px;
+        font-size: 0.84rem;
+        color: #dbeafe;
+      }
+
+      .search-stack {
+        display: grid;
+        gap: 14px;
+        justify-items: center;
+      }
+
+      .search-label {
+        font-size: 0.86rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #9fd8ff;
+        font-weight: 700;
+      }
+
+      .search-box {
+        width: min(100%, 720px);
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+      }
+
+      .search-input, .field-input, .field-textarea {
+        width: 100%;
+        border-radius: 18px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text);
+        padding: 15px 18px;
+        font: inherit;
+        outline: none;
+      }
+
+      .field-textarea {
+        min-height: 90px;
+        resize: vertical;
+      }
+
+      .search-button, .primary-btn, .secondary-btn {
+        border: none;
+        border-radius: 18px;
+        padding: 15px 18px;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .search-button, .primary-btn {
+        color: #082032;
+        background: linear-gradient(135deg, #40c4ff 0%, #9ce4ff 100%);
+      }
+
+      .secondary-btn {
+        color: #062512;
+        background: linear-gradient(135deg, #34d399 0%, #bafbe6 100%);
+      }
+
+      .status {
+        margin-top: 14px;
+        text-align: center;
+        color: var(--muted);
+        min-height: 20px;
+      }
+
+      .metrics {
+        margin-top: 22px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .metric { padding: 18px; }
+      .metric p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+      .metric strong {
+        display: block;
+        margin-top: 10px;
+        font-size: 1.5rem;
+      }
+
+      .results {
+        margin-top: 24px;
+        display: grid;
+        gap: 16px;
+      }
+
+      .result-card { padding: 22px; }
+      .result-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: flex-start;
+      }
+      .result-title { margin: 0; font-size: 1.2rem; }
+      .result-copy {
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+      .result-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+      .result-grid div {
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        padding: 12px 14px;
+      }
+      .result-grid span {
+        display: block;
+        font-size: 0.78rem;
+        color: var(--muted);
+      }
+      .result-grid strong {
+        display: block;
+        margin-top: 7px;
+        font-size: 1rem;
+      }
+      .result-actions {
+        margin-top: 18px;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .empty-state {
+        margin-top: 24px;
+        text-align: center;
+        color: var(--muted);
+        padding: 26px 18px;
+        border-radius: 24px;
+        border: 1px dashed rgba(148, 163, 184, 0.22);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .action-grid {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 14px;
+        align-items: start;
+      }
+
+      .freeze-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+      }
+
+      .freeze-pill.is-frozen {
+        background: rgba(255, 155, 171, 0.14);
+        color: #ffc2cc;
+        border: 1px solid rgba(255, 155, 171, 0.28);
+      }
+
+      .freeze-pill.is-open {
+        background: rgba(52, 211, 153, 0.14);
+        color: #bafbe6;
+        border: 1px solid rgba(52, 211, 153, 0.28);
+      }
+
+      @media (max-width: 900px) {
+        .metrics, .result-grid, .action-grid {
+          grid-template-columns: 1fr;
+        }
+        .search-box { grid-template-columns: 1fr; }
+        .result-head { flex-direction: column; }
+        .shell { width: min(100%, calc(100% - 22px)); }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">Protection compte</p>
+        <h1>Deblocage compte client</h1>
+        <p class="hero-copy">
+          Recherche un joueur, verifie si son compte a ete bloque apres des depots rejetes, puis debloque le compte avec une raison admin claire.
+        </p>
+        <div class="hero-badges">
+          <span class="badge">Recherche UID / email / numero / username</span>
+          <span class="badge">Lecture statut gel / retrait bloque</span>
+          <span class="badge">Deblocage admin avec raison</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="search-stack">
+          <div class="search-label">Chercher un client</div>
+          <div class="search-box">
+            <input id="unfreezeSearchInput" class="search-input" type="text" placeholder="UID, email, numero ou username" autocomplete="off" />
+            <button id="unfreezeSearchBtn" class="search-button" type="button">Chercher</button>
+          </div>
+        </div>
+
+        <div id="unfreezeSearchStatus" class="status"></div>
+
+        <div class="metrics">
+          <article class="metric">
+            <p>Admin connecte</p>
+            <strong id="unfreezeAdminEmail">-</strong>
+          </article>
+          <article class="metric">
+            <p>Resultats</p>
+            <strong id="unfreezeResultsCount">0</strong>
+          </article>
+          <article class="metric">
+            <p>Recherche</p>
+            <strong id="unfreezeQueryEcho">-</strong>
+          </article>
+        </div>
+
+        <div id="unfreezeResults" class="results"></div>
+        <div id="unfreezeEmpty" class="empty-state">Connexion admin en cours...</div>
+      </section>
+
+      <section class="panel">
+        <div class="action-grid">
+          <div>
+            <div class="search-label">Raison admin</div>
+            <textarea id="unfreezeReasonInput" class="field-textarea" placeholder="Exemple: client verifie par support, compte debloque apres revue manuelle."></textarea>
+          </div>
+          <div>
+            <button id="unfreezeActionBtn" class="secondary-btn" type="button">Debloquer le compte</button>
+          </div>
+        </div>
+        <div id="unfreezeActionStatus" class="status"></div>
+      </section>
+    </main>
+
+    <script src="./dashboard-nav-bubble.js"></script>
+    <script type="module" src="./Dclient-unfreeze.js"></script>
+  </body>
+</html>

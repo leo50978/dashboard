@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="./runtime-config.js"></script>
+    <title>Kobposh V2 - Reset financier client</title>
+    <style>
+      body { font-family: Arial, sans-serif; background:#0d1b2a; color:#fff; margin:0; }
+      .wrap { max-width: 900px; margin: 24px auto; padding: 16px; }
+      .card { background:#132238; border:1px solid #274564; border-radius:14px; padding:16px; margin-bottom:16px; }
+      input, textarea, button { width:100%; padding:10px; border-radius:10px; border:1px solid #33597f; background:#0f1d30; color:#fff; }
+      textarea { min-height:80px; }
+      .row { display:grid; grid-template-columns: 1fr auto; gap:10px; }
+      .row button { width:auto; min-width:180px; cursor:pointer; background:#36b37e; border:none; color:#062312; font-weight:700; }
+      .danger { background:#ff6b6b !important; color:#2a0a0a !important; }
+      .muted { color:#9ec0df; font-size:13px; }
+      .status { min-height:20px; margin-top:8px; }
+      .result { white-space:pre-wrap; font-family:Consolas, monospace; font-size:12px; color:#cde7ff; }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="card">
+        <h1>Reset financier client (mode complet)</h1>
+        <p class="muted">Cette action remet le solde et les historiques financiers a zero sans supprimer le compte utilisateur. Elle efface aussi les depots et retraits encore en attente.</p>
+      </section>
+
+      <section class="card">
+        <label>Recherche client (uid, numero, email, username)</label>
+        <div class="row">
+          <input id="queryInput" type="text" placeholder="Ex: +509..., uid..., username..." />
+          <button id="searchBtn" type="button">Rechercher</button>
+        </div>
+        <div id="searchStatus" class="status muted"></div>
+        <div id="results"></div>
+      </section>
+
+      <section class="card">
+        <h3>Action reset</h3>
+        <p class="muted">Selectionne un client puis lance l'apercu ou le reset direct. Le reset reel efface tout le financier du client.</p>
+        <label style="display:block;margin-top:10px;">Raison (optionnel)</label>
+        <textarea id="reasonInput" placeholder="Ex: demande support + validation manuelle"></textarea>
+        <div class="row" style="margin-top:10px;">
+          <button id="previewBtn" type="button">Apercu (dry-run)</button>
+          <button id="resetBtn" type="button" class="danger">Reset reel</button>
+        </div>
+        <div id="actionStatus" class="status muted"></div>
+      </section>
+
+      <section class="card">
+        <h3>Reponse</h3>
+        <div id="output" class="result">Aucune action pour l'instant.</div>
+      </section>
+    </main>
+
+    <script src="./dashboard-nav-bubble.js"></script>
+    <script type="module" src="./Dclient-reset.js"></script>
+  </body>
+</html>

@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="./runtime-config.js"></script>
+    <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="shortcut icon" href="./favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <link rel="manifest" href="./site.webmanifest" />
+    <title>Kobposh V2 - Revue client</title>
+    <style>
+      :root {
+        --bg-0: #06101f;
+        --bg-1: #0b1830;
+        --bg-2: #122443;
+        --panel: rgba(10, 19, 37, 0.84);
+        --panel-soft: rgba(255, 255, 255, 0.04);
+        --line: rgba(148, 163, 184, 0.18);
+        --line-strong: rgba(125, 211, 252, 0.28);
+        --text: #edf6ff;
+        --muted: #94a9c9;
+        --accent: #68d7ff;
+        --accent-2: #2bc48a;
+        --accent-3: #ffb86b;
+        --good: #34d399;
+        --warn: #fbbf24;
+        --bad: #fb7185;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { margin: 0; min-height: 100%; }
+      body {
+        color: var(--text);
+        font-family: "Segoe UI", Arial, sans-serif;
+        line-height: 1.5;
+        background:
+          radial-gradient(circle at top right, rgba(104, 215, 255, 0.12), transparent 26%),
+          radial-gradient(circle at bottom left, rgba(43, 196, 138, 0.12), transparent 30%),
+          linear-gradient(160deg, var(--bg-0) 0%, var(--bg-1) 46%, var(--bg-2) 100%);
+      }
+
+      .shell {
+        width: min(1440px, calc(100% - 24px));
+        margin: 0 auto;
+        padding: 18px 0 32px;
+      }
+
+      .hero,
+      .panel,
+      .metric,
+      .result-card,
+      .history-row,
+      .order-row {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        box-shadow: 0 28px 64px rgba(1, 6, 17, 0.28);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+      }
+
+      .hero,
+      .panel {
+        border-radius: 24px;
+        padding: 18px;
+      }
+
+      .hero-grid,
+      .grid-two,
+      .grid-three,
+      .search-box,
+      .history-filters,
+      .metrics {
+        display: grid;
+        gap: 14px;
+      }
+
+      .hero-grid,
+      .grid-two,
+      .grid-three,
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .eyebrow {
+        margin: 0 0 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        font-size: 0.74rem;
+        font-weight: 800;
+        color: var(--accent);
+      }
+
+      h1, h2, h3, p { margin-top: 0; }
+
+      h1 {
+        font-size: clamp(2rem, 4vw, 3.4rem);
+        line-height: 0.98;
+      }
+
+      .hero-copy,
+      .section-copy,
+      .status {
+        color: var(--muted);
+      }
+
+      .chip {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 14px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.04);
+        color: #dbeafe;
+        font-size: 0.86rem;
+        font-weight: 700;
+      }
+
+      .chip-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        margin-top: 5px;
+        background: var(--good);
+        flex: 0 0 auto;
+      }
+
+      .section-title {
+        margin-bottom: 6px;
+        font-size: 1.08rem;
+        font-weight: 800;
+      }
+
+      .search-input,
+      .field-input,
+      .field-select,
+      .search-button,
+      .primary-button,
+      .secondary-button,
+      .ghost-button {
+        min-height: 50px;
+        border-radius: 18px;
+        font: inherit;
+      }
+
+      .search-input,
+      .field-input,
+      .field-select {
+        width: 100%;
+        border: 1px solid var(--line);
+        background: rgba(7, 14, 31, 0.8);
+        color: var(--text);
+        padding: 0 16px;
+        outline: none;
+      }
+
+      .search-input:focus,
+      .field-input:focus,
+      .field-select:focus {
+        border-color: rgba(104, 215, 255, 0.48);
+        box-shadow: 0 0 0 4px rgba(104, 215, 255, 0.12);
+      }
+
+      .search-button,
+      .primary-button,
+      .secondary-button,
+      .ghost-button {
+        border: 0;
+        font-weight: 800;
+        cursor: pointer;
+        padding: 0 18px;
+        transition: transform 140ms ease, opacity 140ms ease;
+      }
+
+      .search-button,
+      .primary-button {
+        color: #08131f;
+        background: linear-gradient(135deg, #57d5ff 0%, #b5efff 100%);
+      }
+
+      .secondary-button {
+        color: #052419;
+        background: linear-gradient(135deg, #34d399 0%, #bafbe6 100%);
+      }
+
+      .ghost-button {
+        color: var(--text);
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+        transform: none;
+      }
+
+      .search-results,
+      .history-list,
+      .orders-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .result-card,
+      .history-row,
+      .order-row {
+        border-radius: 22px;
+        padding: 16px;
+      }
+
+      .history-head,
+      .result-head,
+      .order-head,
+      .panel-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .history-actions,
+      .result-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .mini-grid,
+      .history-grid,
+      .order-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .mini-grid div,
+      .history-grid div,
+      .order-grid div,
+      .metric {
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: var(--panel-soft);
+        padding: 12px 14px;
+      }
+
+      .mini-grid span,
+      .history-grid span,
+      .order-grid span,
+      .metric p {
+        display: block;
+        color: var(--muted);
+        font-size: 0.82rem;
+        margin-bottom: 6px;
+      }
+
+      .metric strong,
+      .mini-grid strong,
+      .history-grid strong,
+      .order-grid strong {
+        font-size: 1.1rem;
+      }
+
+      .field {
+        display: grid;
+        gap: 6px;
+      }
+
+      .field label {
+        color: #d9e8ff;
+        font-weight: 700;
+        font-size: 0.9rem;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 34px;
+        padding: 0 12px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        font-size: 0.8rem;
+        font-weight: 800;
+      }
+
+      .badge[data-tone="good"] {
+        color: #d1fae5;
+        border-color: rgba(52, 211, 153, 0.28);
+        background: rgba(52, 211, 153, 0.12);
+      }
+
+      .badge[data-tone="warn"] {
+        color: #fde68a;
+        border-color: rgba(251, 191, 36, 0.28);
+        background: rgba(251, 191, 36, 0.12);
+      }
+
+      .badge[data-tone="bad"] {
+        color: #fecdd3;
+        border-color: rgba(251, 113, 133, 0.28);
+        background: rgba(251, 113, 133, 0.12);
+      }
+
+      .badge[data-tone="neutral"] {
+        color: #dbeafe;
+      }
+
+      .status[data-tone="good"] { color: #86efac; }
+      .status[data-tone="warn"] { color: #fcd34d; }
+      .status[data-tone="bad"] { color: #fda4af; }
+
+      .hidden { display: none !important; }
+
+      .history-title,
+      .result-title,
+      .order-title {
+        margin-bottom: 4px;
+        font-size: 1rem;
+        font-weight: 800;
+      }
+
+      .history-meta,
+      .order-meta,
+      .result-copy {
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .pill-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .pill {
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.03);
+        font-size: 0.84rem;
+        color: #d7eaff;
+      }
+
+      @media (min-width: 860px) {
+        .hero-grid,
+        .grid-two {
+          grid-template-columns: 1.2fr 0.8fr;
+        }
+
+        .grid-three {
+          grid-template-columns: repeat(3, 1fr);
+        }
+
+        .search-box {
+          grid-template-columns: 1fr auto;
+        }
+
+        .history-filters {
+          grid-template-columns: repeat(3, 1fr);
+        }
+
+        .metrics {
+          grid-template-columns: repeat(4, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div class="hero-grid">
+          <div>
+            <p class="eyebrow">Revue client</p>
+            <h1>Wallet, depots et historique joueur</h1>
+            <p class="hero-copy">
+              Cette version V2 reprend l’ancien dashboard critique de revue client, mais l’interface est maintenant pensée pour le nouvel environnement HTG.
+              Les soldes visibles, les commandes et les synthèses affichées ici restent orientés HTG et financement V2.
+            </p>
+            <div class="pill-list">
+              <span class="chip"><span class="chip-dot"></span><span id="clientReviewAdminEmail">Connexion admin...</span></span>
+              <span class="chip" id="clientReviewSelectedChip">Aucun client selectionne</span>
+            </div>
+          </div>
+
+          <div class="panel">
+            <p class="section-title">Recherche rapide</p>
+            <p class="section-copy">UID, email, telephone ou username.</p>
+            <div class="search-box" style="margin-top:14px;">
+              <input id="clientReviewSearchInput" class="search-input" type="search" placeholder="Rechercher un client..." autocomplete="off" />
+              <button id="clientReviewSearchBtn" class="search-button" type="button">Chercher</button>
+            </div>
+            <p id="clientReviewStatus" class="status" data-tone="neutral" style="margin-top:12px;">Pret.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" style="margin-top:18px;">
+        <div>
+          <p class="section-title">Resultats de recherche</p>
+          <p class="section-copy">Choisis un client pour charger son espace de revue.</p>
+        </div>
+        <div id="clientReviewResults" class="search-results" style="margin-top:14px;"></div>
+        <p id="clientReviewResultsEmpty" class="status" data-tone="neutral" style="margin-top:10px;">Aucun resultat pour le moment.</p>
+      </section>
+
+      <section id="clientReviewDashboard" class="hidden" style="margin-top:18px;">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-title">Resume du compte</p>
+              <p id="clientReviewContextCopy" class="section-copy">Selectionne un joueur pour voir son etat.</p>
+            </div>
+            <div class="history-actions">
+              <button id="clientReviewApproveAllBtn" class="secondary-button" type="button">Approuver tout</button>
+              <button id="clientReviewRefreshBtn" class="ghost-button" type="button">Rafraichir</button>
+            </div>
+          </div>
+          <p id="clientReviewApproveAllStatus" class="status" data-tone="neutral" style="margin-top:10px;">Aucune approbation lancee.</p>
+
+          <div class="metrics" style="margin-top:18px;">
+            <div class="metric">
+              <p>HTG approuves</p>
+              <strong id="clientReviewApprovedHtg">0 HTG</strong>
+            </div>
+            <div class="metric">
+              <p>HTG en attente</p>
+              <strong id="clientReviewPendingHtg">0 HTG</strong>
+            </div>
+            <div class="metric">
+              <p>HTG jouables</p>
+              <strong id="clientReviewPlayableHtg">0 HTG</strong>
+            </div>
+            <div class="metric">
+              <p>HTG retirables</p>
+              <strong id="clientReviewWithdrawableHtg">0 HTG</strong>
+            </div>
+          </div>
+        </section>
+
+        <div class="grid-two" style="margin-top:18px;">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-title">Commandes recentes</p>
+                <p class="section-copy">Les dernieres commandes et leur statut funding V2.</p>
+              </div>
+              <span id="clientReviewPendingCountBadge" class="badge" data-tone="warn">0 en examen</span>
+            </div>
+            <div id="clientReviewOrders" class="orders-list" style="margin-top:14px;"></div>
+            <p id="clientReviewOrdersEmpty" class="status" data-tone="neutral" style="margin-top:10px;">Aucune commande disponible.</p>
+            <div id="clientReviewOrdersPagination" class="hidden" style="margin-top:12px;">
+              <button id="clientReviewOrdersLoadMoreBtn" class="ghost-button" type="button">Voir plus de commandes</button>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-title">Filtres historique</p>
+                <p class="section-copy">Filtre les parties par jeu, resultat, adversaire et periode.</p>
+              </div>
+              <div class="history-actions">
+                <button id="clientReviewHistoryRefreshBtn" class="primary-button" type="button">Recharger</button>
+              </div>
+            </div>
+
+            <div class="history-filters" style="margin-top:14px;">
+              <div class="field">
+                <label for="clientReviewGameFilter">Jeu</label>
+                <select id="clientReviewGameFilter" class="field-select">
+                  <option value="all">Tous les jeux</option>
+                  <option value="domino">Domino</option>
+                  <option value="morpion">Morpion</option>
+                  <option value="duel">Duel</option>
+                  <option value="dame">Dame</option>
+                  <option value="pong">Pong</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="clientReviewResultFilter">Resultat</label>
+                <select id="clientReviewResultFilter" class="field-select">
+                  <option value="all">Tous</option>
+                  <option value="win">Gagnes</option>
+                  <option value="loss">Perdus</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="clientReviewOpponentFilter">Adversaire</label>
+                <select id="clientReviewOpponentFilter" class="field-select">
+                  <option value="all">Tous</option>
+                  <option value="human">Humain</option>
+                  <option value="bot">Bot</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="clientReviewDateFrom">Date debut</label>
+                <input id="clientReviewDateFrom" class="field-input" type="date" />
+              </div>
+              <div class="field">
+                <label for="clientReviewDateTo">Date fin</label>
+                <input id="clientReviewDateTo" class="field-input" type="date" />
+              </div>
+            </div>
+
+            <p id="clientReviewHistoryMeta" class="status" data-tone="neutral" style="margin-top:14px;">0 partie chargee.</p>
+
+            <div class="metrics" style="margin-top:14px;">
+              <div class="metric">
+                <p>Parties affichees</p>
+                <strong id="clientReviewTotalMatches">0</strong>
+              </div>
+              <div class="metric">
+                <p>Mise affichee</p>
+                <strong id="clientReviewTotalWagered">0 HTG</strong>
+              </div>
+              <div class="metric">
+                <p>Gain affiche</p>
+                <strong id="clientReviewTotalWon">0 HTG</strong>
+              </div>
+              <div class="metric">
+                <p>Net affiche</p>
+                <strong id="clientReviewTotalNet">0 HTG</strong>
+              </div>
+            </div>
+
+            <div id="clientReviewGameBreakdown" class="orders-list" style="margin-top:14px;"></div>
+            <div id="clientReviewHistory" class="history-list" style="margin-top:14px;"></div>
+            <p id="clientReviewHistoryEmpty" class="status" data-tone="neutral" style="margin-top:10px;">Aucune partie a afficher.</p>
+            <div id="clientReviewPagination" class="hidden" style="margin-top:12px;">
+              <button id="clientReviewLoadMoreBtn" class="ghost-button" type="button">Voir plus</button>
+            </div>
+          </section>
+        </div>
+
+        <section class="panel" style="margin-top:18px;">
+          <div class="panel-head">
+            <div>
+              <p class="section-title">Analyse admin</p>
+              <p class="section-copy">Lecture des signaux de risque, avec une presentation nettoyee pour la V2.</p>
+            </div>
+            <div class="history-actions">
+              <button id="clientReviewFraudAnalyzeBtn" class="primary-button" type="button">Analyser</button>
+              <button id="clientReviewFraudRefreshBtn" class="ghost-button" type="button">Rafraichir</button>
+              <button id="clientReviewRepairResolvedBtn" class="secondary-button" type="button">Reparer commandes resolues</button>
+            </div>
+          </div>
+
+          <div class="metrics" style="margin-top:18px;">
+            <div class="metric">
+              <p>Score risque</p>
+              <strong id="clientReviewFraudScore">0/100</strong>
+            </div>
+            <div class="metric">
+              <p>Niveau</p>
+              <strong id="clientReviewFraudLevel">LOW</strong>
+            </div>
+            <div class="metric">
+              <p>Statut</p>
+              <strong id="clientReviewFraudFlag">Aucun signal fort</strong>
+            </div>
+            <div class="metric">
+              <p>Fenetre alerte</p>
+              <strong id="clientReviewFraudWindow">Aucune alerte</strong>
+            </div>
+          </div>
+
+          <div class="pill-list" style="margin-top:14px;">
+            <span class="badge" id="clientReviewFraudStatus" data-tone="neutral">Lance une analyse pour obtenir un verdict.</span>
+          </div>
+
+          <div class="grid-two" style="margin-top:18px;">
+            <div class="panel">
+              <p class="section-title">Anomalies detectees</p>
+              <p class="section-copy">Chaque anomalie garde le titre, le detail et l'action recommandee.</p>
+              <div id="clientReviewFraudFindings" class="history-list" style="margin-top:14px;"></div>
+              <p id="clientReviewFraudFindingsEmpty" class="status" data-tone="neutral" style="margin-top:10px;">Aucune anomalie detectee pour le moment.</p>
+            </div>
+
+            <div class="panel">
+              <p class="section-title">Chronologie de controle</p>
+              <p class="section-copy">Evenements recents utiles pour la revue admin.</p>
+              <div id="clientReviewFraudTimeline" class="history-list" style="margin-top:14px;"></div>
+              <p id="clientReviewFraudTimelineEmpty" class="status" data-tone="neutral" style="margin-top:10px;">La chronologie apparaitra apres analyse.</p>
+            </div>
+          </div>
+
+          <p id="clientReviewActionStatus" class="status" data-tone="neutral" style="margin-top:14px;">Aucune action en cours.</p>
+        </section>
+      </section>
+    </main>
+
+    <script src="./dashboard-nav-bubble.js"></script>
+    <script type="module" src="./Dclient-review.js"></script>
+  </body>
+</html>
