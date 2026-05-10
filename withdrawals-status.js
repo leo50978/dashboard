@@ -8,6 +8,7 @@ import {
   loadWithdrawals,
   updateWithdrawalStatus,
 } from "./withdrawals-data.js";
+import { initDashboardPwaExperience } from "./dashboard-pwa-notifications.js";
 
 const status = String(window.__WITHDRAWALS_STATUS || "all").trim().toLowerCase();
 const meta = getStatusMeta(status);
@@ -525,6 +526,7 @@ async function init() {
     }
 
     await refreshRows();
+    await initDashboardPwaExperience();
 
     searchInputEl?.addEventListener("input", () => {
       const visibleRows = applyFilters(currentRows);

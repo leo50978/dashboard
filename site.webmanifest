@@ -1,7 +1,7 @@
 {
-  "name": "Dominoes Lakay Dashboard",
-  "short_name": "DLK Dash",
-  "description": "Hub autonome des dashboards Dominoes Lakay.",
+  "name": "Kobposh V2 Dashboard",
+  "short_name": "Kobposh Dash",
+  "description": "Hub admin PWA du dashboard Kobposh V2 avec suivi pending.",
   "id": "./index.html",
   "start_url": "./index.html",
   "scope": "./",
@@ -21,5 +21,32 @@
   ],
   "theme_color": "#0b1220",
   "background_color": "#0b1220",
-  "display": "standalone"
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "shortcuts": [
+    {
+      "name": "Depots en attente",
+      "short_name": "Depots",
+      "url": "./Dorders-pending.html",
+      "icons": [
+        {
+          "src": "./web-app-manifest-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Retraits en attente",
+      "short_name": "Retraits",
+      "url": "./Dwithdrawals-pending.html",
+      "icons": [
+        {
+          "src": "./web-app-manifest-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
 }

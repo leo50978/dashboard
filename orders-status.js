@@ -8,6 +8,7 @@ import {
   getStatusMeta,
 } from "./orders-data.js";
 import { resolveDepositReviewSecure } from "./secure-functions.js";
+import { initDashboardPwaExperience } from "./dashboard-pwa-notifications.js";
 
 const status = String(window.__ORDERS_STATUS || "all").trim().toLowerCase();
 const meta = getStatusMeta(status);
@@ -926,6 +927,7 @@ async function init() {
     }
 
     await refreshRowsAndHandleFailure();
+    await initDashboardPwaExperience();
   } catch (error) {
     console.error("[ORDERS_STATUS] init failed", error);
     loadingEl?.classList.add("hidden");
