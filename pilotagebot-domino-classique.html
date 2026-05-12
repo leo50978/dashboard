@@ -375,8 +375,8 @@
       <h1>Domino classique V2</h1>
       <p class="hero-copy">
         Ce panneau pilote les bots locaux du `Domino classique` V2. L'admin peut forcer un niveau manuel,
-        ou laisser le moteur auto suivre les vraies archives `HTG` du jeu pour ajuster `userpro`, `amateur`,
-        `expert` ou `ultra`.
+        ou laisser le moteur auto suivre les vraies archives `HTG` du jeu pour alterner seulement entre
+        `userpro` et `ultra`.
       </p>
 
       <div class="metric-grid">
@@ -430,10 +430,9 @@
             <label>Niveau manuel</label>
             <div class="level-grid" id="dominoPilotLevelGrid">
               <button type="button" data-level="userpro">UserPro</button>
-              <button type="button" data-level="amateur">Amateur</button>
-              <button type="button" data-level="expert">Expert</button>
               <button type="button" data-level="ultra">Ultra</button>
             </div>
+            <p class="helper-copy">Le niveau manuel est applique a tous les prochains matchs. `Ultra` doit rester le mode quasi invincible.</p>
           </div>
 
           <div class="action-row">

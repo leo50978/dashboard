@@ -4,7 +4,7 @@ import {
   setDominoClassicBotPilotControlSecure,
 } from "./secure-functions.js";
 
-const DEFAULT_LEVEL = "expert";
+const DEFAULT_LEVEL = "userpro";
 const LIVE_REFRESH_INTERVAL_MS = 45 * 1000;
 
 const dom = {
@@ -77,17 +77,16 @@ function escapeHtml(value = "") {
 
 function normalizeLevel(value = "") {
   const level = String(value || "").trim().toLowerCase();
-  return level === "userpro" || level === "amateur" || level === "expert" || level === "ultra"
-    ? level
-    : DEFAULT_LEVEL;
+  if (level === "ultra" || level === "expert") return "ultra";
+  if (level === "userpro" || level === "amateur") return "userpro";
+  return DEFAULT_LEVEL;
 }
 
 function levelLabel(level = "") {
   const normalized = normalizeLevel(level);
   if (normalized === "userpro") return "UserPro";
-  if (normalized === "amateur") return "Amateur";
   if (normalized === "ultra") return "Ultra";
-  return "Expert";
+  return "UserPro";
 }
 
 function modeLabel(mode = "") {
@@ -112,7 +111,7 @@ function reasonLabel(reason = "") {
   if (normalized === "margin_low") return "La marge reste fragile, le systeme garde une defense legere.";
   if (normalized === "new_high_comfort" || normalized === "margin_high") return "Le Domino tient une marge confortable, le systeme peut adoucir le niveau bot.";
   if (normalized === "no_volume") return "Pas assez de parties Domino archivees sur la fenetre, le systeme reste neutre.";
-  return "Le Domino reste dans une zone d'equilibre, le systeme garde un niveau intermediaire.";
+  return "Le Domino reste dans une zone de pilotage simple entre UserPro et Ultra.";
 }
 
 function formatInt(value) {
