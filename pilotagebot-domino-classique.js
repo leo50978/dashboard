@@ -77,6 +77,7 @@ function escapeHtml(value = "") {
 
 function normalizeLevel(value = "") {
   const level = String(value || "").trim().toLowerCase();
+  if (level === "dominov1" || level === "v1") return "dominov1";
   if (level === "ultra" || level === "expert") return "ultra";
   if (level === "userpro" || level === "amateur") return "userpro";
   return DEFAULT_LEVEL;
@@ -85,6 +86,7 @@ function normalizeLevel(value = "") {
 function levelLabel(level = "") {
   const normalized = normalizeLevel(level);
   if (normalized === "userpro") return "UserPro";
+  if (normalized === "dominov1") return "DominoV1";
   if (normalized === "ultra") return "Ultra";
   return "UserPro";
 }
@@ -111,7 +113,7 @@ function reasonLabel(reason = "") {
   if (normalized === "margin_low") return "La marge reste fragile, le systeme garde une defense legere.";
   if (normalized === "new_high_comfort" || normalized === "margin_high") return "Le Domino tient une marge confortable, le systeme peut adoucir le niveau bot.";
   if (normalized === "no_volume") return "Pas assez de parties Domino archivees sur la fenetre, le systeme reste neutre.";
-  return "Le Domino reste dans une zone de pilotage simple entre UserPro et Ultra.";
+  return "Le Domino reste dans une zone de pilotage simple entre UserPro et Ultra. Le mode DominoV1 reste disponible en manuel seulement.";
 }
 
 function formatInt(value) {

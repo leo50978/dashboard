@@ -243,7 +243,7 @@
     }
 
     .segmented { grid-template-columns: 1fr 1fr; }
-    .level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .level-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
 
     button {
       appearance: none;
@@ -376,7 +376,8 @@
       <p class="hero-copy">
         Ce panneau pilote les bots locaux du `Domino classique` V2. L'admin peut forcer un niveau manuel,
         ou laisser le moteur auto suivre les vraies archives `HTG` du jeu pour alterner seulement entre
-        `userpro` et `ultra`.
+        `userpro` et `ultra`. Le mode manuel peut aussi figer `dominov1`, qui recopie le bot fort historique
+        du site V1.
       </p>
 
       <div class="metric-grid">
@@ -430,9 +431,10 @@
             <label>Niveau manuel</label>
             <div class="level-grid" id="dominoPilotLevelGrid">
               <button type="button" data-level="userpro">UserPro</button>
+              <button type="button" data-level="dominov1">DominoV1</button>
               <button type="button" data-level="ultra">Ultra</button>
             </div>
-            <p class="helper-copy">Le niveau manuel est applique a tous les prochains matchs. `Ultra` doit rester le mode quasi invincible.</p>
+            <p class="helper-copy">Le niveau manuel est applique a tous les prochains matchs. `dominov1` copie le bot fort V1, alors que `ultra` reste le mode quasi invincible. Le mode auto continue de choisir seulement entre `userpro` et `ultra`.</p>
           </div>
 
           <div class="action-row">
