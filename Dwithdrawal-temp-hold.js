@@ -1,9 +1,9 @@
-import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js";
+import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js?v=dwth-auth-v2";
 import {
   getAgentDepositClientContextSecure,
   searchAgentDepositClientsSecure,
   setWithdrawalTemporaryHoldSecure,
-} from "./secure-functions.js";
+} from "./secure-functions.js?v=dwth-secure-v2";
 
 const TEMPORARY_WITHDRAWAL_HOLD_MESSAGE = "Le retrait est temporairement indisponible, veuillez attendre quelques minutes.";
 
