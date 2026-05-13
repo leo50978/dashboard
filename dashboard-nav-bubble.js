@@ -15,6 +15,7 @@
     { href: "./Dclient-reset.html", label: "Reset client", match: ["dclient-reset.html"] },
     { href: "./Dclient-review.html", label: "Revue client", match: ["dclient-review.html"] },
     { href: "./Dclient-unfreeze.html", label: "Debloquer compte", match: ["dclient-unfreeze.html"] },
+    { href: "./Dwithdrawal-temp-hold.html", label: "Gel retrait", match: ["dwithdrawal-temp-hold.html"] },
     { href: "./Dpassword-recovery.html", label: "Mot de passe", match: ["dpassword-recovery.html"] },
     {
       href: "./Dwithdrawals.html",

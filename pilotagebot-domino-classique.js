@@ -78,7 +78,7 @@ function escapeHtml(value = "") {
 function normalizeLevel(value = "") {
   const level = String(value || "").trim().toLowerCase();
   if (level === "dominov1" || level === "v1") return "dominov1";
-  if (level === "ultra" || level === "expert") return "ultra";
+  if (level === "ultra" || level === "expert") return "dominov1";
   if (level === "userpro" || level === "amateur") return "userpro";
   return DEFAULT_LEVEL;
 }
@@ -87,7 +87,6 @@ function levelLabel(level = "") {
   const normalized = normalizeLevel(level);
   if (normalized === "userpro") return "UserPro";
   if (normalized === "dominov1") return "DominoV1";
-  if (normalized === "ultra") return "Ultra";
   return "UserPro";
 }
 
@@ -106,14 +105,14 @@ function bandMeta(band = "") {
 
 function reasonLabel(reason = "") {
   const normalized = String(reason || "").trim().toLowerCase();
-  if (normalized === "drawdown_critical") return "Le profit Domino classique est trop loin sous son dernier sommet: le systeme pousse fort les bots pour stopper la glissade.";
-  if (normalized === "drawdown_high") return "La courbe Domino reste sous pression sous le dernier pic, le systeme reste en defense.";
-  if (normalized === "recovery_guard") return "Le Domino remonte mais n'a pas encore repris son dernier sommet: le systeme garde une pression intermediaire.";
-  if (normalized === "margin_too_low") return "La marge Domino est trop basse ou negative, le systeme durcit le bot pour proteger les HTG.";
-  if (normalized === "margin_low") return "La marge reste fragile, le systeme garde une defense legere.";
-  if (normalized === "new_high_comfort" || normalized === "margin_high") return "Le Domino tient une marge confortable, le systeme peut adoucir le niveau bot.";
+  if (normalized === "drawdown_critical") return "Le profit Domino classique est trop loin sous son dernier sommet: le systeme force `DominoV1` pour stopper la glissade.";
+  if (normalized === "drawdown_high") return "La courbe Domino reste sous pression sous le dernier pic: le systeme garde `DominoV1` en defense.";
+  if (normalized === "recovery_guard") return "Le Domino remonte mais n'a pas encore repris son dernier sommet: le systeme garde encore `DominoV1`.";
+  if (normalized === "margin_too_low") return "La marge Domino est trop basse ou negative: le systeme passe en `DominoV1` pour proteger les HTG.";
+  if (normalized === "margin_low") return "La marge reste fragile: le systeme conserve `DominoV1`.";
+  if (normalized === "new_high_comfort" || normalized === "margin_high") return "Le Domino tient une marge confortable: le systeme peut revenir sur `UserPro`.";
   if (normalized === "no_volume") return "Pas assez de parties Domino archivees sur la fenetre, le systeme reste neutre.";
-  return "Le Domino reste dans une zone de pilotage simple entre UserPro et Ultra. Le mode DominoV1 reste disponible en manuel seulement.";
+  return "Le Domino reste dans une zone de pilotage simple entre `UserPro` et `DominoV1`.";
 }
 
 function formatInt(value) {

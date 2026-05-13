@@ -233,6 +233,15 @@ export async function unfreezeClientAccountSecure(payload = {}) {
   });
 }
 
+export async function setWithdrawalTemporaryHoldSecure(payload = {}) {
+  const fallbackError = "Impossible de mettre a jour le gel retrait temporaire.";
+  return invokeBackendHttp("/api/dashboard/client-admin/set-withdrawal-temporary-hold", {
+    payload,
+    requireAuth: true,
+    fallbackError,
+  });
+}
+
 export async function setClientDeletionReviewStatusSecure(payload = {}) {
   return invokeCallable("setClientDeletionReviewStatusSecure", payload, "Impossible de mettre a jour le statut de revue suppression.");
 }

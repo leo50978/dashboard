@@ -1,6 +1,8 @@
 import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js";
 import { getGamesVolumeAnalyticsSnapshotSecure } from "./secure-functions.js";
 
+const DASHBOARD_TIME_ZONE = "America/Port-au-Prince";
+
 const chartState = {
   trend: null,
   mix: null,
@@ -47,20 +49,72 @@ function formatInt(value) {
   return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(safeFloat(value));
 }
 
+function getZonedDateParts(ms) {
+  const safeMs = safeInt(ms);
+  if (!safeMs) return null;
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: DASHBOARD_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  });
+  const values = {};
+  formatter.formatToParts(new Date(safeMs)).forEach((part) => {
+    if (part.type !== "literal") values[part.type] = part.value;
+  });
+  return {
+    year: Number(values.year || 0),
+    month: Number(values.month || 0),
+    day: Number(values.day || 0),
+    hour: String(values.hour || "00") === "24" ? 0 : Number(values.hour || 0),
+    minute: Number(values.minute || 0),
+    second: Number(values.second || 0),
+  };
+}
+
+function zonedDateTimeToMs(year, month, day, hour = 0, minute = 0, second = 0, millisecond = 0) {
+  if (![year, month, day].every((value) => Number.isFinite(value) && value > 0)) return 0;
+  const guess = Date.UTC(year, month - 1, day, hour, minute, second, millisecond);
+  const observed = getZonedDateParts(guess);
+  if (!observed) return guess;
+  const targetAsUtc = Date.UTC(year, month - 1, day, hour, minute, second, millisecond);
+  const observedAsUtc = Date.UTC(
+    observed.year,
+    Math.max(0, observed.month - 1),
+    observed.day,
+    observed.hour,
+    observed.minute,
+    observed.second,
+    millisecond
+  );
+  return guess + (targetAsUtc - observedAsUtc);
+}
+
+function shiftZonedDay(ms, deltaDays = 0) {
+  const parts = getZonedDateParts(ms || Date.now());
+  if (!parts) return { year: 0, month: 0, day: 0 };
+  const shifted = new Date(Date.UTC(parts.year, Math.max(0, parts.month - 1), parts.day + safeInt(deltaDays), 12, 0, 0, 0));
+  return {
+    year: shifted.getUTCFullYear(),
+    month: shifted.getUTCMonth() + 1,
+    day: shifted.getUTCDate(),
+  };
+}
+
 function formatDateTime(ms) {
   const safeMs = safeInt(ms);
   if (!safeMs) return "-";
-  return new Date(safeMs).toLocaleString("fr-FR");
+  return new Date(safeMs).toLocaleString("fr-FR", { timeZone: DASHBOARD_TIME_ZONE });
 }
 
 function formatDateInput(ms) {
-  const safeMs = safeInt(ms);
-  if (!safeMs) return "";
-  const date = new Date(safeMs);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  const parts = getZonedDateParts(ms);
+  if (!parts) return "";
+  return `${String(parts.year || 0).padStart(4, "0")}-${String(parts.month || 0).padStart(2, "0")}-${String(parts.day || 0).padStart(2, "0")}`;
 }
 
 function parseDateInput(rawValue, endOfDay = false) {
@@ -70,8 +124,8 @@ function parseDateInput(rawValue, endOfDay = false) {
   if (parts.length !== 3 || parts.some((item) => !Number.isFinite(item))) return 0;
   const [year, month, day] = parts;
   return endOfDay
-    ? new Date(year, month - 1, day, 23, 59, 59, 999).getTime()
-    : new Date(year, month - 1, day, 0, 0, 0, 0).getTime();
+    ? zonedDateTimeToMs(year, month, day, 23, 59, 59, 999)
+    : zonedDateTimeToMs(year, month, day, 0, 0, 0, 0);
 }
 
 function setStatus(text, tone = "neutral") {
@@ -88,22 +142,21 @@ function destroyChart(name) {
 }
 
 function syncDatesForWindow(windowKey) {
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const start = new Date(todayStart);
-  if (windowKey === "7d") {
-    start.setDate(start.getDate() - 6);
-  } else if (windowKey === "30d") {
-    start.setDate(start.getDate() - 29);
-  }
+  const nowMs = Date.now();
   if (windowKey === "global") {
     dom.dateFrom.value = "";
     dom.dateTo.value = "";
     return;
   }
   if (windowKey === "custom") return;
-  dom.dateFrom.value = formatDateInput(start.getTime());
-  dom.dateTo.value = formatDateInput(now.getTime());
+  const startParts = windowKey === "7d"
+    ? shiftZonedDay(nowMs, -6)
+    : windowKey === "30d"
+      ? shiftZonedDay(nowMs, -29)
+      : shiftZonedDay(nowMs, 0);
+  const startMs = zonedDateTimeToMs(startParts.year, startParts.month, startParts.day, 0, 0, 0, 0);
+  dom.dateFrom.value = formatDateInput(startMs);
+  dom.dateTo.value = formatDateInput(nowMs);
 }
 
 function buildPayload() {
@@ -145,10 +198,10 @@ function renderSummary(snapshot = {}, result = {}) {
 
   if (dom.coverage) {
     const startText = range?.isGlobal ? "Début historique" : formatDateTime(range.startMs);
-    dom.coverage.textContent = `Couverture: ${startText} -> ${formatDateTime(range.endMs)}`;
+    dom.coverage.textContent = `Couverture (${DASHBOARD_TIME_ZONE}): ${startText} -> ${formatDateTime(range.endMs)}`;
   }
   if (dom.generatedAt) {
-    dom.generatedAt.textContent = `Dernier snapshot: ${formatDateTime(snapshot.generatedAtMs)}`;
+    dom.generatedAt.textContent = `Dernier snapshot (${DASHBOARD_TIME_ZONE}): ${formatDateTime(snapshot.generatedAtMs)}`;
   }
 }
 
