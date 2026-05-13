@@ -30,6 +30,7 @@
     { href: "./Dsite-visits.html", label: "Visites site", match: ["dsite-visits.html"] },
     { href: "./Dtransfers.html", label: "Transferts", match: ["dtransfers.html"] },
     { href: "./Dgames-volume.html", label: "Volume jeux", match: ["dgames-volume.html"] },
+    { href: "./Dgame-availability.html", label: "Dispo jeux", match: ["dgame-availability.html"] },
     { href: "./Dai-advisor.html", label: "Conseiller IA", match: ["dai-advisor.html"] },
     { href: "./Dmorpion.html", label: "Analytics Morpion", match: ["dmorpion.html"] },
     { href: "./pilotagebot-pong.html", label: "Pilotage Pong", match: ["pilotagebot-pong.html"] },
