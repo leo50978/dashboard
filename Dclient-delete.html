@@ -204,12 +204,13 @@
       <section class="card">
         <h1>Suppression compte client</h1>
         <p class="muted">
-          Cette page sert a supprimer un compte utilisateur seulement si le compte est vide et sans historique financier.
-          Si le compte a encore solde, ordres, retraits ou historique de jeu, la suppression sera refusee proprement.
+          Cette page sert a supprimer un compte utilisateur meme s'il lui reste un solde.
+          Le solde sera archive dans la trace admin, mais la suppression sera encore refusee si le compte a des ordres,
+          des retraits ou un historique financier.
         </p>
         <div class="warning-box">
           Cette action est irreversible pour le document client et le compte Firebase Auth. Pour un compte avec historique,
-          il faut archiver au lieu de supprimer.
+          il faut archiver au lieu de supprimer. Pour un compte avec solde seul, la valeur reste visible dans l'archive.
         </div>
       </section>
 

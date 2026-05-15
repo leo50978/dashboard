@@ -183,7 +183,12 @@ async function runDelete() {
       note: String(dom.noteInput.value || "").trim(),
     });
     renderOutput(response || {});
-    setActionStatus("Compte supprime avec succes.", "good");
+    const archivedHtg = Number(response?.archivedBalanceSnapshot?.htgBalance || 0);
+    if (archivedHtg > 0) {
+      setActionStatus(`Compte supprime avec succes. Solde archive: ${archivedHtg} HTG.`, "good");
+    } else {
+      setActionStatus("Compte supprime avec succes.", "good");
+    }
     selectClient(null);
     dom.results.innerHTML = `<div class="muted">Le compte a ete supprime. Relance une recherche pour continuer.</div>`;
     dom.noteInput.value = "";
