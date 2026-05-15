@@ -36,6 +36,7 @@
     { href: "./Dai-advisor.html", label: "Conseiller IA", match: ["dai-advisor.html"] },
     { href: "./Dmorpion.html", label: "Analytics Morpion", match: ["dmorpion.html"] },
     { href: "./pilotagebot-pong.html", label: "Pilotage Pong", match: ["pilotagebot-pong.html"] },
+    { href: "./pilotagebot-ludo.html", label: "Pilotage Ludo", match: ["pilotagebot-ludo.html"] },
     { href: "./pilotagebot-domino-classique.html", label: "Pilotage Domino", match: ["pilotagebot-domino-classique.html"] },
     { href: "./Dagentdeposit.html", label: "Depot agent", match: ["dagentdeposit.html"] },
     { href: "./Dpayment.html", label: "Methodes depot", match: ["dpayment.html"] },

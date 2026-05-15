@@ -200,7 +200,7 @@
       .runtime-note { margin: 0; color: var(--muted); font-size: 0.9rem; line-height: 1.45; }
       .kpi-grid {
         display: grid;
-        grid-template-columns: repeat(6, minmax(0, 1fr));
+        grid-template-columns: repeat(7, minmax(0, 1fr));
         gap: 14px;
       }
       .kpi { border-radius: 22px; padding: 18px; }
@@ -273,7 +273,7 @@
             <p class="eyebrow">Analytics parties</p>
             <h1 class="hero-title">Volume des parties jouées</h1>
             <p class="hero-copy">
-              Vue consolidée du nombre total de parties terminées sur Domino classique, Duel 2 joueurs, Morpion 5, Dame et Pong dans l'environnement V2 HTG.
+              Vue consolidée du nombre total de parties terminées sur Domino classique, Duel 2 joueurs, Morpion 5, Dame, Pong et Ludo dans l'environnement V2 HTG.
             </p>
           </div>
           <div class="top-actions">
@@ -351,6 +351,11 @@
             <p class="kpi-value" id="gamesVolumePong">--</p>
             <p class="kpi-note" id="gamesVolumePongNote">--</p>
           </article>
+          <article class="neo kpi">
+            <p class="kpi-label">Ludo</p>
+            <p class="kpi-value" id="gamesVolumeLudo">--</p>
+            <p class="kpi-note" id="gamesVolumeLudoNote">--</p>
+          </article>
         </section>
 
         <section class="section mini-grid">
@@ -399,7 +404,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-    <script type="module" src="./dashboard-nav-bubble.js"></script>
-    <script type="module" src="./Dgames-volume.js"></script>
+    <script type="module" src="./dashboard-nav-bubble.js?v=20260515-ludo-volume"></script>
+    <script type="module" src="./Dgames-volume.js?v=20260515-ludo-volume"></script>
   </body>
 </html>

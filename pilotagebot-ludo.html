@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <script src="./runtime-config.js"></script>
+  <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="shortcut icon" href="./favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+  <link rel="manifest" href="./site.webmanifest" />
+  <title>Kobposh V2 · Pilotage bot Ludo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07110d;
+      --panel: rgba(12, 28, 22, 0.88);
+      --line: rgba(148, 163, 184, 0.16);
+      --text: #edf9f3;
+      --muted: #9ab9ad;
+      --mint: #34d399;
+      --lime: #bef264;
+      --amber: #f59e0b;
+      --danger: #fb7185;
+      --sky: #38bdf8;
+      --violet: #a78bfa;
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Manrope", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(52, 211, 153, 0.16), transparent 28%),
+        radial-gradient(circle at top right, rgba(56, 189, 248, 0.14), transparent 24%),
+        linear-gradient(180deg, #04100c 0%, var(--bg) 52%, #030a08 100%);
+    }
+    .shell {
+      width: min(1240px, 100%);
+      margin: 0 auto;
+      padding:
+        calc(16px + env(safe-area-inset-top, 0px))
+        max(14px, env(safe-area-inset-left, 0px))
+        calc(34px + env(safe-area-inset-bottom, 0px))
+        max(14px, env(safe-area-inset-right, 0px));
+    }
+    .hero, .panel, .metric, .mix-card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.26);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+    .hero { border-radius: 28px; padding: 20px; overflow: hidden; }
+    .eyebrow {
+      margin: 0;
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: #8ff5d0;
+      font-weight: 800;
+    }
+    h1, h2, h3 {
+      margin: 0;
+      font-family: "Space Grotesk", "Manrope", sans-serif;
+    }
+    h1 {
+      margin-top: 12px;
+      font-size: clamp(2.1rem, 5vw, 4rem);
+      line-height: 0.98;
+      max-width: 11ch;
+    }
+    .hero-copy,
+    .section-copy,
+    .empty-copy,
+    .helper-copy,
+    .metric small,
+    .trend-meta span,
+    .mix-card span,
+    .field label,
+    .status-copy,
+    .chart-copy,
+    .recovery-copy {
+      color: var(--muted);
+    }
+    .hero-copy,
+    .section-copy,
+    .empty-copy,
+    .helper-copy,
+    .status-copy,
+    .chart-copy,
+    .recovery-copy {
+      margin: 0;
+      font-size: 0.95rem;
+      line-height: 1.72;
+    }
+    .hero-copy { margin-top: 14px; max-width: 65ch; }
+    .hero-top, .section-head { display: grid; gap: 12px; }
+    .admin-chip, .back-link, .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      width: fit-content;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05);
+      padding: 10px 14px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+    .admin-chip { color: #d8fff2; }
+    .back-link { color: #d5f4ff; }
+    .metric-grid, .chart-grid, .control-grid, .mix-grid {
+      display: grid;
+      gap: 14px;
+    }
+    .metric-grid {
+      margin-top: 20px;
+      grid-template-columns: 1fr;
+    }
+    .metric {
+      border-radius: 22px;
+      padding: 16px;
+      min-width: 0;
+    }
+    .metric label, .field label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+    .metric strong {
+      display: block;
+      margin-top: 10px;
+      font-size: clamp(1.3rem, 4vw, 2rem);
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+    .metric small {
+      display: block;
+      margin-top: 8px;
+      font-size: 0.86rem;
+      line-height: 1.55;
+    }
+    .panel {
+      margin-top: 18px;
+      border-radius: 24px;
+      padding: 18px;
+    }
+    .control-grid, .chart-grid, .mix-grid { grid-template-columns: 1fr; }
+    .control-card, .chart-card {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(5, 13, 10, 0.4);
+    }
+    .field { display: grid; gap: 8px; min-width: 0; }
+    .field select {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      background: rgba(3, 10, 8, 0.55);
+      color: var(--text);
+      padding: 14px 15px;
+      font: inherit;
+      outline: none;
+    }
+    .field select:focus {
+      border-color: rgba(52, 211, 153, 0.45);
+      box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.1);
+    }
+    .segmented,
+    .level-grid,
+    .action-row,
+    .status-row,
+    .equity-meta-grid,
+    .mix-inline,
+    .mix-head {
+      display: grid;
+      gap: 10px;
+    }
+    .segmented { grid-template-columns: 1fr 1fr; }
+    .level-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    button {
+      appearance: none;
+      border: none;
+      font: inherit;
+      cursor: pointer;
+    }
+    .segmented button,
+    .level-grid button,
+    .action-row button {
+      min-height: 48px;
+      border-radius: 16px;
+      padding: 12px 14px;
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05);
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+    }
+    .segmented button:hover,
+    .level-grid button:hover,
+    .action-row button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(52, 211, 153, 0.28);
+    }
+    .segmented button.is-active,
+    .level-grid button.is-active {
+      background: linear-gradient(135deg, rgba(52, 211, 153, 0.2), rgba(56, 189, 248, 0.2));
+      border-color: rgba(52, 211, 153, 0.46);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+    }
+    .action-row button.primary {
+      background: linear-gradient(135deg, rgba(52, 211, 153, 0.26), rgba(56, 189, 248, 0.24));
+      border: 1px solid rgba(52, 211, 153, 0.4);
+      font-weight: 800;
+    }
+    .badge-pill[data-tone="comfort"] { color: #d8ffed; border-color: rgba(52,211,153,0.35); }
+    .badge-pill[data-tone="defense"] { color: #fff0c7; border-color: rgba(245,158,11,0.35); }
+    .badge-pill[data-tone="danger"] { color: #ffd7de; border-color: rgba(251,113,133,0.35); }
+    .badge-pill[data-tone="equilibrium"] { color: #d5f4ff; border-color: rgba(56,189,248,0.35); }
+    .status-copy strong,
+    .mix-head strong,
+    .trend-meta strong,
+    .equity-kpi strong {
+      color: var(--text);
+    }
+    .equity-shell {
+      width: 100%;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(4, 10, 8, 0.58);
+      padding: 12px;
+    }
+    .equity-chart { width: 100%; height: auto; display: block; }
+    .equity-grid-line,
+    .equity-zero-line,
+    .equity-peak-line {
+      stroke: rgba(226, 232, 240, 0.08);
+      stroke-width: 1;
+    }
+    .equity-zero-line { stroke-dasharray: 4 4; }
+    .equity-peak-line { stroke: rgba(190, 242, 100, 0.24); stroke-dasharray: 6 6; }
+    .equity-line {
+      fill: none;
+      stroke: var(--sky);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .equity-area { fill: url(#ludoPilotEquityAreaGradient); }
+    .equity-dot { fill: var(--mint); stroke: rgba(255,255,255,0.85); stroke-width: 2; }
+    .equity-axis {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 10px;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .equity-meta-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .equity-kpi {
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.03);
+      padding: 14px;
+    }
+    .equity-kpi span {
+      display: block;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      font-weight: 800;
+    }
+    .equity-kpi strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 1.1rem;
+    }
+    .trend-list, .mix-grid { display: grid; gap: 12px; }
+    .trend-row {
+      display: grid;
+      grid-template-columns: minmax(0, 120px) minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.03);
+    }
+    .trend-meta strong { display: block; font-size: 0.95rem; }
+    .trend-track, .mix-track {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+    .trend-bar, .mix-fill {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+    }
+    .trend-bar.positive, .mix-fill.positive { background: linear-gradient(90deg, rgba(52,211,153,0.94), rgba(190,242,100,0.92)); }
+    .trend-bar.negative, .mix-fill.negative { background: linear-gradient(90deg, rgba(251,113,133,0.95), rgba(245,158,11,0.92)); }
+    .positive { color: #d8ffed; }
+    .negative { color: #ffd8de; }
+    .mix-card {
+      border-radius: 18px;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+    .mix-head { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+    .mix-inline { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); font-size: 0.9rem; }
+    @media (min-width: 760px) {
+      .metric-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .control-grid { grid-template-columns: 1.2fr 0.8fr; }
+      .chart-grid { grid-template-columns: 1.05fr 0.95fr; }
+      .mix-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 759px) {
+      .equity-meta-grid { grid-template-columns: 1fr; }
+      .trend-row { grid-template-columns: 1fr; }
+      .mix-inline { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-top">
+        <a class="back-link" href="./index.html">Retour dashboard</a>
+        <span class="admin-chip" id="ludoPilotAdminEmail">Admin inconnu</span>
+      </div>
+      <p class="eyebrow">Pilotage local · Ludo</p>
+      <h1>Bot Ludo HTG</h1>
+      <p class="hero-copy">
+        Controle le niveau actif du bot Ludo V2, entre un profil faible qui peut perdre et un profil fort tres triche pour proteger la marge.
+      </p>
+
+      <div class="metric-grid">
+        <article class="metric">
+          <label>Mode applique</label>
+          <strong id="ludoPilotModeValue">--</strong>
+          <small id="ludoPilotModeCopy">--</small>
+        </article>
+        <article class="metric">
+          <label>Net periode</label>
+          <strong id="ludoPilotNetValue">--</strong>
+          <small id="ludoPilotNetCopy">--</small>
+        </article>
+        <article class="metric">
+          <label>Marge</label>
+          <strong id="ludoPilotMarginValue">--</strong>
+          <small id="ludoPilotMarginCopy">--</small>
+        </article>
+        <article class="metric">
+          <label>Parties Ludo</label>
+          <strong id="ludoPilotRoomsValue">--</strong>
+          <small id="ludoPilotRoomsCopy">--</small>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <p class="eyebrow">Decision bot</p>
+        <h2>Pilotage manuel ou automatique</h2>
+        <p class="section-copy">
+          En manuel tu forces le niveau du bot. En automatique le systeme bascule entre `weak` et `strong` selon la courbe HTG des parties Ludo.
+        </p>
+      </div>
+
+      <div class="control-grid">
+        <article class="control-card">
+          <div class="segmented">
+            <button id="ludoPilotModeManualBtn" type="button">Manuel</button>
+            <button id="ludoPilotModeAutoBtn" type="button">Automatique</button>
+          </div>
+
+          <div class="field">
+            <label for="ludoPilotWindowSelect">Fenetre du moteur auto</label>
+            <select id="ludoPilotWindowSelect">
+              <option value="today">Aujourd'hui</option>
+              <option value="24h">24 heures glissantes</option>
+              <option value="7d">7 derniers jours</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Niveau manuel</label>
+            <div class="level-grid" id="ludoPilotLevelGrid">
+              <button type="button" data-level="weak">Bot faible</button>
+              <button type="button" data-level="strong">Bot fò</button>
+            </div>
+          </div>
+
+          <div class="action-row">
+            <button class="primary" id="ludoPilotApplyBtn" type="button">Appliquer le pilotage Ludo</button>
+          </div>
+        </article>
+
+        <article class="chart-card">
+          <div class="status-row">
+            <span class="badge-pill" id="ludoPilotBandBadge" data-tone="equilibrium">--</span>
+            <span class="badge-pill" id="ludoPilotAppliedBadge" data-tone="equilibrium">--</span>
+          </div>
+          <p class="status-copy" id="ludoPilotReasonCopy">Le moteur affichera ici pourquoi il pousse vers le bot faible ou fort.</p>
+          <p class="helper-copy" id="ludoPilotFetchMeta">Snapshot: --</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <p class="eyebrow">Performance</p>
+        <h2>Lecture HTG du bot Ludo</h2>
+        <p class="section-copy">
+          Suivi de l'encaisse, des payouts, de l'equity et du drawdown pour savoir quand l'auto doit durcir le bot.
+        </p>
+      </div>
+
+      <div class="metric-grid">
+        <article class="metric">
+          <label>Encaisse</label>
+          <strong id="ludoPilotCollectedValue">--</strong>
+          <small>Somme des mises Ludo en HTG sur la fenetre.</small>
+        </article>
+        <article class="metric">
+          <label>Payout</label>
+          <strong id="ludoPilotPayoutValue">--</strong>
+          <small>Credits HTG reverses aux joueurs qui gagnent.</small>
+        </article>
+        <article class="metric">
+          <label>Equity</label>
+          <strong id="ludoPilotEquityValue">--</strong>
+          <small id="ludoPilotEquityCopy">--</small>
+        </article>
+        <article class="metric">
+          <label>Drawdown</label>
+          <strong id="ludoPilotDrawdownValue">--</strong>
+          <small id="ludoPilotDrawdownCopy">--</small>
+        </article>
+      </div>
+
+      <div class="chart-grid" style="margin-top:14px;">
+        <article class="chart-card">
+          <h3>Courbe equity Ludo</h3>
+          <p class="chart-copy">Le bot auto lit surtout cette courbe pour savoir s'il faut adoucir ou tricher fort.</p>
+          <div class="equity-shell">
+            <svg class="equity-chart" id="ludoPilotEquitySvg" viewBox="0 0 720 240" role="img" aria-label="Courbe equity Ludo"></svg>
+            <div class="equity-axis" id="ludoPilotEquityAxis">
+              <span>-</span>
+              <span>-</span>
+              <span>-</span>
+            </div>
+          </div>
+          <p class="recovery-copy" id="ludoPilotRecoveryCopy">--</p>
+        </article>
+
+        <article class="chart-card">
+          <div class="equity-meta-grid">
+            <div class="equity-kpi">
+              <span>Sommet</span>
+              <strong id="ludoPilotPeakValue">--</strong>
+            </div>
+            <div class="equity-kpi">
+              <span>Dernier pic</span>
+              <strong id="ludoPilotPeakCopy">--</strong>
+            </div>
+            <div class="equity-kpi">
+              <span>Winrate bot</span>
+              <strong id="ludoPilotWinrateValue">--</strong>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <p class="eyebrow">Repartition</p>
+        <h2>Volumes par niveau et par mise</h2>
+        <p class="section-copy">
+          Lecture utile pour verifier que le site emploie bien le bon profil de bot et mesurer la performance du mode fort.
+        </p>
+      </div>
+
+      <div class="chart-grid" style="margin-top:14px;">
+        <article class="chart-card">
+          <h3>Trend recent</h3>
+          <p class="chart-copy">Chaque ligne montre le net HTG d'un point de temps sur la fenetre choisie.</p>
+          <div class="trend-list" id="ludoPilotTrendList"></div>
+        </article>
+        <article class="chart-card">
+          <h3>Mix par niveau</h3>
+          <p class="chart-copy">Parties archivees sous `weak` ou `strong`.</p>
+          <div class="mix-grid" id="ludoPilotDifficultyMixGrid"></div>
+        </article>
+      </div>
+
+      <div class="chart-card" style="margin-top:14px;">
+        <h3>Mix par mise</h3>
+        <p class="chart-copy">Lecture utile si demain tu ajoutes d'autres tickets Ludo que `25 HTG`.</p>
+        <div class="mix-grid" id="ludoPilotStakeMixGrid"></div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="./dashboard-nav-bubble.js?v=20260515-ludo-pilot2"></script>
+  <script type="module" src="./pilotagebot-ludo.js?v=20260515-ludo-pilot2"></script>
+</body>
+</html>

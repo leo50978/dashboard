@@ -421,6 +421,24 @@ export async function setDominoClassicBotPilotControlSecure(payload = {}) {
   });
 }
 
+export async function getLudoBotPilotSnapshotSecure(payload = {}) {
+  const fallbackError = "Impossible de charger le pilotage Ludo.";
+  return invokeBackendHttp("/api/dashboard/ludo-bot-pilot/snapshot", {
+    payload,
+    requireAuth: true,
+    fallbackError,
+  });
+}
+
+export async function setLudoBotPilotControlSecure(payload = {}) {
+  const fallbackError = "Impossible de mettre a jour le pilotage Ludo.";
+  return invokeBackendHttp("/api/dashboard/ludo-bot-pilot/control", {
+    payload,
+    requireAuth: true,
+    fallbackError,
+  });
+}
+
 export async function getMorpionAnalyticsSnapshotSecure(payload = {}) {
   const fallbackError = "Impossible de charger les analytics Morpion.";
   return invokeBackendHttp("/api/dashboard/morpion/snapshot", {
