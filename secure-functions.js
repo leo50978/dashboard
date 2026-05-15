@@ -251,7 +251,12 @@ export async function archiveClientAccountSecure(payload = {}) {
 }
 
 export async function deleteClientAccountSecure(payload = {}) {
-  return invokeCallable("deleteClientAccountSecure", payload, "Impossible de supprimer le compte client.");
+  const fallbackError = "Impossible de supprimer le compte client.";
+  return invokeBackendHttp("/api/dashboard/client-admin/delete-account", {
+    payload,
+    requireAuth: true,
+    fallbackError,
+  });
 }
 
 export async function getClientPendingDepositOrdersSecure(payload = {}) {

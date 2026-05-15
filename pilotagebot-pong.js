@@ -3,6 +3,7 @@ import { getPongBotPilotSnapshotSecure, setPongBotPilotControlSecure } from "./s
 
 const DEFAULT_LEVEL = "ultra";
 const LIVE_REFRESH_INTERVAL_MS = 45 * 1000;
+const RATE_HTG_TO_DOES = 20;
 
 const dom = {
   adminEmail: document.getElementById("pongPilotAdminEmail"),
@@ -120,22 +121,32 @@ function formatInt(value) {
   return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(safeFloat(value));
 }
 
-function formatDoes(value) {
-  return `${formatInt(value)} Does`;
+function readMetricValue(source = {}, htgKey = "", doesKey = "") {
+  if (source && htgKey && Number.isFinite(Number(source[htgKey]))) {
+    return safeSignedInt(source[htgKey]);
+  }
+  if (source && doesKey && Number.isFinite(Number(source[doesKey]))) {
+    return Math.trunc(safeFloat(source[doesKey]) / RATE_HTG_TO_DOES);
+  }
+  return 0;
 }
 
-function formatSignedDoes(value) {
+function formatHtg(value) {
+  return `${formatInt(value)} HTG`;
+}
+
+function formatSignedHtg(value) {
   const num = safeInt(value);
-  return `${num > 0 ? "+" : ""}${formatInt(num)} Does`;
+  return `${num > 0 ? "+" : ""}${formatInt(num)} HTG`;
 }
 
 function formatPercent(value) {
   return `${(safeFloat(value) * 100).toFixed(1)}%`;
 }
 
-function formatDrawdown(doesValue, pctValue) {
-  const drawdown = Math.max(0, safeInt(doesValue));
-  return `${drawdown > 0 ? "-" : ""}${formatInt(drawdown)} Does Â· ${formatPercent(pctValue)}`;
+function formatDrawdown(htgValue, pctValue) {
+  const drawdown = Math.max(0, safeInt(htgValue));
+  return `${drawdown > 0 ? "-" : ""}${formatInt(drawdown)} HTG | ${formatPercent(pctValue)}`;
 }
 
 function formatDateTime(ms = 0) {
@@ -143,6 +154,7 @@ function formatDateTime(ms = 0) {
   return new Date(ms).toLocaleString("fr-FR", {
     dateStyle: "short",
     timeStyle: "short",
+    timeZone: "America/Port-au-Prince",
   });
 }
 
@@ -206,8 +218,8 @@ function renderEquityCurve(snapshot = null) {
   const padBottom = 20;
   const chartWidth = width - padLeft - padRight;
   const chartHeight = height - padTop - padBottom;
-  const values = points.map((item) => safeSignedInt(item.equityDoes));
-  const allValues = [...values, 0, safeSignedInt(snapshot?.highWaterMarkDoes)];
+  const values = points.map((item) => readMetricValue(item, "equityHtg", "equityDoes"));
+  const allValues = [...values, 0, readMetricValue(snapshot, "highWaterMarkHtg", "highWaterMarkDoes")];
   let minValue = Math.min(...allValues);
   let maxValue = Math.max(...allValues);
   if (minValue === maxValue) {
@@ -222,8 +234,12 @@ function renderEquityCurve(snapshot = null) {
   };
 
   const zeroY = toY(0);
-  const peakY = toY(snapshot?.highWaterMarkDoes || 0);
-  const plotted = points.map((item, index) => ({ ...item, x: toX(index), y: toY(item.equityDoes) }));
+  const peakY = toY(readMetricValue(snapshot, "highWaterMarkHtg", "highWaterMarkDoes"));
+  const plotted = points.map((item, index) => ({
+    ...item,
+    x: toX(index),
+    y: toY(readMetricValue(item, "equityHtg", "equityDoes")),
+  }));
   const linePoints = plotted.map((item) => `${item.x.toFixed(1)},${item.y.toFixed(1)}`).join(" ");
   const firstPoint = plotted[0];
   const lastPoint = plotted[plotted.length - 1];
@@ -260,12 +276,12 @@ function renderEquityCurve(snapshot = null) {
     <span>${escapeHtml(points[points.length - 1]?.label || "Maintenant")}</span>
   `;
 
-  const drawdownDoes = Math.max(0, safeInt(snapshot?.drawdownDoes));
-  if (drawdownDoes <= 0) {
+  const drawdownHtg = Math.max(0, readMetricValue(snapshot, "drawdownHtg", "drawdownDoes"));
+  if (drawdownHtg <= 0) {
     dom.recoveryCopy.textContent = `La courbe Pong tient actuellement son sommet sur la fenetre ${state.window}. Le systeme peut respirer sans trop charger le bot.`;
     return;
   }
-  dom.recoveryCopy.textContent = `La courbe Pong reste sous son dernier sommet de ${formatDrawdown(snapshot?.drawdownDoes, snapshot?.drawdownPct)}. Dernier pic atteint le ${formatDateTime(snapshot?.lastPeakAtMs)}. Tant que ce drawdown reste ouvert, le pilotage automatique garde plus de pression.`;
+  dom.recoveryCopy.textContent = `La courbe Pong reste sous son dernier sommet de ${formatDrawdown(readMetricValue(snapshot, "drawdownHtg", "drawdownDoes"), snapshot?.drawdownPct)}. Dernier pic atteint le ${formatDateTime(snapshot?.lastPeakAtMs)}. Tant que ce drawdown reste ouvert, le pilotage automatique garde plus de pression.`;
 }
 
 function renderTrend(snapshot = null) {
@@ -275,10 +291,10 @@ function renderTrend(snapshot = null) {
     return;
   }
 
-  const maxAbs = Math.max(...trend.map((item) => Math.abs(safeInt(item.netDoes))), 1);
+  const maxAbs = Math.max(...trend.map((item) => Math.abs(readMetricValue(item, "netHtg", "netDoes"))), 1);
   dom.trendList.innerHTML = trend.map((item) => {
-    const netDoes = safeInt(item.netDoes);
-    const width = Math.max(10, Math.round((Math.abs(netDoes) / maxAbs) * 100));
+    const netHtg = readMetricValue(item, "netHtg", "netDoes");
+    const width = Math.max(10, Math.round((Math.abs(netHtg) / maxAbs) * 100));
     return `
       <div class="trend-row">
         <div class="trend-meta">
@@ -286,9 +302,9 @@ function renderTrend(snapshot = null) {
           <span>${formatInt(item.rooms)} Pong${safeInt(item.rooms) > 1 ? "s" : ""}</span>
         </div>
         <div class="trend-track">
-          <span class="trend-bar ${netDoes >= 0 ? "positive" : "negative"}" style="width:${width}%"></span>
+          <span class="trend-bar ${netHtg >= 0 ? "positive" : "negative"}" style="width:${width}%"></span>
         </div>
-        <div class="${netDoes >= 0 ? "positive" : "negative"}">${escapeHtml(formatSignedDoes(netDoes))}</div>
+        <div class="${netHtg >= 0 ? "positive" : "negative"}">${escapeHtml(formatSignedHtg(netHtg))}</div>
       </div>
     `;
   }).join("");
@@ -304,7 +320,7 @@ function renderDifficultyMix(snapshot = null) {
   const maxRooms = Math.max(...rows.map((item) => safeInt(item.rooms)), 1);
   dom.difficultyMixGrid.innerHTML = rows.map((item) => {
     const rooms = safeInt(item.rooms);
-    const netDoes = safeInt(item.netDoes);
+    const netHtg = readMetricValue(item, "netHtg", "netDoes");
     const width = rooms > 0 ? Math.max(10, Math.round((rooms / maxRooms) * 100)) : 0;
     return `
       <article class="mix-card">
@@ -313,10 +329,10 @@ function renderDifficultyMix(snapshot = null) {
           <span>${formatInt(rooms)} Pong${rooms > 1 ? "s" : ""}</span>
         </div>
         <div class="mix-track">
-          <span class="mix-fill ${netDoes >= 0 ? "positive" : "negative"}" style="width:${width}%"></span>
+          <span class="mix-fill ${netHtg >= 0 ? "positive" : "negative"}" style="width:${width}%"></span>
         </div>
         <div class="mix-inline">
-          <span>Net <b class="${netDoes >= 0 ? "positive" : "negative"}">${escapeHtml(formatSignedDoes(netDoes))}</b></span>
+          <span>Net <b class="${netHtg >= 0 ? "positive" : "negative"}">${escapeHtml(formatSignedHtg(netHtg))}</b></span>
           <span>Humains <b>${formatInt(item.humanWins)}</b></span>
           <span>Bot <b>${formatInt(item.botWins)}</b></span>
         </div>
@@ -335,20 +351,21 @@ function renderStakeMix(snapshot = null) {
   const maxRooms = Math.max(...rows.map((item) => safeInt(item.rooms)), 1);
   dom.stakeMixGrid.innerHTML = rows.map((item) => {
     const rooms = safeInt(item.rooms);
-    const netDoes = safeInt(item.netDoes);
+    const netHtg = readMetricValue(item, "netHtg", "netDoes");
+    const stakeHtg = Math.max(0, readMetricValue(item, "stakeHtg", "stakeDoes"));
     const width = rooms > 0 ? Math.max(10, Math.round((rooms / maxRooms) * 100)) : 0;
     return `
       <article class="mix-card">
         <div class="mix-head">
-          <strong>${escapeHtml(item.label || `${safeInt(item.stakeDoes)} Does`)}</strong>
+          <strong>${escapeHtml(item.labelHtg || `${formatInt(stakeHtg)} HTG`)}</strong>
           <span>${formatInt(rooms)} Pong${rooms > 1 ? "s" : ""}</span>
         </div>
         <div class="mix-track">
-          <span class="mix-fill ${netDoes >= 0 ? "positive" : "negative"}" style="width:${width}%"></span>
+          <span class="mix-fill ${netHtg >= 0 ? "positive" : "negative"}" style="width:${width}%"></span>
         </div>
         <div class="mix-inline">
-          <span>Net <b class="${netDoes >= 0 ? "positive" : "negative"}">${escapeHtml(formatSignedDoes(netDoes))}</b></span>
-          <span>Mise <b>${formatInt(item.stakeDoes)} Does</b></span>
+          <span>Net <b class="${netHtg >= 0 ? "positive" : "negative"}">${escapeHtml(formatSignedHtg(netHtg))}</b></span>
+          <span>Mise <b>${formatInt(stakeHtg)} HTG</b></span>
         </div>
       </article>
     `;
@@ -359,33 +376,38 @@ function renderSnapshot() {
   const snapshot = state.snapshot || {};
   const band = bandMeta(snapshot.recommendedBand);
   const appliedLevel = state.mode === "auto" ? state.autoBotDifficulty : state.manualBotDifficulty;
-  const drawdownDoes = Math.max(0, safeInt(snapshot.drawdownDoes));
+  const netHtg = readMetricValue(snapshot, "netHtg", "netDoes");
+  const collectedHtg = readMetricValue(snapshot, "collectedHtg", "collectedDoes");
+  const payoutHtg = readMetricValue(snapshot, "payoutHtg", "payoutDoes");
+  const currentEquityHtg = readMetricValue(snapshot, "currentEquityHtg", "currentEquityDoes");
+  const highWaterMarkHtg = readMetricValue(snapshot, "highWaterMarkHtg", "highWaterMarkDoes");
+  const drawdownHtg = Math.max(0, readMetricValue(snapshot, "drawdownHtg", "drawdownDoes"));
 
-  dom.netValue.textContent = formatSignedDoes(snapshot.netDoes);
-  dom.netValue.classList.toggle("positive", safeInt(snapshot.netDoes) > 0);
-  dom.netValue.classList.toggle("negative", safeInt(snapshot.netDoes) < 0);
-  dom.netCopy.textContent = `Encaisse ${formatDoes(snapshot.collectedDoes)} Â· payout ${formatDoes(snapshot.payoutDoes)}.`;
+  dom.netValue.textContent = formatSignedHtg(netHtg);
+  dom.netValue.classList.toggle("positive", netHtg > 0);
+  dom.netValue.classList.toggle("negative", netHtg < 0);
+  dom.netCopy.textContent = `Encaisse ${formatHtg(collectedHtg)} | payout ${formatHtg(payoutHtg)}.`;
 
   dom.marginValue.textContent = formatPercent(snapshot.marginPct);
-  dom.marginCopy.textContent = `Bot gagne ${formatPercent(snapshot.botWinRatePct)} Â· humain ${formatPercent(snapshot.humanWinRatePct)}.`;
+  dom.marginCopy.textContent = `Bot gagne ${formatPercent(snapshot.botWinRatePct)} | humain ${formatPercent(snapshot.humanWinRatePct)}.`;
 
   dom.roomsValue.textContent = formatInt(snapshot.roomsCount);
   dom.roomsCopy.textContent = snapshot.truncated
     ? `Lecture Pong plafonnee a ${formatInt(snapshot.fetchLimit)} matchs recents.`
     : `Fenetre ${state.window} archivee de ${formatDateTime(snapshot.startMs)} a ${formatDateTime(snapshot.endMs)}.`;
 
-  dom.collectedValue.textContent = formatDoes(snapshot.collectedDoes);
-  dom.payoutValue.textContent = formatDoes(snapshot.payoutDoes);
-  dom.equityValue.textContent = formatSignedDoes(snapshot.currentEquityDoes);
-  dom.equityValue.classList.toggle("positive", safeInt(snapshot.currentEquityDoes) > 0);
-  dom.equityValue.classList.toggle("negative", safeInt(snapshot.currentEquityDoes) < 0);
-  dom.equityCopy.textContent = `Depart a zero le ${formatDateTime(snapshot.startMs)} Â· dernier point ${formatDateTime(snapshot.endMs)}.`;
-  dom.peakValue.textContent = formatDoes(snapshot.highWaterMarkDoes);
+  dom.collectedValue.textContent = formatHtg(collectedHtg);
+  dom.payoutValue.textContent = formatHtg(payoutHtg);
+  dom.equityValue.textContent = formatSignedHtg(currentEquityHtg);
+  dom.equityValue.classList.toggle("positive", currentEquityHtg > 0);
+  dom.equityValue.classList.toggle("negative", currentEquityHtg < 0);
+  dom.equityCopy.textContent = `Depart a zero le ${formatDateTime(snapshot.startMs)} | dernier point ${formatDateTime(snapshot.endMs)}.`;
+  dom.peakValue.textContent = formatHtg(highWaterMarkHtg);
   dom.peakCopy.textContent = `Dernier sommet Pong observe le ${formatDateTime(snapshot.lastPeakAtMs)}.`;
-  dom.drawdownValue.textContent = formatDrawdown(snapshot.drawdownDoes, snapshot.drawdownPct);
-  dom.drawdownValue.classList.toggle("negative", drawdownDoes > 0);
-  dom.drawdownValue.classList.toggle("positive", drawdownDoes <= 0);
-  dom.drawdownCopy.textContent = drawdownDoes > 0
+  dom.drawdownValue.textContent = formatDrawdown(drawdownHtg, snapshot.drawdownPct);
+  dom.drawdownValue.classList.toggle("negative", drawdownHtg > 0);
+  dom.drawdownValue.classList.toggle("positive", drawdownHtg <= 0);
+  dom.drawdownCopy.textContent = drawdownHtg > 0
     ? "Le pilotage Pong doit reconstruire au-dessus de ce pic."
     : "Aucun drawdown ouvert sur la fenetre Pong active.";
 
@@ -395,7 +417,7 @@ function renderSnapshot() {
   dom.appliedBadge.dataset.tone = state.mode === "auto" ? band.tone : "equilibrium";
 
   dom.reasonCopy.textContent = `${reasonLabel(snapshot.recommendedReason)} Dernier calcul: ${formatDateTime(snapshot.computedAtMs)}.`;
-  dom.fetchMeta.textContent = `Mode ${modeLabel(state.mode)} Â· niveau manuel ${levelLabel(state.manualBotDifficulty)} Â· niveau auto recommande ${levelLabel(state.autoBotDifficulty)}. Source: PongRoomResults Â· refresh ${Math.round(LIVE_REFRESH_INTERVAL_MS / 1000)}s.`;
+  dom.fetchMeta.textContent = `Mode ${modeLabel(state.mode)} | niveau manuel ${levelLabel(state.manualBotDifficulty)} | niveau auto recommande ${levelLabel(state.autoBotDifficulty)}. Source: pongMatchResults | refresh ${Math.round(LIVE_REFRESH_INTERVAL_MS / 1000)}s.`;
 
   updateControls();
   renderEquityCurve(snapshot);

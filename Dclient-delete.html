@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="./runtime-config.js"></script>
+    <title>Kobposh V2 - Suppression compte client</title>
+    <style>
+      :root {
+        --bg: #091423;
+        --panel: #112033;
+        --panel-2: #162a41;
+        --line: #284864;
+        --text: #f4f8ff;
+        --muted: #9eb8d3;
+        --good: #36b37e;
+        --danger: #ff6b6b;
+        --danger-deep: #2d0f16;
+        --warning: #ffbf69;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(180deg, #091423 0%, #0f1d30 100%);
+        color: var(--text);
+      }
+
+      .wrap {
+        max-width: 980px;
+        margin: 24px auto;
+        padding: 16px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 18px;
+        margin-bottom: 16px;
+      }
+
+      h1, h2, h3, p {
+        margin-top: 0;
+      }
+
+      .muted {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .warning-box {
+        background: rgba(255, 191, 105, 0.1);
+        border: 1px solid rgba(255, 191, 105, 0.32);
+        color: #ffe7c2;
+        border-radius: 14px;
+        padding: 12px 14px;
+      }
+
+      .search-row,
+      .action-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+      }
+
+      input,
+      textarea,
+      button {
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid #33597f;
+        background: #0f1d30;
+        color: var(--text);
+        padding: 12px 14px;
+        font: inherit;
+      }
+
+      textarea {
+        min-height: 92px;
+        resize: vertical;
+      }
+
+      button {
+        cursor: pointer;
+        width: auto;
+        min-width: 170px;
+        font-weight: 700;
+      }
+
+      .primary-btn {
+        background: var(--good);
+        border-color: transparent;
+        color: #082114;
+      }
+
+      .danger-btn {
+        background: var(--danger);
+        border-color: transparent;
+        color: #2b090e;
+      }
+
+      .danger-btn:disabled,
+      .primary-btn:disabled,
+      button:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+      }
+
+      .status {
+        min-height: 22px;
+        margin-top: 10px;
+        font-size: 14px;
+      }
+
+      .status[data-tone="good"] {
+        color: #9effd0;
+      }
+
+      .status[data-tone="bad"] {
+        color: #ffb4b4;
+      }
+
+      .status[data-tone="warn"] {
+        color: #ffe2af;
+      }
+
+      .result-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .result-item {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--panel-2);
+        padding: 14px;
+        cursor: pointer;
+      }
+
+      .result-item.is-active {
+        outline: 2px solid var(--good);
+        background: #193654;
+      }
+
+      .result-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .result-title {
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .result-meta {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .selected-box {
+        border-radius: 16px;
+        border: 1px dashed #3d688d;
+        padding: 14px;
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .selected-box strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .output {
+        white-space: pre-wrap;
+        font-family: Consolas, monospace;
+        font-size: 12px;
+        color: #d9ecff;
+      }
+
+      @media (max-width: 760px) {
+        .search-row,
+        .action-row {
+          grid-template-columns: 1fr;
+        }
+
+        button {
+          width: 100%;
+          min-width: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="card">
+        <h1>Suppression compte client</h1>
+        <p class="muted">
+          Cette page sert a supprimer un compte utilisateur seulement si le compte est vide et sans historique financier.
+          Si le compte a encore solde, ordres, retraits ou historique de jeu, la suppression sera refusee proprement.
+        </p>
+        <div class="warning-box">
+          Cette action est irreversible pour le document client et le compte Firebase Auth. Pour un compte avec historique,
+          il faut archiver au lieu de supprimer.
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Recherche</h2>
+        <div class="search-row">
+          <input id="clientDeleteSearchInput" type="search" placeholder="Chercher par uid, email, numero ou username..." autocomplete="off" />
+          <button id="clientDeleteSearchBtn" type="button" class="primary-btn">Rechercher</button>
+        </div>
+        <div id="clientDeleteSearchStatus" class="status" data-tone="neutral"></div>
+        <div id="clientDeleteResults" class="result-list"></div>
+      </section>
+
+      <section class="card">
+        <h2>Suppression</h2>
+        <div id="clientDeleteSelected" class="selected-box">
+          <strong>Aucun client selectionne.</strong>
+          <div class="muted">Choisis d'abord un resultat de recherche.</div>
+        </div>
+        <label for="clientDeleteNoteInput" style="display:block; margin:14px 0 8px;">Note admin (optionnel)</label>
+        <textarea id="clientDeleteNoteInput" placeholder="Ex: compte test, demande support, doublon confirme..."></textarea>
+        <div class="action-row" style="margin-top:12px;">
+          <div class="muted">
+            Le backend refusera la suppression si le compte est protege ou s'il faut plutot l'archiver.
+          </div>
+          <button id="clientDeleteBtn" type="button" class="danger-btn" disabled>Supprimer le compte</button>
+        </div>
+        <div id="clientDeleteActionStatus" class="status" data-tone="neutral"></div>
+      </section>
+
+      <section class="card">
+        <h3>Reponse backend</h3>
+        <div id="clientDeleteOutput" class="output">Aucune action pour l'instant.</div>
+      </section>
+    </main>
+
+    <script src="./dashboard-nav-bubble.js"></script>
+    <script type="module" src="./Dclient-delete.js"></script>
+  </body>
+</html>
