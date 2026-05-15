@@ -2,7 +2,7 @@ import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js";
 import {
   deleteClientAccountSecure,
   searchAgentDepositClientsSecure,
-} from "./secure-functions.js";
+} from "./secure-functions.js?v=20260515-clientdeletefix1";
 
 const dom = {
   searchInput: document.getElementById("clientDeleteSearchInput"),
