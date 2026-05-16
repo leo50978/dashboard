@@ -286,15 +286,15 @@
         <div class="hero__grid">
           <div>
             <p class="eyebrow">Disponibilite jeux</p>
-            <h1>Fermer ou rouvrir Pong et Domino 4 player</h1>
+            <h1>Fermer ou rouvrir Pong, Ludo et Domino 4 player</h1>
             <p>
-              Cette page coupe l'entree publique de <strong>Pong</strong> et de <strong>Domino 4 player</strong>
+              Cette page coupe l'entree publique de <strong>Pong</strong>, de <strong>Ludo</strong> et de <strong>Domino 4 player</strong>
               en un clic. Le site lit ces drapeaux via le runtime public Vercel, et le backend bloque aussi
               les demarrages de partie pour eviter les contournements par URL directe.
             </p>
             <div class="toolbar">
-              <button type="button" class="danger" id="closeAllGamesBtn">Fermer les deux jeux</button>
-              <button type="button" class="primary" id="openAllGamesBtn">Rouvrir les deux jeux</button>
+              <button type="button" class="danger" id="closeAllGamesBtn">Fermer les trois jeux</button>
+              <button type="button" class="primary" id="openAllGamesBtn">Rouvrir les trois jeux</button>
               <button type="button" class="ghost" id="reloadGameAvailabilityBtn">Recharger</button>
               <a class="btn" href="./index.html">Retour dashboard</a>
             </div>
@@ -306,6 +306,7 @@
             <div class="hero__chips">
               <span class="chip">settings/public_app_settings</span>
               <span class="chip">pongEnabled</span>
+              <span class="chip">ludoEnabled</span>
               <span class="chip">dominoClassicEnabled</span>
               <span class="chip">runtime-config public</span>
               <span class="chip">start-wager Vercel</span>
@@ -339,6 +340,30 @@
           <div class="game-card__actions">
             <button type="button" class="danger" data-game-action="pong:close">Fermer Pong</button>
             <button type="button" class="primary" data-game-action="pong:open">Rouvrir Pong</button>
+          </div>
+        </article>
+
+        <article class="game-card" data-game-card="ludo">
+          <div class="game-card__head">
+            <h2 class="game-card__label">Ludo</h2>
+            <span class="badge is-open" data-game-status-badge="ludo">Actif</span>
+          </div>
+          <p class="game-card__copy" data-game-status-copy="ludo">
+            Les utilisateurs peuvent lancer Ludo depuis la page d'accueil.
+          </p>
+          <div class="game-card__meta">
+            <div class="meta-box">
+              <small>Flag public</small>
+              <strong>ludoEnabled</strong>
+            </div>
+            <div class="meta-box">
+              <small>UI site</small>
+              <strong>Modal indisponible si ferme</strong>
+            </div>
+          </div>
+          <div class="game-card__actions">
+            <button type="button" class="danger" data-game-action="ludo:close">Fermer Ludo</button>
+            <button type="button" class="primary" data-game-action="ludo:open">Rouvrir Ludo</button>
           </div>
         </article>
 
@@ -377,7 +402,7 @@
       </section>
     </main>
 
-    <script type="module" src="./Dgame-availability.js?v=dgav-v1"></script>
+    <script type="module" src="./Dgame-availability.js?v=dgav-v2-ludo1"></script>
     <script src="./dashboard-nav-bubble.js"></script>
   </body>
 </html>

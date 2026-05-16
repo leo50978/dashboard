@@ -11,6 +11,7 @@ const PUBLIC_SETTINGS_DOC = "public_app_settings";
 const DEFAULT_GAME_AVAILABILITY = Object.freeze({
   pongEnabled: true,
   dominoClassicEnabled: true,
+  ludoEnabled: true,
 });
 
 const GAME_META = Object.freeze({
@@ -20,6 +21,13 @@ const GAME_META = Object.freeze({
     statusClosed: "Pong ferme",
     copyOpen: "Les utilisateurs peuvent lancer Pong depuis la page d'accueil.",
     copyClosed: "Le site affiche maintenant une modal d'indisponibilite pour Pong.",
+  },
+  ludo: {
+    label: "Ludo",
+    statusOpen: "Ludo actif",
+    statusClosed: "Ludo ferme",
+    copyOpen: "Les utilisateurs peuvent lancer Ludo depuis la page d'accueil.",
+    copyClosed: "Le site affiche maintenant une modal d'indisponibilite pour Ludo.",
   },
   dominoClassic: {
     label: "Domino 4 player",
@@ -74,6 +82,7 @@ function normalizeSnapshot(raw = {}) {
   return {
     pongEnabled: source.pongEnabled !== false,
     dominoClassicEnabled: source.dominoClassicEnabled !== false,
+    ludoEnabled: source.ludoEnabled !== false,
     updatedAtMs: Number(source.gameAvailabilityUpdatedAtMs || source.updatedAtMs || 0) || 0,
     updatedByEmail: String(
       source.gameAvailabilityUpdatedByEmail
@@ -101,6 +110,7 @@ function renderGameCard(gameKey, isEnabled) {
 function renderSnapshot(snapshot = currentSnapshot) {
   currentSnapshot = normalizeSnapshot(snapshot);
   renderGameCard("pong", currentSnapshot.pongEnabled !== false);
+  renderGameCard("ludo", currentSnapshot.ludoEnabled !== false);
   renderGameCard("dominoClassic", currentSnapshot.dominoClassicEnabled !== false);
 
   if (dom.lastUpdate) {
@@ -143,6 +153,7 @@ async function saveAvailability(nextState = {}, successMessage = "Configuration 
     await setDoc(doc(db, "settings", PUBLIC_SETTINGS_DOC), {
       pongEnabled: normalizedState.pongEnabled !== false,
       dominoClassicEnabled: normalizedState.dominoClassicEnabled !== false,
+      ludoEnabled: normalizedState.ludoEnabled !== false,
       gameAvailabilityVersion: "gav-v1",
       gameAvailabilityUpdatedAtMs: Date.now(),
       gameAvailabilityUpdatedAt: serverTimestamp(),
@@ -168,14 +179,16 @@ function bindActions() {
     saveAvailability({
       pongEnabled: false,
       dominoClassicEnabled: false,
-    }, "Pong et Domino 4 player sont maintenant fermes.");
+      ludoEnabled: false,
+    }, "Pong, Ludo et Domino 4 player sont maintenant fermes.");
   });
 
   dom.openAllBtn?.addEventListener("click", () => {
     saveAvailability({
       pongEnabled: true,
       dominoClassicEnabled: true,
-    }, "Pong et Domino 4 player sont maintenant rouverts.");
+      ludoEnabled: true,
+    }, "Pong, Ludo et Domino 4 player sont maintenant rouverts.");
   });
 
   dom.actionButtons.forEach((button) => {
@@ -185,8 +198,13 @@ function bindActions() {
       if (!GAME_META[gameKey]) return;
 
       const nextValue = action === "open";
+      const fieldName = gameKey === "pong"
+        ? "pongEnabled"
+        : gameKey === "ludo"
+          ? "ludoEnabled"
+          : "dominoClassicEnabled";
       saveAvailability({
-        [gameKey === "pong" ? "pongEnabled" : "dominoClassicEnabled"]: nextValue,
+        [fieldName]: nextValue,
       }, `${GAME_META[gameKey].label} est maintenant ${nextValue ? "ouvert" : "ferme"}.`);
     });
   });
