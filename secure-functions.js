@@ -1,4 +1,4 @@
-import { auth, functions as firebaseFunctions, httpsCallable } from "./firebase-init.js";
+﻿import { auth, functions as firebaseFunctions, httpsCallable } from "./firebase-init.js";
 import "./runtime-config.js";
 
 const CALLABLE_CACHE = new Map();
@@ -442,6 +442,24 @@ export async function setLudoBotPilotControlSecure(payload = {}) {
 export async function getMorpionAnalyticsSnapshotSecure(payload = {}) {
   const fallbackError = "Impossible de charger les analytics Morpion.";
   return invokeBackendHttp("/api/dashboard/morpion/snapshot", {
+    payload,
+    requireAuth: true,
+    fallbackError,
+  });
+}
+
+export async function getChampionnaDashboardSnapshotSecure(payload = {}) {
+  const fallbackError = "Impossible de charger le dashboard Championna.";
+  return invokeBackendHttp("/api/dashboard/championna/snapshot", {
+    payload,
+    requireAuth: true,
+    fallbackError,
+  });
+}
+
+export async function updateChampionnaMatchScoreSecure(payload = {}) {
+  const fallbackError = "Impossible de mettre a jour le score Championna.";
+  return invokeBackendHttp("/api/dashboard/championna/update-match", {
     payload,
     requireAuth: true,
     fallbackError,

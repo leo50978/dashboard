@@ -1,0 +1,146 @@
+﻿<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kobposh V2 - Championna</title>
+    <script src="./runtime-config.js"></script>
+    <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="shortcut icon" href="./favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <link rel="manifest" href="./site.webmanifest" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #07100d;
+        --panel: rgba(9, 24, 18, 0.9);
+        --panel-soft: rgba(255, 255, 255, 0.045);
+        --line: rgba(184, 232, 205, 0.14);
+        --line-strong: rgba(57, 217, 138, 0.34);
+        --text: #effcf4;
+        --muted: #98b6a8;
+        --mint: #39d98a;
+        --sky: #67e8f9;
+        --danger: #fb7185;
+        --warn: #fbbf24;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Space Grotesk", Arial, sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(103, 232, 249, 0.13), transparent 28%),
+          radial-gradient(circle at top right, rgba(57, 217, 138, 0.14), transparent 24%),
+          linear-gradient(180deg, #040806 0%, var(--bg) 52%, #020504 100%);
+      }
+      .shell { width: min(1280px, calc(100% - 28px)); margin: 0 auto; padding: 28px 0 48px; }
+      .hero, .panel, .match-card, .metric-card { border: 1px solid var(--line); background: var(--panel); box-shadow: 0 24px 70px rgba(0,0,0,.28); backdrop-filter: blur(18px); }
+      .hero, .panel { border-radius: 24px; padding: 20px; }
+      .hero { display: grid; gap: 16px; }
+      .topline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+      .eyebrow { margin: 0; font-size: .72rem; letter-spacing: .16em; text-transform: uppercase; color: var(--sky); font-weight: 800; }
+      h1, h2, h3, p { margin: 0; }
+      h1 { margin-top: 8px; font-family: "Sora", sans-serif; font-size: clamp(2rem, 5vw, 4rem); line-height: .96; }
+      .copy, .helper, .status, .match-meta, .metric-card span { color: var(--muted); line-height: 1.65; }
+      .copy { max-width: 76ch; margin-top: 12px; }
+      .actions, .filter-grid, .metrics-grid, .round-grid, .score-form { display: grid; gap: 12px; }
+      .actions { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+      .action-btn, .back-link { min-height: 46px; border-radius: 14px; border: 1px solid rgba(255,255,255,.09); font: inherit; font-weight: 800; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+      .action-btn.primary { background: linear-gradient(135deg, #39d98a, #67e8f9); color: #04130d; }
+      .action-btn.secondary, .back-link { background: rgba(255,255,255,.05); color: var(--text); }
+      .action-btn:disabled { opacity: .55; cursor: not-allowed; }
+      .panel { margin-top: 16px; }
+      .filter-grid { grid-template-columns: 1fr; margin-top: 14px; }
+      label { display: block; font-size: .74rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+      select, input { width: 100%; border-radius: 14px; border: 1px solid rgba(255,255,255,.09); background: rgba(2,8,6,.72); color: var(--text); padding: 12px 13px; font: inherit; outline: none; }
+      .metrics-grid { margin-top: 14px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+      .metric-card { border-radius: 18px; padding: 14px; }
+      .metric-card strong { display: block; margin-top: 8px; font-family: "Sora", sans-serif; font-size: 1.4rem; }
+      .round-grid { margin-top: 16px; }
+      .round-title { color: #dff9ec; font-size: 1rem; margin: 8px 0 0; }
+      .match-card { border-radius: 18px; padding: 14px; display: grid; gap: 12px; }
+      .match-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; }
+      .status-pill { border-radius: 999px; padding: 7px 10px; border: 1px solid var(--line); color: #dff9ec; font-size: .78rem; font-weight: 800; }
+      .status-pill.done { border-color: rgba(57,217,138,.38); color: var(--mint); }
+      .pair { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 10px; align-items: center; }
+      .player:last-child { text-align: right; }
+      .player strong { display: block; overflow-wrap: anywhere; }
+      .player span { display: block; margin-top: 4px; color: var(--muted); font-size: .8rem; }
+      .versus { color: var(--sky); font-weight: 900; }
+      .score-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .score-form input { text-align: center; font-weight: 900; }
+      .score-form button { grid-column: 1 / -1; }
+      .empty { border-radius: 18px; border: 1px dashed rgba(255,255,255,.16); padding: 22px; text-align: center; color: var(--muted); }
+      .status[data-tone="error"] { color: var(--danger); }
+      .status[data-tone="success"] { color: #86efac; }
+      @media (min-width: 840px) { .filter-grid { grid-template-columns: 1fr auto; align-items: end; } .score-form { grid-template-columns: 120px 120px minmax(190px, 1fr); align-items: end; } .score-form button { grid-column: auto; } }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div class="topline">
+          <div>
+            <p class="eyebrow">Dashboard Championna</p>
+            <h1>Gestion des matchs et scores</h1>
+            <p class="copy">Choisis un jeu, entre le score officiel du match, puis le dashboard fait avancer le gagnant vers la phase suivante. Le site public lit le meme calendrier et se met a jour automatiquement.</p>
+          </div>
+          <a class="back-link" href="./index.html">Retour hub</a>
+        </div>
+        <div class="actions">
+          <a class="action-btn secondary" href="./Dgames-volume.html">Volume jeux</a>
+          <a class="action-btn secondary" href="./Dmorpion.html">Analytics Morpion</a>
+          <button id="championnaRefreshTopBtn" class="action-btn primary" type="button">Rafraichir Championna</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="topline">
+          <div>
+            <h2>Jeu a manager</h2>
+            <p class="helper">Le score valide est celui ou un joueur arrive a 2 parties gagnees: 2-0, 2-1, 0-2 ou 1-2.</p>
+          </div>
+          <p id="championnaStatus" class="status" data-tone="neutral">Chargement...</p>
+        </div>
+        <div class="filter-grid">
+          <div>
+            <label for="championnaGameSelect">Jeu Championna</label>
+            <select id="championnaGameSelect">
+              <option value="domino">Domino</option>
+              <option value="mopyon">Mopyon</option>
+              <option value="dame">Dame</option>
+              <option value="ludo">Ludo</option>
+              <option value="echec">Echec</option>
+            </select>
+          </div>
+          <button id="championnaRefreshBtn" class="action-btn primary" type="button">Actualiser</button>
+        </div>
+        <div class="metrics-grid">
+          <article class="metric-card"><span>Inscrits</span><strong id="championnaRegisteredMetric">0/8</strong></article>
+          <article class="metric-card"><span>Matchs termines</span><strong id="championnaCompletedMetric">0/7</strong></article>
+          <article class="metric-card"><span>Statut</span><strong id="championnaStateMetric">-</strong></article>
+          <article class="metric-card"><span>Champion</span><strong id="championnaWinnerMetric">-</strong></article>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="topline">
+          <div>
+            <h2>Calendrier officiel</h2>
+            <p class="helper">Quand tu sauvegardes un score, il apparait dans la modal Championna du site.</p>
+          </div>
+        </div>
+        <div id="championnaMatches" class="round-grid"><div class="empty">En attente du premier chargement.</div></div>
+      </section>
+    </main>
+
+    <script type="module" src="./dashboard-nav-bubble.js"></script>
+    <script type="module" src="./Dchampionna.js"></script>
+  </body>
+</html>

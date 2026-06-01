@@ -34,6 +34,7 @@
     { href: "./Dgames-volume.html", label: "Volume jeux", match: ["dgames-volume.html"] },
     { href: "./Dgame-availability.html", label: "Dispo jeux", match: ["dgame-availability.html"] },
     { href: "./Dai-advisor.html", label: "Conseiller IA", match: ["dai-advisor.html"] },
+    { href: "./Dchampionna.html", label: "Championna", match: ["dchampionna.html"] },
     { href: "./Dmorpion.html", label: "Analytics Morpion", match: ["dmorpion.html"] },
     { href: "./pilotagebot-pong.html", label: "Pilotage Pong", match: ["pilotagebot-pong.html"] },
     { href: "./pilotagebot-ludo.html", label: "Pilotage Ludo", match: ["pilotagebot-ludo.html"] },
@@ -191,6 +192,8 @@
     renderNav();
   }
 })();
+
+
 
 
 
