@@ -62,6 +62,12 @@
       .metrics-grid { margin-top: 14px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
       .metric-card { border-radius: 18px; padding: 14px; }
       .metric-card strong { display: block; margin-top: 8px; font-family: "Sora", sans-serif; font-size: 1.4rem; }
+      .registered-list { margin-top: 16px; display: grid; gap: 10px; }
+      .registered-row { border: 1px solid var(--line); border-radius: 16px; padding: 12px; display: grid; gap: 10px; background: rgba(255,255,255,.04); }
+      .registered-row__main strong { display: block; overflow-wrap: anywhere; }
+      .registered-row__main span { display: block; margin-top: 4px; color: var(--muted); font-size: .82rem; overflow-wrap: anywhere; }
+      .danger-btn { min-height: 42px; border-radius: 13px; border: 1px solid rgba(251,113,133,.36); background: rgba(251,113,133,.1); color: #fecdd3; font: inherit; font-weight: 900; cursor: pointer; }
+      .danger-btn:disabled { opacity: .55; cursor: not-allowed; }
       .round-grid { margin-top: 16px; }
       .round-title { color: #dff9ec; font-size: 1rem; margin: 8px 0 0; }
       .match-card { border-radius: 18px; padding: 14px; display: grid; gap: 12px; }
@@ -79,31 +85,16 @@
       .empty { border-radius: 18px; border: 1px dashed rgba(255,255,255,.16); padding: 22px; text-align: center; color: var(--muted); }
       .status[data-tone="error"] { color: var(--danger); }
       .status[data-tone="success"] { color: #86efac; }
-      @media (min-width: 840px) { .filter-grid { grid-template-columns: 1fr auto; align-items: end; } .score-form { grid-template-columns: 120px 120px minmax(190px, 1fr); align-items: end; } .score-form button { grid-column: auto; } }
+      @media (min-width: 840px) { .filter-grid { grid-template-columns: 1fr auto; align-items: end; } .registered-row { grid-template-columns: minmax(0, 1fr) 190px; align-items: center; } .score-form { grid-template-columns: 120px 120px minmax(190px, 1fr); align-items: end; } .score-form button { grid-column: auto; } }
     </style>
   </head>
   <body>
     <main class="shell">
-      <section class="hero">
-        <div class="topline">
-          <div>
-            <p class="eyebrow">Dashboard Championna</p>
-            <h1>Gestion des matchs et scores</h1>
-            <p class="copy">Choisis un jeu, entre le score officiel du match, puis le dashboard fait avancer le gagnant vers la phase suivante. Le site public lit le meme calendrier et se met a jour automatiquement.</p>
-          </div>
-          <a class="back-link" href="./index.html">Retour hub</a>
-        </div>
-        <div class="actions">
-          <a class="action-btn secondary" href="./Dgames-volume.html">Volume jeux</a>
-          <a class="action-btn secondary" href="./Dmorpion.html">Analytics Morpion</a>
-          <button id="championnaRefreshTopBtn" class="action-btn primary" type="button">Rafraichir Championna</button>
-        </div>
-      </section>
-
       <section class="panel">
         <div class="topline">
           <div>
-            <h2>Jeu a manager</h2>
+            <p class="eyebrow">Dashboard Championna</p>
+            <h1>Championna</h1>
             <p class="helper">Le score valide est celui ou un joueur arrive a 2 parties gagnees: 2-0, 2-1, 0-2 ou 1-2.</p>
           </div>
           <p id="championnaStatus" class="status" data-tone="neutral">Chargement...</p>
@@ -127,6 +118,7 @@
           <article class="metric-card"><span>Statut</span><strong id="championnaStateMetric">-</strong></article>
           <article class="metric-card"><span>Champion</span><strong id="championnaWinnerMetric">-</strong></article>
         </div>
+        <div class="registered-list" id="championnaRegisteredList"><div class="empty">Aucun inscrit charge.</div></div>
       </section>
 
       <section class="panel">
@@ -140,7 +132,6 @@
       </section>
     </main>
 
-    <script type="module" src="./dashboard-nav-bubble.js"></script>
-    <script type="module" src="./Dchampionna.js"></script>
+    <script type="module" src="./Dchampionna.js?v=20260601-championna-remove1"></script>
   </body>
 </html>

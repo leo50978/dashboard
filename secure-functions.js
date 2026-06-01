@@ -465,3 +465,12 @@ export async function updateChampionnaMatchScoreSecure(payload = {}) {
     fallbackError,
   });
 }
+
+export async function removeChampionnaRegistrationSecure(payload = {}) {
+  const fallbackError = "Impossible de retirer cet inscrit Championna.";
+  return invokeBackendHttp("/api/dashboard/championna/remove-registration", {
+    payload,
+    requireAuth: true,
+    fallbackError,
+  });
+}

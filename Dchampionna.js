@@ -1,12 +1,14 @@
-﻿import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js";
+import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js";
 import {
   getChampionnaDashboardSnapshotSecure,
+  removeChampionnaRegistrationSecure,
   updateChampionnaMatchScoreSecure,
-} from "./secure-functions.js";
+} from "./secure-functions.js?v=20260601-championna-remove1";
 
 const state = {
   loading: false,
   savingMatchId: "",
+  removingRegistrationId: "",
   selectedGameKey: "domino",
   snapshot: null,
 };
@@ -14,12 +16,12 @@ const state = {
 const dom = {
   gameSelect: document.getElementById("championnaGameSelect"),
   refreshBtn: document.getElementById("championnaRefreshBtn"),
-  refreshTopBtn: document.getElementById("championnaRefreshTopBtn"),
   status: document.getElementById("championnaStatus"),
   registeredMetric: document.getElementById("championnaRegisteredMetric"),
   completedMetric: document.getElementById("championnaCompletedMetric"),
   stateMetric: document.getElementById("championnaStateMetric"),
   winnerMetric: document.getElementById("championnaWinnerMetric"),
+  registeredList: document.getElementById("championnaRegisteredList"),
   matches: document.getElementById("championnaMatches"),
 };
 
@@ -91,7 +93,7 @@ function render() {
   if (dom.stateMetric) dom.stateMetric.textContent = bracket?.status || (bracket ? "active" : "attente");
   if (dom.winnerMetric) dom.winnerMetric.textContent = bracket?.championName || "-";
   if (dom.refreshBtn) dom.refreshBtn.disabled = state.loading;
-  if (dom.refreshTopBtn) dom.refreshTopBtn.disabled = state.loading;
+  renderRegisteredList(registrations, bracket);
 
   if (!bracket) {
     if (dom.matches) {
@@ -121,6 +123,50 @@ function render() {
         matchId: form.getAttribute("data-match-id"),
         homeScore: form.querySelector("[data-home-score]")?.value,
         awayScore: form.querySelector("[data-away-score]")?.value,
+      });
+    });
+  });
+}
+
+function renderRegisteredList(registrations = [], bracket = null) {
+  if (!dom.registeredList) return;
+  const safeRows = Array.isArray(registrations) ? registrations : [];
+  if (!safeRows.length) {
+    dom.registeredList.innerHTML = `<div class="empty">Pa gen inscrit pou ce jeu.</div>`;
+    return;
+  }
+
+  const matches = Array.isArray(bracket?.matches) ? bracket.matches : [];
+  const hasCompletedMatch = matches.some((match) => String(match?.status || "") === "completed");
+  dom.registeredList.innerHTML = safeRows.map((row) => {
+    const rowId = String(row?.id || "").trim();
+    const uid = String(row?.uid || "").trim();
+    const busy = state.removingRegistrationId === rowId;
+    const disabled = state.loading || Boolean(state.removingRegistrationId) || hasCompletedMatch || !rowId || !uid;
+    const title = hasCompletedMatch
+      ? "Retrait bloque: un match est deja termine."
+      : "Retirer cet inscrit du championna.";
+    return `
+      <article class="registered-row">
+        <div class="registered-row__main">
+          <strong>${escapeHtml(row?.username || "Utilisateur")}</strong>
+          <span>${escapeHtml(uid || rowId)} - ${escapeHtml(row?.gameName || state.selectedGameKey)}</span>
+        </div>
+        <button class="danger-btn" type="button" data-remove-registration data-registration-id="${escapeHtml(rowId)}" data-uid="${escapeHtml(uid)}" ${disabled ? "disabled" : ""} title="${escapeHtml(title)}">
+          ${escapeHtml(busy ? "Retrait..." : "Retirer")}
+        </button>
+      </article>
+    `;
+  }).join("");
+
+  dom.registeredList.querySelectorAll("[data-remove-registration]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const username = button.closest(".registered-row")?.querySelector("strong")?.textContent?.trim() || "cet inscrit";
+      const ok = window.confirm(`Retirer ${username} du championna ${state.selectedGameKey}?`);
+      if (!ok) return;
+      void removeRegistration({
+        registrationId: button.getAttribute("data-registration-id"),
+        uid: button.getAttribute("data-uid"),
       });
     });
   });
@@ -196,13 +242,35 @@ async function saveScore({ matchId = "", homeScore = "", awayScore = "" } = {}) 
   }
 }
 
+async function removeRegistration({ registrationId = "", uid = "" } = {}) {
+  const normalizedRegistrationId = String(registrationId || "").trim();
+  const normalizedUid = String(uid || "").trim();
+  if (!normalizedRegistrationId || !normalizedUid || state.removingRegistrationId) return;
+  state.removingRegistrationId = normalizedRegistrationId;
+  render();
+  try {
+    await removeChampionnaRegistrationSecure({
+      gameKey: state.selectedGameKey,
+      registrationId: normalizedRegistrationId,
+      uid: normalizedUid,
+    });
+    setStatus("Inscrit retire. Le site public va se mettre a jour.", "success");
+    await refreshDashboard();
+  } catch (error) {
+    console.error("[DCHAMPIONNA] remove registration failed", error);
+    setStatus(error?.message || "Impossible de retirer cet inscrit.", "error");
+  } finally {
+    state.removingRegistrationId = "";
+    render();
+  }
+}
+
 function bindEvents() {
   dom.gameSelect?.addEventListener("change", () => {
     state.selectedGameKey = String(dom.gameSelect.value || "domino").trim() || "domino";
     render();
   });
   dom.refreshBtn?.addEventListener("click", () => void refreshDashboard());
-  dom.refreshTopBtn?.addEventListener("click", () => void refreshDashboard());
 }
 
 async function bootstrap() {
