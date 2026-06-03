@@ -474,3 +474,12 @@ export async function removeChampionnaRegistrationSecure(payload = {}) {
     fallbackError,
   });
 }
+
+export async function getHtgCashflowSnapshotSecure(payload = {}) {
+  const fallbackError = "Impossible de charger le cashflow HTG.";
+  return invokeBackendHttp("/api/dashboard/cashflow-htg/snapshot", {
+    payload,
+    requireAuth: true,
+    fallbackError,
+  });
+}

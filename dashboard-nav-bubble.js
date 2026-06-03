@@ -29,6 +29,7 @@
       ],
     },
     { href: "./Ddepositflow.html", label: "Flux depots", match: ["ddepositflow.html"] },
+    { href: "./Dcashflow-htg.html", label: "Cashflow HTG", match: ["dcashflow-htg.html"] },
     { href: "./Dsite-visits.html", label: "Visites site", match: ["dsite-visits.html"] },
     { href: "./Dtransfers.html", label: "Transferts", match: ["dtransfers.html"] },
     { href: "./Dgames-volume.html", label: "Volume jeux", match: ["dgames-volume.html"] },
