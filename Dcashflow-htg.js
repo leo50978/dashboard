@@ -1,5 +1,5 @@
-ï»¿import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js";
-import { getHtgCashflowSnapshotSecure } from "./secure-functions.js";
+import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js?v=20260603-cashflow2";
+import { getHtgCashflowSnapshotSecure } from "./secure-functions.js?v=20260603-cashflow2";
 
 const dom = {
   status: document.getElementById("cashflowStatus"),
@@ -221,7 +221,7 @@ function renderRecent(result = {}) {
         <strong>${escapeHtml(row.customerName || row.customerEmail || row.uniqueCode || "Depot")}</strong>
         <span class="money-positive">${escapeHtml(formatHtg(row.amountHtg))}</span>
       </div>
-      <div class="recent-meta">${escapeHtml(row.sourceLabel || "Depot")} Â· ${escapeHtml(row.methodName || "-")}<br>${escapeHtml(formatDateTime(row.resolvedAtMs))}</div>
+      <div class="recent-meta">${escapeHtml(row.sourceLabel || "Depot")} · ${escapeHtml(row.methodName || "-")}<br>${escapeHtml(formatDateTime(row.resolvedAtMs))}</div>
     </li>
   `);
   renderRecentList(dom.recentWithdrawals, dom.recentWithdrawalsEmpty, snapshot.recentApprovedWithdrawals || [], (row) => `
@@ -239,7 +239,7 @@ function renderRecent(result = {}) {
         <strong>${escapeHtml(row.gameLabel || "Jeu")}</strong>
         <span class="${safeInt(row.operatorGameEdgeHtg) >= 0 ? "money-positive" : "money-negative"}">${escapeHtml(formatSignedHtg(row.operatorGameEdgeHtg))}</span>
       </div>
-      <div class="recent-meta">Mises users ${escapeHtml(formatHtg(row.usersStakeHtg))} Â· payout ${escapeHtml(formatHtg(row.payoutHtg))}<br>${escapeHtml(formatDateTime(row.resolvedAtMs))}</div>
+      <div class="recent-meta">Mises users ${escapeHtml(formatHtg(row.usersStakeHtg))} · payout ${escapeHtml(formatHtg(row.payoutHtg))}<br>${escapeHtml(formatDateTime(row.resolvedAtMs))}</div>
     </li>
   `);
 }
@@ -286,3 +286,4 @@ async function init() {
 }
 
 void init();
+
