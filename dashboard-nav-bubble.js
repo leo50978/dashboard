@@ -40,6 +40,7 @@
     { href: "./pilotagebot-pong.html", label: "Pilotage Pong", match: ["pilotagebot-pong.html"] },
     { href: "./pilotagebot-ludo.html", label: "Pilotage Ludo", match: ["pilotagebot-ludo.html"] },
     { href: "./pilotagebot-domino-classique.html", label: "Pilotage Domino", match: ["pilotagebot-domino-classique.html"] },
+    { href: "./pilotagebot-duel.html", label: "Pilotage Duel", match: ["pilotagebot-duel.html"] },
     { href: "./Dagentdeposit.html", label: "Depot agent", match: ["dagentdeposit.html"] },
     { href: "./Dpayment.html", label: "Methodes depot", match: ["dpayment.html"] },
     { href: "./Dorders-pending.html", label: "Depots attente", match: ["dorders-pending.html"] },
@@ -193,6 +194,8 @@
     renderNav();
   }
 })();
+
+
 
 
 

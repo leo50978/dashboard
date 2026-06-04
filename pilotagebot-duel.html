@@ -9,7 +9,7 @@
   <link rel="shortcut icon" href="./favicon.ico" />
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
   <link rel="manifest" href="./site.webmanifest" />
-  <title>Kobposh V2 Â· Pilotage Domino classique</title>
+  <title>Kobposh V2 Â· Pilotage Duel</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -372,9 +372,9 @@
         <span class="admin-chip" id="dominoPilotAdminEmail">Session admin en cours...</span>
       </div>
       <p class="eyebrow">Pilotage bots</p>
-      <h1>Domino classique V2</h1>
+      <h1>Duel 2 joueurs Gran chanm</h1>
       <p class="hero-copy">
-        Ce panneau pilote les bots locaux du `Domino classique` V2. L'admin peut forcer un niveau manuel,
+        Ce panneau pilote le Gran chanm Duel 2 joueurs en bot-only. L'admin peut forcer un niveau manuel,
         ou laisser le moteur auto suivre les vraies archives `HTG` du jeu pour alterner seulement entre
         `userpro` et `dominov1`. Le mode manuel peut aussi figer `dominov1`, qui sert maintenant de mode
         coalition `3 vs 1` a donne prouvee gagnante bots avant le premier coup.
@@ -404,7 +404,7 @@
         <h2>Controle du niveau</h2>
         <p class="section-copy">
           Mode manuel pour figer le bot sur un niveau, ou mode auto pour suivre la courbe de profit du
-          `Domino classique` V2 sans quitter l'environnement `HTG`.
+          `Duel 2 joueurs` sans quitter l'environnement `HTG`.
         </p>
       </div>
 
@@ -456,7 +456,7 @@
             <article class="metric">
               <label>Encaisse HTG</label>
               <strong id="dominoPilotCollectedValue">-</strong>
-              <small>Somme des mises HTG prises dans les parties Domino classiques archivees.</small>
+              <small>Somme des mises HTG prises dans les Duels Gran chanm archives.</small>
             </article>
             <article class="metric">
               <label>Payout HTG</label>
@@ -472,7 +472,7 @@
       <div class="section-head">
         <h2>Evolution du profit Domino</h2>
         <p class="section-copy">
-          La courbe cumulative suit le profit `HTG` du Domino classique comme une equity curve. Le mode auto
+          La courbe cumulative suit le profit `HTG` du Duel comme une equity curve. Le mode auto
           se sert de cette courbe, de la marge et des victoires humaines pour durcir ou adoucir les bots.
         </p>
       </div>
@@ -497,7 +497,7 @@
           </article>
         </div>
         <div class="equity-shell">
-          <svg class="equity-svg" id="dominoPilotEquitySvg" viewBox="0 0 720 240" role="img" aria-label="Courbe cumulative du profit Domino classique">
+          <svg class="equity-svg" id="dominoPilotEquitySvg" viewBox="0 0 720 240" role="img" aria-label="Courbe cumulative du profit Duel">
             <defs>
               <linearGradient id="dominoPilotEquityAreaGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stop-color="#34d399" stop-opacity="0.38"></stop>
@@ -542,7 +542,9 @@
   </main>
 
   <script src="./dashboard-nav-bubble.js?v=20260603-domino-noexpert1"></script>
-  <script type="module" src="./pilotagebot-domino-classique.js?v=20260603-domino-noexpert1"></script>
+  <script type="module" src="./pilotagebot-duel.js?v=20260603-duel-pilot1"></script>
 </body>
 </html>
+
+
 

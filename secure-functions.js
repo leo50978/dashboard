@@ -421,6 +421,24 @@ export async function setDominoClassicBotPilotControlSecure(payload = {}) {
   });
 }
 
+export async function getDuelBotPilotSnapshotSecure(payload = {}) {
+  const fallbackError = "Impossible de charger le pilotage Duel.";
+  return invokeBackendHttp("/api/dashboard/duel-bot-pilot/snapshot", {
+    payload,
+    requireAuth: true,
+    fallbackError,
+  });
+}
+
+export async function setDuelBotPilotControlSecure(payload = {}) {
+  const fallbackError = "Impossible de mettre a jour le pilotage Duel.";
+  return invokeBackendHttp("/api/dashboard/duel-bot-pilot/control", {
+    payload,
+    requireAuth: true,
+    fallbackError,
+  });
+}
+
 export async function getLudoBotPilotSnapshotSecure(payload = {}) {
   const fallbackError = "Impossible de charger le pilotage Ludo.";
   return invokeBackendHttp("/api/dashboard/ludo-bot-pilot/snapshot", {
@@ -483,3 +501,4 @@ export async function getHtgCashflowSnapshotSecure(payload = {}) {
     fallbackError,
   });
 }
+
