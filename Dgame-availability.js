@@ -1,4 +1,4 @@
-import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js";
+﻿import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js";
 import {
   db,
   doc,
@@ -11,6 +11,7 @@ const PUBLIC_SETTINGS_DOC = "public_app_settings";
 const DEFAULT_GAME_AVAILABILITY = Object.freeze({
   pongEnabled: true,
   dominoClassicEnabled: true,
+  dominoDuelPublicEnabled: true,
   ludoEnabled: true,
 });
 
@@ -28,6 +29,13 @@ const GAME_META = Object.freeze({
     statusClosed: "Ludo ferme",
     copyOpen: "Les utilisateurs peuvent lancer Ludo depuis la page d'accueil.",
     copyClosed: "Le site affiche maintenant une modal d'indisponibilite pour Ludo.",
+  },
+  dominoDuelPublic: {
+    label: "Domino duel gran chanm",
+    statusOpen: "Domino duel gran chanm actif",
+    statusClosed: "Domino duel gran chanm ferme",
+    copyOpen: "Les utilisateurs peuvent lancer Gran chanm de Domino duel depuis la page d'accueil.",
+    copyClosed: "Le site affiche maintenant une modal d'indisponibilite pour Domino duel gran chanm.",
   },
   dominoClassic: {
     label: "Domino 4 player",
@@ -82,6 +90,7 @@ function normalizeSnapshot(raw = {}) {
   return {
     pongEnabled: source.pongEnabled !== false,
     dominoClassicEnabled: source.dominoClassicEnabled !== false,
+    dominoDuelPublicEnabled: source.dominoDuelPublicEnabled !== false,
     ludoEnabled: source.ludoEnabled !== false,
     updatedAtMs: Number(source.gameAvailabilityUpdatedAtMs || source.updatedAtMs || 0) || 0,
     updatedByEmail: String(
@@ -111,6 +120,7 @@ function renderSnapshot(snapshot = currentSnapshot) {
   currentSnapshot = normalizeSnapshot(snapshot);
   renderGameCard("pong", currentSnapshot.pongEnabled !== false);
   renderGameCard("ludo", currentSnapshot.ludoEnabled !== false);
+  renderGameCard("dominoDuelPublic", currentSnapshot.dominoDuelPublicEnabled !== false);
   renderGameCard("dominoClassic", currentSnapshot.dominoClassicEnabled !== false);
 
   if (dom.lastUpdate) {
@@ -153,6 +163,7 @@ async function saveAvailability(nextState = {}, successMessage = "Configuration 
     await setDoc(doc(db, "settings", PUBLIC_SETTINGS_DOC), {
       pongEnabled: normalizedState.pongEnabled !== false,
       dominoClassicEnabled: normalizedState.dominoClassicEnabled !== false,
+      dominoDuelPublicEnabled: normalizedState.dominoDuelPublicEnabled !== false,
       ludoEnabled: normalizedState.ludoEnabled !== false,
       gameAvailabilityVersion: "gav-v1",
       gameAvailabilityUpdatedAtMs: Date.now(),
@@ -179,16 +190,18 @@ function bindActions() {
     saveAvailability({
       pongEnabled: false,
       dominoClassicEnabled: false,
+      dominoDuelPublicEnabled: false,
       ludoEnabled: false,
-    }, "Pong, Ludo et Domino 4 player sont maintenant fermes.");
+    }, "Pong, Ludo, Domino duel gran chanm et Domino 4 player sont maintenant fermes.");
   });
 
   dom.openAllBtn?.addEventListener("click", () => {
     saveAvailability({
       pongEnabled: true,
       dominoClassicEnabled: true,
+      dominoDuelPublicEnabled: true,
       ludoEnabled: true,
-    }, "Pong, Ludo et Domino 4 player sont maintenant rouverts.");
+    }, "Pong, Ludo, Domino duel gran chanm et Domino 4 player sont maintenant rouverts.");
   });
 
   dom.actionButtons.forEach((button) => {
@@ -202,7 +215,9 @@ function bindActions() {
         ? "pongEnabled"
         : gameKey === "ludo"
           ? "ludoEnabled"
-          : "dominoClassicEnabled";
+          : gameKey === "dominoDuelPublic"
+            ? "dominoDuelPublicEnabled"
+            : "dominoClassicEnabled";
       saveAvailability({
         [fieldName]: nextValue,
       }, `${GAME_META[gameKey].label} est maintenant ${nextValue ? "ouvert" : "ferme"}.`);
@@ -222,3 +237,4 @@ async function boot() {
 }
 
 boot();
+
