@@ -18,6 +18,7 @@ const DEFAULT_GAME_AVAILABILITY = Object.freeze({
 const GAME_META = Object.freeze({
   pong: {
     label: "Pong",
+    field: "pongEnabled",
     statusOpen: "Pong actif",
     statusClosed: "Pong ferme",
     copyOpen: "Les utilisateurs peuvent lancer Pong depuis la page d'accueil.",
@@ -25,6 +26,7 @@ const GAME_META = Object.freeze({
   },
   ludo: {
     label: "Ludo",
+    field: "ludoEnabled",
     statusOpen: "Ludo actif",
     statusClosed: "Ludo ferme",
     copyOpen: "Les utilisateurs peuvent lancer Ludo depuis la page d'accueil.",
@@ -32,6 +34,7 @@ const GAME_META = Object.freeze({
   },
   dominoDuelPublic: {
     label: "Domino duel 2 joueurs",
+    field: "dominoDuelPublicEnabled",
     statusOpen: "Domino duel actif",
     statusClosed: "Domino duel ferme",
     copyOpen: "Les utilisateurs peuvent ouvrir Domino duel depuis la page d'accueil.",
@@ -39,6 +42,7 @@ const GAME_META = Object.freeze({
   },
   dominoClassic: {
     label: "Domino 4 player",
+    field: "dominoClassicEnabled",
     statusOpen: "Domino 4 player actif",
     statusClosed: "Domino 4 player ferme",
     copyOpen: "Les utilisateurs peuvent choisir Domino 4 player depuis la modal DOMINO.",
@@ -46,13 +50,15 @@ const GAME_META = Object.freeze({
   },
 });
 
+const GAME_KEYS = Object.freeze(Object.keys(GAME_META));
+
 const dom = {
   status: document.getElementById("gameAvailabilityStatus"),
   lastUpdate: document.getElementById("lastGameAvailabilityUpdate"),
   reloadBtn: document.getElementById("reloadGameAvailabilityBtn"),
   closeAllBtn: document.getElementById("closeAllGamesBtn"),
   openAllBtn: document.getElementById("openAllGamesBtn"),
-  actionButtons: Array.from(document.querySelectorAll("[data-game-action]")),
+  actionButtons: Array.from(document.querySelectorAll("[data-game-key][data-game-next-state]")),
 };
 
 let currentAdmin = null;
@@ -102,6 +108,16 @@ function normalizeSnapshot(raw = {}) {
   };
 }
 
+function buildAvailabilityPatch(snapshot = currentSnapshot) {
+  const normalized = normalizeSnapshot(snapshot);
+  return GAME_KEYS.reduce((acc, gameKey) => {
+    const fieldName = GAME_META[gameKey]?.field;
+    if (!fieldName) return acc;
+    acc[fieldName] = normalized[fieldName] !== false;
+    return acc;
+  }, {});
+}
+
 function renderGameCard(gameKey, isEnabled) {
   const card = document.querySelector(`[data-game-card="${gameKey}"]`);
   const badge = document.querySelector(`[data-game-status-badge="${gameKey}"]`);
@@ -118,10 +134,10 @@ function renderGameCard(gameKey, isEnabled) {
 
 function renderSnapshot(snapshot = currentSnapshot) {
   currentSnapshot = normalizeSnapshot(snapshot);
-  renderGameCard("pong", currentSnapshot.pongEnabled !== false);
-  renderGameCard("ludo", currentSnapshot.ludoEnabled !== false);
-  renderGameCard("dominoDuelPublic", currentSnapshot.dominoDuelPublicEnabled !== false);
-  renderGameCard("dominoClassic", currentSnapshot.dominoClassicEnabled !== false);
+  GAME_KEYS.forEach((gameKey) => {
+    const fieldName = GAME_META[gameKey]?.field;
+    renderGameCard(gameKey, currentSnapshot[fieldName] !== false);
+  });
 
   if (dom.lastUpdate) {
     const updatedBy = currentSnapshot.updatedByEmail
@@ -158,27 +174,39 @@ async function saveAvailability(nextState = {}, successMessage = "Configuration 
     ...currentSnapshot,
     ...nextState,
   });
+  const availabilityPatch = buildAvailabilityPatch(normalizedState);
 
   try {
     await setDoc(doc(db, "settings", PUBLIC_SETTINGS_DOC), {
-      pongEnabled: normalizedState.pongEnabled !== false,
-      dominoClassicEnabled: normalizedState.dominoClassicEnabled !== false,
-      dominoDuelPublicEnabled: normalizedState.dominoDuelPublicEnabled !== false,
-      ludoEnabled: normalizedState.ludoEnabled !== false,
-      gameAvailabilityVersion: "gav-v1",
+      ...availabilityPatch,
+      gameAvailabilityVersion: "gav-v2",
       gameAvailabilityUpdatedAtMs: Date.now(),
       gameAvailabilityUpdatedAt: serverTimestamp(),
       gameAvailabilityUpdatedByUid: String(currentAdmin?.uid || "").trim(),
       gameAvailabilityUpdatedByEmail: String(currentAdmin?.email || "").trim(),
     }, { merge: true });
 
-    await loadAvailability();
+    renderSnapshot({
+      ...normalizedState,
+      updatedAtMs: Date.now(),
+      updatedByEmail: String(currentAdmin?.email || "").trim(),
+    });
     setStatus(successMessage, "success");
+    await loadAvailability();
   } catch (error) {
     console.error("[DGAME_AVAILABILITY] save error", error);
     setStatus(error?.message || "Impossible d'enregistrer la disponibilite jeux.", "error");
     setLoading(false);
   }
+}
+
+function buildBulkState(nextValue) {
+  return GAME_KEYS.reduce((acc, gameKey) => {
+    const fieldName = GAME_META[gameKey]?.field;
+    if (!fieldName) return acc;
+    acc[fieldName] = nextValue;
+    return acc;
+  }, {});
 }
 
 function bindActions() {
@@ -187,40 +215,30 @@ function bindActions() {
   });
 
   dom.closeAllBtn?.addEventListener("click", () => {
-    saveAvailability({
-      pongEnabled: false,
-      dominoClassicEnabled: false,
-      dominoDuelPublicEnabled: false,
-      ludoEnabled: false,
-    }, "Pong, Ludo, Domino duel et Domino 4 player sont maintenant fermes.");
+    saveAvailability(
+      buildBulkState(false),
+      "Pong, Ludo, Domino duel et Domino 4 player sont maintenant fermes."
+    );
   });
 
   dom.openAllBtn?.addEventListener("click", () => {
-    saveAvailability({
-      pongEnabled: true,
-      dominoClassicEnabled: true,
-      dominoDuelPublicEnabled: true,
-      ludoEnabled: true,
-    }, "Pong, Ludo, Domino duel et Domino 4 player sont maintenant rouverts.");
+    saveAvailability(
+      buildBulkState(true),
+      "Pong, Ludo, Domino duel et Domino 4 player sont maintenant rouverts."
+    );
   });
 
   dom.actionButtons.forEach((button) => {
     button.addEventListener("click", () => {
-      const raw = String(button.getAttribute("data-game-action") || "").trim();
-      const [gameKey, action] = raw.split(":");
-      if (!GAME_META[gameKey]) return;
+      const gameKey = String(button.getAttribute("data-game-key") || "").trim();
+      const nextStateRaw = String(button.getAttribute("data-game-next-state") || "").trim().toLowerCase();
+      const meta = GAME_META[gameKey];
+      if (!meta?.field) return;
 
-      const nextValue = action === "open";
-      const fieldName = gameKey === "pong"
-        ? "pongEnabled"
-        : gameKey === "ludo"
-          ? "ludoEnabled"
-          : gameKey === "dominoDuelPublic"
-            ? "dominoDuelPublicEnabled"
-            : "dominoClassicEnabled";
+      const nextValue = nextStateRaw === "open";
       saveAvailability({
-        [fieldName]: nextValue,
-      }, `${GAME_META[gameKey].label} est maintenant ${nextValue ? "ouvert" : "ferme"}.`);
+        [meta.field]: nextValue,
+      }, `${meta.label} est maintenant ${nextValue ? "ouvert" : "ferme"}.`);
     });
   });
 }
@@ -237,5 +255,3 @@ async function boot() {
 }
 
 boot();
-
-
