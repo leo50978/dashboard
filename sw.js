@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = "kobposh-dashboard-v2-pwa-v7";
+const CACHE_NAME = "kobposh-dashboard-v2-pwa-v8";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -103,5 +103,6 @@ self.addEventListener("push", (event) => {
   };
   event.waitUntil(self.registration.showNotification(title, options));
 });
+
 
 

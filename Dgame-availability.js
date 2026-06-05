@@ -8,6 +8,7 @@ import {
 } from "./firebase-init.js";
 
 const PUBLIC_SETTINGS_DOC = "public_app_settings";
+const DEBUG_GAME_AVAILABILITY = true;
 const DEFAULT_GAME_AVAILABILITY = Object.freeze({
   pongEnabled: true,
   dominoClassicEnabled: true,
@@ -67,6 +68,15 @@ let currentSnapshot = {
   updatedAtMs: 0,
   updatedByEmail: "",
 };
+
+function logGameAvailabilityDebug(eventName, payload = null) {
+  if (!DEBUG_GAME_AVAILABILITY) return;
+  try {
+    console.log("[DGAME_AVAILABILITY_DEBUG]", eventName, payload ?? {});
+  } catch (_) {
+    // noop
+  }
+}
 
 function setStatus(message = "", tone = "") {
   if (!dom.status) return;
@@ -134,6 +144,7 @@ function renderGameCard(gameKey, isEnabled) {
 
 function renderSnapshot(snapshot = currentSnapshot) {
   currentSnapshot = normalizeSnapshot(snapshot);
+  logGameAvailabilityDebug("renderSnapshot", currentSnapshot);
   GAME_KEYS.forEach((gameKey) => {
     const fieldName = GAME_META[gameKey]?.field;
     renderGameCard(gameKey, currentSnapshot[fieldName] !== false);
@@ -155,6 +166,10 @@ async function loadAvailability() {
   try {
     const snap = await getDoc(doc(db, "settings", PUBLIC_SETTINGS_DOC));
     const data = snap.exists() ? (snap.data() || {}) : {};
+    logGameAvailabilityDebug("loadAvailability:fetched", {
+      exists: snap.exists(),
+      raw: data,
+    });
     renderSnapshot(data);
     setStatus("Disponibilite jeux chargee.", "success");
   } catch (error) {
@@ -175,8 +190,23 @@ async function saveAvailability(nextState = {}, successMessage = "Configuration 
     ...nextState,
   });
   const availabilityPatch = buildAvailabilityPatch(normalizedState);
+  logGameAvailabilityDebug("saveAvailability:prepared", {
+    nextState,
+    normalizedState,
+    availabilityPatch,
+    adminEmail: String(currentAdmin?.email || "").trim(),
+  });
 
   try {
+    logGameAvailabilityDebug("saveAvailability:before-setDoc", {
+      document: PUBLIC_SETTINGS_DOC,
+      payload: {
+        ...availabilityPatch,
+        gameAvailabilityVersion: "gav-v2",
+        gameAvailabilityUpdatedByUid: String(currentAdmin?.uid || "").trim(),
+        gameAvailabilityUpdatedByEmail: String(currentAdmin?.email || "").trim(),
+      },
+    });
     await setDoc(doc(db, "settings", PUBLIC_SETTINGS_DOC), {
       ...availabilityPatch,
       gameAvailabilityVersion: "gav-v2",
@@ -190,6 +220,12 @@ async function saveAvailability(nextState = {}, successMessage = "Configuration 
       ...normalizedState,
       updatedAtMs: Date.now(),
       updatedByEmail: String(currentAdmin?.email || "").trim(),
+    });
+    logGameAvailabilityDebug("saveAvailability:optimistic-rendered", {
+      state: {
+        ...normalizedState,
+        updatedByEmail: String(currentAdmin?.email || "").trim(),
+      },
     });
     setStatus(successMessage, "success");
     await loadAvailability();
@@ -236,6 +272,12 @@ function bindActions() {
       if (!meta?.field) return;
 
       const nextValue = nextStateRaw === "open";
+      logGameAvailabilityDebug("actionButton:click", {
+        gameKey,
+        nextStateRaw,
+        nextValue,
+        field: meta.field,
+      });
       saveAvailability({
         [meta.field]: nextValue,
       }, `${meta.label} est maintenant ${nextValue ? "ouvert" : "ferme"}.`);
