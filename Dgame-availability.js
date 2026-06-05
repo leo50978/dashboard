@@ -31,11 +31,11 @@ const GAME_META = Object.freeze({
     copyClosed: "Le site affiche maintenant une modal d'indisponibilite pour Ludo.",
   },
   dominoDuelPublic: {
-    label: "Domino duel gran chanm",
-    statusOpen: "Domino duel gran chanm actif",
-    statusClosed: "Domino duel gran chanm ferme",
-    copyOpen: "Les utilisateurs peuvent lancer Gran chanm de Domino duel depuis la page d'accueil.",
-    copyClosed: "Le site affiche maintenant une modal d'indisponibilite pour Domino duel gran chanm.",
+    label: "Domino duel 2 joueurs",
+    statusOpen: "Domino duel actif",
+    statusClosed: "Domino duel ferme",
+    copyOpen: "Les utilisateurs peuvent ouvrir Domino duel depuis la page d'accueil.",
+    copyClosed: "Le site ferme maintenant tout Domino duel et affiche une modal d'indisponibilite.",
   },
   dominoClassic: {
     label: "Domino 4 player",
@@ -192,7 +192,7 @@ function bindActions() {
       dominoClassicEnabled: false,
       dominoDuelPublicEnabled: false,
       ludoEnabled: false,
-    }, "Pong, Ludo, Domino duel gran chanm et Domino 4 player sont maintenant fermes.");
+    }, "Pong, Ludo, Domino duel et Domino 4 player sont maintenant fermes.");
   });
 
   dom.openAllBtn?.addEventListener("click", () => {
@@ -201,7 +201,7 @@ function bindActions() {
       dominoClassicEnabled: true,
       dominoDuelPublicEnabled: true,
       ludoEnabled: true,
-    }, "Pong, Ludo, Domino duel gran chanm et Domino 4 player sont maintenant rouverts.");
+    }, "Pong, Ludo, Domino duel et Domino 4 player sont maintenant rouverts.");
   });
 
   dom.actionButtons.forEach((button) => {
@@ -237,4 +237,5 @@ async function boot() {
 }
 
 boot();
+
 
