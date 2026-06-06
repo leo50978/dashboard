@@ -2,7 +2,7 @@
 import {
   getDuelBotPilotSnapshotSecure,
   setDuelBotPilotControlSecure,
-} from "./secure-functions.js?v=20260603-duel-pilot1";
+} from "./secure-functions.js?v=20260604-duel-pilot2";
 
 const DEFAULT_LEVEL = "userpro";
 const LIVE_REFRESH_INTERVAL_MS = 45 * 1000;
@@ -18,6 +18,7 @@ const dom = {
   roomsValue: document.getElementById("dominoPilotRoomsValue"),
   roomsCopy: document.getElementById("dominoPilotRoomsCopy"),
   windowSelect: document.getElementById("dominoPilotWindowSelect"),
+  waitSelect: document.getElementById("dominoPilotWaitSelect"),
   modeManualBtn: document.getElementById("dominoPilotModeManualBtn"),
   modeAutoBtn: document.getElementById("dominoPilotModeAutoBtn"),
   levelButtons: Array.from(document.querySelectorAll("#dominoPilotLevelGrid [data-level]")),
@@ -46,6 +47,7 @@ const state = {
   userEmail: "",
   mode: "manual",
   window: "today",
+  waitSeconds: 7,
   manualBotDifficulty: DEFAULT_LEVEL,
   autoBotDifficulty: DEFAULT_LEVEL,
   appliedBotDifficulty: DEFAULT_LEVEL,
@@ -86,7 +88,7 @@ function normalizeLevel(value = "") {
 function levelLabel(level = "") {
   const normalized = normalizeLevel(level);
   if (normalized === "userpro") return "UserPro";
-  if (normalized === "dominov1") return "DominoV1";
+  if (normalized === "dominov1") return "DuelV1";
   return "UserPro";
 }
 
@@ -105,14 +107,14 @@ function bandMeta(band = "") {
 
 function reasonLabel(reason = "") {
   const normalized = String(reason || "").trim().toLowerCase();
-  if (normalized === "drawdown_critical") return "Le profit Duel est trop loin sous son dernier sommet: le systeme force `DominoV1` pour stopper la glissade.";
-  if (normalized === "drawdown_high") return "La courbe Domino reste sous pression sous le dernier pic: le systeme garde `DominoV1` en defense.";
-  if (normalized === "recovery_guard") return "Le Domino remonte mais n'a pas encore repris son dernier sommet: le systeme garde encore `DominoV1`.";
-  if (normalized === "margin_too_low") return "La marge Domino est trop basse ou negative: le systeme passe en `DominoV1` pour proteger les HTG.";
-  if (normalized === "margin_low") return "La marge reste fragile: le systeme conserve `DominoV1`.";
+  if (normalized === "drawdown_critical") return "Le profit Duel est trop loin sous son dernier sommet: le systeme force `DuelV1` pour stopper la glissade.";
+  if (normalized === "drawdown_high") return "La courbe Domino reste sous pression sous le dernier pic: le systeme garde `DuelV1` en defense.";
+  if (normalized === "recovery_guard") return "Le Domino remonte mais n'a pas encore repris son dernier sommet: le systeme garde encore `DuelV1`.";
+  if (normalized === "margin_too_low") return "La marge Domino est trop basse ou negative: le systeme passe en `DuelV1` pour proteger les HTG.";
+  if (normalized === "margin_low") return "La marge reste fragile: le systeme conserve `DuelV1`.";
   if (normalized === "new_high_comfort" || normalized === "margin_high") return "Le Domino tient une marge confortable: le systeme peut revenir sur `UserPro`.";
   if (normalized === "no_volume") return "Pas assez de parties Domino archivees sur la fenetre, le systeme reste neutre.";
-  return "Le Domino reste dans une zone de pilotage simple entre `UserPro` et `DominoV1`.";
+  return "Le Domino reste dans une zone de pilotage simple entre `UserPro` et `DuelV1`.";
 }
 
 function formatInt(value) {
@@ -151,6 +153,7 @@ function setLoading(loading) {
   dom.modeManualBtn.disabled = state.loading;
   dom.modeAutoBtn.disabled = state.loading;
   dom.windowSelect.disabled = state.loading;
+  if (dom.waitSelect) dom.waitSelect.disabled = state.loading;
   dom.levelButtons.forEach((button) => {
     button.disabled = state.loading || state.mode === "auto";
   });
@@ -169,7 +172,8 @@ function updateControls() {
   });
 
   dom.windowSelect.value = state.window;
-  dom.applyBtn.textContent = isAuto ? "Appliquer le pilotage automatique Duel" : "Appliquer le niveau manuel Duel";
+  if (dom.waitSelect) dom.waitSelect.value = String(state.waitSeconds || 7);
+  dom.applyBtn.textContent = isAuto ? "Appliquer le pilotage automatique Duel" : "Appliquer le pilotage Duel";
 }
 
 function renderEquityCurve(snapshot = null) {
@@ -385,7 +389,7 @@ function renderSnapshot() {
   dom.appliedBadge.dataset.tone = state.mode === "auto" ? band.tone : "equilibrium";
 
   dom.reasonCopy.textContent = `${reasonLabel(snapshot.recommendedReason)} Dernier calcul: ${formatDateTime(snapshot.computedAtMs)}.`;
-  dom.fetchMeta.textContent = `Mode ${modeLabel(state.mode)} Â· niveau manuel ${levelLabel(state.manualBotDifficulty)} Â· niveau auto recommande ${levelLabel(state.autoBotDifficulty)}. Source: dominoClassicMatchResults Â· refresh ${Math.round(LIVE_REFRESH_INTERVAL_MS / 1000)}s.`;
+  dom.fetchMeta.textContent = `Mode ${modeLabel(state.mode)} Â· attente bot ${formatInt(state.waitSeconds)}s Â· niveau manuel ${levelLabel(state.manualBotDifficulty)} Â· niveau auto recommande ${levelLabel(state.autoBotDifficulty)}. Source: duelRoomResults Â· refresh ${Math.round(LIVE_REFRESH_INTERVAL_MS / 1000)}s.`;
 
   updateControls();
   renderEquityCurve(snapshot);
@@ -397,6 +401,7 @@ function renderSnapshot() {
 function hydrateFromResponse(response = {}) {
   state.mode = String(response.mode || state.mode || "manual").toLowerCase() === "auto" ? "auto" : "manual";
   state.window = String(response.window || state.window || "today");
+  state.waitSeconds = Math.max(3, safeInt(response.waitSeconds || state.waitSeconds || 7));
   state.manualBotDifficulty = normalizeLevel(response.manualBotDifficulty || state.manualBotDifficulty);
   state.autoBotDifficulty = normalizeLevel(response.autoBotDifficulty || response.snapshot?.recommendedLevel || state.autoBotDifficulty);
   state.appliedBotDifficulty = normalizeLevel(response.appliedBotDifficulty || state.appliedBotDifficulty);
@@ -427,6 +432,7 @@ async function applyControl(next = {}) {
     const payload = {
       mode: next.mode || state.mode,
       window: next.window || state.window,
+      waitSeconds: safeInt(next.waitSeconds || state.waitSeconds || 7),
       manualBotDifficulty: next.manualBotDifficulty || state.manualBotDifficulty,
     };
     const response = await setDuelBotPilotControlSecure(payload);
@@ -455,6 +461,13 @@ function bindEvents() {
     void loadSnapshot();
   });
 
+  if (dom.waitSelect) {
+    dom.waitSelect.addEventListener("change", () => {
+      state.waitSeconds = Math.max(3, safeInt(dom.waitSelect.value || state.waitSeconds || 7));
+      updateControls();
+    });
+  }
+
   dom.levelButtons.forEach((button) => {
     button.addEventListener("click", () => {
       if (state.loading || state.mode === "auto") return;
@@ -468,6 +481,7 @@ function bindEvents() {
     void applyControl({
       mode: state.mode,
       window: state.window,
+      waitSeconds: state.waitSeconds,
       manualBotDifficulty: state.manualBotDifficulty,
     });
   });
@@ -505,7 +519,7 @@ async function bootstrap() {
 }
 
 void bootstrap().catch((error) => {
-  console.error("[DOMINO_CLASSIC_BOT_PILOT] bootstrap failed", error);
+  console.error("[DUEL_BOT_PILOT] bootstrap failed", error);
   if (dom.reasonCopy) {
     dom.reasonCopy.textContent = error?.message || "Impossible de charger le pilotage Duel.";
   }

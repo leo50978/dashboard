@@ -1,4 +1,4 @@
-const CACHE_NAME = "kobposh-dashboard-v2-pwa-v8";
+const CACHE_NAME = "kobposh-dashboard-v2-pwa-v9";
 const CORE_ASSETS = [
   "./",
   "./index.html",
