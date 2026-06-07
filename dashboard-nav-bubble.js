@@ -1,6 +1,7 @@
-﻿(function () {
+(function () {
   const NAV_ID = "kobposhV2DashboardNav";
   const STYLE_ID = "kobposhV2DashboardNavStyle";
+  const MENU_OPEN_CLASS = "is-menu-open";
   const currentPath = (() => {
     const pathname = String(window.location?.pathname || "");
     const last = pathname.split("/").filter(Boolean).pop() || "index.html";
@@ -53,7 +54,7 @@
     style.id = STYLE_ID;
     style.textContent = `
       body.kobposh-v2-dashboard-shell {
-        padding-top: 88px;
+        padding-top: 76px;
       }
       #${NAV_ID} {
         position: fixed;
@@ -63,18 +64,28 @@
         z-index: 7000;
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
-        background: rgba(6, 12, 24, 0.82);
+        background: rgba(6, 12, 24, 0.88);
         border-bottom: 1px solid rgba(148, 163, 184, 0.18);
-        box-shadow: 0 20px 40px rgba(2, 8, 20, 0.22);
+        box-shadow: 0 18px 36px rgba(2, 8, 20, 0.24);
+      }
+      #${NAV_ID} .nav-backdrop {
+        position: fixed;
+        inset: 0;
+        display: none;
+        background: rgba(2, 8, 20, 0.22);
+      }
+      #${NAV_ID}.${MENU_OPEN_CLASS} .nav-backdrop {
+        display: block;
       }
       #${NAV_ID} .nav-inner {
+        position: relative;
         max-width: 1280px;
         margin: 0 auto;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 16px;
-        padding: 14px 18px;
+        padding: 12px 18px;
       }
       #${NAV_ID} .nav-brand {
         display: inline-flex;
@@ -99,6 +110,7 @@
       #${NAV_ID} .nav-brand-text {
         display: flex;
         flex-direction: column;
+        min-width: 0;
       }
       #${NAV_ID} .nav-brand-title {
         font-size: 0.98rem;
@@ -109,22 +121,70 @@
         font-size: 0.72rem;
         line-height: 1.2;
         color: rgba(191, 219, 254, 0.82);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
-      #${NAV_ID} .nav-links {
+      #${NAV_ID} .nav-menu-wrap {
+        position: relative;
         display: flex;
         align-items: center;
+        justify-content: flex-end;
+      }
+      #${NAV_ID} .nav-menu-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         gap: 8px;
-        overflow-x: auto;
+        min-height: 44px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        padding: 0 16px;
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.05);
+        font: inherit;
+        font-size: 0.88rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition: 160ms ease;
+      }
+      #${NAV_ID} .nav-menu-btn:hover {
+        transform: translateY(-1px);
+        border-color: rgba(96, 165, 250, 0.38);
+      }
+      #${NAV_ID} .nav-menu-icon {
+        font-size: 1rem;
+        line-height: 1;
+      }
+      #${NAV_ID} .nav-links {
+        position: absolute;
+        top: calc(100% + 12px);
+        right: 0;
+        width: min(360px, calc(100vw - 24px));
+        max-height: min(72vh, 560px);
+        overflow: auto;
+        display: none;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 12px;
+        border-radius: 24px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(6, 12, 24, 0.96);
+        box-shadow: 0 28px 46px rgba(2, 8, 20, 0.38);
         scrollbar-width: none;
+      }
+      #${NAV_ID}.${MENU_OPEN_CLASS} .nav-links {
+        display: grid;
       }
       #${NAV_ID} .nav-links::-webkit-scrollbar {
         display: none;
       }
       #${NAV_ID} .nav-link {
-        flex: 0 0 auto;
-        border-radius: 999px;
+        display: block;
+        width: 100%;
+        border-radius: 16px;
         border: 1px solid rgba(148, 163, 184, 0.16);
-        padding: 10px 14px;
+        padding: 12px 14px;
         color: rgba(226, 232, 240, 0.9);
         text-decoration: none;
         font-size: 0.88rem;
@@ -143,14 +203,15 @@
         color: #ffffff;
         box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
       }
-      @media (max-width: 860px) {
+      @media (max-width: 640px) {
         body.kobposh-v2-dashboard-shell {
-          padding-top: 118px;
+          padding-top: 72px;
         }
         #${NAV_ID} .nav-inner {
-          flex-direction: column;
-          align-items: stretch;
-          gap: 12px;
+          padding: 10px 14px;
+        }
+        #${NAV_ID} .nav-brand-copy {
+          display: none;
         }
       }
     `;
@@ -172,6 +233,7 @@
       .join("");
 
     nav.innerHTML = `
+      <button class="nav-backdrop" type="button" aria-label="Fermer le menu"></button>
       <div class="nav-inner">
         <a class="nav-brand" href="./index.html">
           <span class="nav-brand-badge">KV</span>
@@ -180,12 +242,38 @@
             <span class="nav-brand-copy">Dashboard admin relie a la nouvelle base</span>
           </span>
         </a>
-        <div class="nav-links">${linksHtml}</div>
+        <div class="nav-menu-wrap">
+          <button class="nav-menu-btn" type="button" aria-expanded="false" aria-controls="${NAV_ID}-links">
+            <span>Menu</span>
+            <span class="nav-menu-icon">▾</span>
+          </button>
+          <div class="nav-links" id="${NAV_ID}-links">${linksHtml}</div>
+        </div>
       </div>
     `;
 
     document.body.classList.add("kobposh-v2-dashboard-shell");
     document.body.prepend(nav);
+
+    const menuBtn = nav.querySelector(".nav-menu-btn");
+    const backdrop = nav.querySelector(".nav-backdrop");
+    const menuLinks = Array.from(nav.querySelectorAll(".nav-link"));
+
+    const setMenuOpen = (open) => {
+      nav.classList.toggle(MENU_OPEN_CLASS, open);
+      if (menuBtn) {
+        menuBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      }
+    };
+
+    menuBtn?.addEventListener("click", () => {
+      setMenuOpen(!nav.classList.contains(MENU_OPEN_CLASS));
+    });
+    backdrop?.addEventListener("click", () => setMenuOpen(false));
+    menuLinks.forEach((link) => link.addEventListener("click", () => setMenuOpen(false)));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    });
   }
 
   if (document.readyState === "loading") {
@@ -194,10 +282,3 @@
     renderNav();
   }
 })();
-
-
-
-
-
-
-

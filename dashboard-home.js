@@ -1,7 +1,6 @@
 import { auth } from "./auth.js";
 import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js";
-import { initDashboardPwaExperience } from "./dashboard-pwa-notifications.js";
-import "./dashboard-nav-bubble.js";
+import "./dashboard-nav-bubble.js?v=20260607-header-dropdown1";
 
 const sessionLabelEl = document.getElementById("dashboardHubSessionLabel");
 const sessionCopyEl = document.getElementById("dashboardHubSessionCopy");
@@ -33,7 +32,6 @@ async function bootDashboardHome() {
       email ? `Session active: ${email}` : "Session admin active",
       "Tu peux maintenant utiliser cette page comme point d'entree pour toutes les pages du dashboard V2."
     );
-    await initDashboardPwaExperience();
   } catch (error) {
     console.warn("[DASHBOARD_HOME] auth failed", error);
     setSessionState(
