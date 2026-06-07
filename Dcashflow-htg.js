@@ -1,5 +1,5 @@
-import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js?v=20260603-cashflow2";
-import { getHtgCashflowSnapshotSecure } from "./secure-functions.js?v=20260603-cashflow2";
+ï»¿import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js?v=20260607-cashflow-lite1";
+import { getHtgCashflowSnapshotSecure } from "./secure-functions.js?v=20260607-cashflow-lite1";
 
 const dom = {
   status: document.getElementById("cashflowStatus"),
@@ -7,7 +7,6 @@ const dom = {
   windowSelect: document.getElementById("cashflowWindow"),
   dateFrom: document.getElementById("cashflowDateFrom"),
   dateTo: document.getElementById("cashflowDateTo"),
-  generatedAt: document.getElementById("cashflowGeneratedAt"),
   coverage: document.getElementById("cashflowCoverage"),
   sourceNote: document.getElementById("cashflowSourceNote"),
   depositsValue: document.getElementById("cashflowDepositsValue"),
@@ -32,14 +31,6 @@ const dom = {
   agentCopy: document.getElementById("cashflowAgentCopy"),
   withdrawalsCountValue: document.getElementById("cashflowWithdrawalsCountValue"),
   withdrawalsCountCopy: document.getElementById("cashflowWithdrawalsCountCopy"),
-  tableBody: document.getElementById("cashflowTableBody"),
-  empty: document.getElementById("cashflowEmpty"),
-  recentDeposits: document.getElementById("cashflowRecentDeposits"),
-  recentDepositsEmpty: document.getElementById("cashflowRecentDepositsEmpty"),
-  recentWithdrawals: document.getElementById("cashflowRecentWithdrawals"),
-  recentWithdrawalsEmpty: document.getElementById("cashflowRecentWithdrawalsEmpty"),
-  recentGames: document.getElementById("cashflowRecentGames"),
-  recentGamesEmpty: document.getElementById("cashflowRecentGamesEmpty"),
 };
 
 function safeInt(value) {
@@ -132,12 +123,16 @@ function buildPayload() {
       window: "custom",
       startMs: parseDateInput(dom.dateFrom?.value || "", false),
       endMs: parseDateInput(dom.dateTo?.value || "", true),
-      listLimit: 30,
+      listLimit: 0,
+      includeRecent: false,
+      includeBuckets: false,
     };
   }
   return {
     window: windowKey,
-    listLimit: 30,
+    listLimit: 0,
+    includeRecent: false,
+    includeBuckets: false,
   };
 }
 
@@ -152,96 +147,36 @@ function renderSummary(result = {}) {
   if (dom.withdrawalsValue) dom.withdrawalsValue.textContent = formatHtg(summary.approvedWithdrawalsHtg);
   if (dom.withdrawalsCopy) dom.withdrawalsCopy.textContent = `${formatInt(summary.approvedWithdrawalsCount)} retrait(s) approuves`;
   if (dom.netCashValue) dom.netCashValue.textContent = formatSignedHtg(summary.netCashHtg);
+  if (dom.netCashCopy) dom.netCashCopy.textContent = "Entrees - sorties reelles";
   if (dom.gameEdgeValue) dom.gameEdgeValue.textContent = formatSignedHtg(summary.operatorGameEdgeHtg);
+  if (dom.gameEdgeCopy) dom.gameEdgeCopy.textContent = "Marge reelle des jeux finis";
   if (dom.usersStakeValue) dom.usersStakeValue.textContent = formatHtg(summary.usersStakeHtg);
+  if (dom.usersStakeCopy) dom.usersStakeCopy.textContent = "Total engage par les joueurs";
   if (dom.usersPayoutValue) dom.usersPayoutValue.textContent = formatHtg(summary.usersPayoutHtg);
+  if (dom.usersPayoutCopy) dom.usersPayoutCopy.textContent = "Payouts reels verses";
   if (dom.usersNetValue) dom.usersNetValue.textContent = formatSignedHtg(summary.usersNetHtg);
+  if (dom.usersNetCopy) dom.usersNetCopy.textContent = "Gains moins pertes des joueurs";
   if (dom.businessValue) dom.businessValue.textContent = formatSignedHtg(summary.netBusinessHtg);
-  if (dom.businessCopy) dom.businessCopy.textContent = "Lecture finale de la periode.";
+  if (dom.businessCopy) dom.businessCopy.textContent = "Net cash + marge jeux";
   if (dom.directValue) dom.directValue.textContent = formatHtg(summary.directApprovedDepositsHtg);
   if (dom.directCopy) dom.directCopy.textContent = `${formatInt(summary.approvedDepositsCount - summary.agentApprovedDepositsCount)} depot(s) directs`;
   if (dom.agentValue) dom.agentValue.textContent = formatHtg(summary.agentApprovedDepositsHtg);
   if (dom.agentCopy) dom.agentCopy.textContent = `${formatInt(summary.agentApprovedDepositsCount)} depot(s) agent`;
   if (dom.withdrawalsCountValue) dom.withdrawalsCountValue.textContent = formatInt(summary.approvedWithdrawalsCount);
   if (dom.withdrawalsCountCopy) dom.withdrawalsCountCopy.textContent = `${formatHtg(summary.approvedWithdrawalsHtg)} sortis sur la periode`;
-  if (dom.generatedAt) dom.generatedAt.textContent = `Dernier snapshot: ${formatDateTime(result.generatedAtMs)}`;
   if (dom.coverage) {
     const startText = range?.isGlobal ? "Debut historique" : formatDateTime(range.startMs);
     dom.coverage.textContent = `${startText} -> ${formatDateTime(range.endMs)}`;
   }
   if (dom.sourceNote) {
     dom.sourceNote.innerHTML = `
-      <strong>Definitions:</strong><br>
+      <strong>Chiffres reels utilises:</strong><br>
       ${escapeHtml(defs.depositsRule || "-")}<br>
       ${escapeHtml(defs.withdrawalsRule || "-")}<br>
       ${escapeHtml(defs.gamesRule || "-")}<br>
       ${escapeHtml(defs.businessRule || "-")}
     `;
   }
-}
-
-function renderBuckets(result = {}) {
-  const rows = Array.isArray(result?.snapshot?.buckets) ? result.snapshot.buckets : [];
-  if (!dom.tableBody) return;
-  if (!rows.length) {
-    dom.tableBody.innerHTML = "";
-    dom.empty?.classList.remove("hidden");
-    return;
-  }
-  dom.empty?.classList.add("hidden");
-  dom.tableBody.innerHTML = rows.map((row) => `
-    <tr>
-      <td data-label="Periode">${escapeHtml(row.label)}</td>
-      <td data-label="Entrees">${escapeHtml(formatHtg(row.approvedDepositsHtg))}</td>
-      <td data-label="Sorties">${escapeHtml(formatHtg(row.approvedWithdrawalsHtg))}</td>
-      <td data-label="Net cash">${escapeHtml(formatSignedHtg(row.netCashHtg))}</td>
-      <td data-label="Net joueurs">${escapeHtml(formatSignedHtg(row.usersNetHtg))}</td>
-      <td data-label="Marge jeux">${escapeHtml(formatSignedHtg(row.operatorGameEdgeHtg))}</td>
-      <td data-label="Resultat">${escapeHtml(formatSignedHtg(row.netBusinessHtg))}</td>
-    </tr>
-  `).join("");
-}
-
-function renderRecentList(target, emptyEl, rows = [], renderer) {
-  if (!target) return;
-  if (!rows.length) {
-    target.innerHTML = "";
-    emptyEl?.classList.remove("hidden");
-    return;
-  }
-  emptyEl?.classList.add("hidden");
-  target.innerHTML = rows.map(renderer).join("");
-}
-
-function renderRecent(result = {}) {
-  const snapshot = result?.snapshot || {};
-  renderRecentList(dom.recentDeposits, dom.recentDepositsEmpty, snapshot.recentApprovedDeposits || [], (row) => `
-    <li>
-      <div class="recent-head">
-        <strong>${escapeHtml(row.customerName || row.customerEmail || row.uniqueCode || "Depot")}</strong>
-        <span class="money-positive">${escapeHtml(formatHtg(row.amountHtg))}</span>
-      </div>
-      <div class="recent-meta">${escapeHtml(row.sourceLabel || "Depot")} · ${escapeHtml(row.methodName || "-")}<br>${escapeHtml(formatDateTime(row.resolvedAtMs))}</div>
-    </li>
-  `);
-  renderRecentList(dom.recentWithdrawals, dom.recentWithdrawalsEmpty, snapshot.recentApprovedWithdrawals || [], (row) => `
-    <li>
-      <div class="recent-head">
-        <strong>${escapeHtml(row.customerName || row.customerEmail || row.destinationValue || "Retrait")}</strong>
-        <span class="money-negative">-${escapeHtml(formatHtg(row.amountHtg))}</span>
-      </div>
-      <div class="recent-meta">${escapeHtml(row.methodName || "-")}<br>${escapeHtml(formatDateTime(row.resolvedAtMs))}</div>
-    </li>
-  `);
-  renderRecentList(dom.recentGames, dom.recentGamesEmpty, snapshot.recentGameEconomics || [], (row) => `
-    <li>
-      <div class="recent-head">
-        <strong>${escapeHtml(row.gameLabel || "Jeu")}</strong>
-        <span class="${safeInt(row.operatorGameEdgeHtg) >= 0 ? "money-positive" : "money-negative"}">${escapeHtml(formatSignedHtg(row.operatorGameEdgeHtg))}</span>
-      </div>
-      <div class="recent-meta">Mises users ${escapeHtml(formatHtg(row.usersStakeHtg))} · payout ${escapeHtml(formatHtg(row.payoutHtg))}<br>${escapeHtml(formatDateTime(row.resolvedAtMs))}</div>
-    </li>
-  `);
 }
 
 async function refreshCashflow() {
@@ -253,8 +188,6 @@ async function refreshCashflow() {
     });
     const result = await getHtgCashflowSnapshotSecure(buildPayload());
     renderSummary(result || {});
-    renderBuckets(result || {});
-    renderRecent(result || {});
     setStatus("Cashflow HTG charge.", "success");
   } catch (error) {
     console.error("[CASHFLOW_HTG_DASHBOARD_V2] refresh error", error);
@@ -286,4 +219,3 @@ async function init() {
 }
 
 void init();
-
