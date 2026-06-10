@@ -49,8 +49,6 @@ const dom = {
   methodsAxis: document.getElementById("depositFlowMethodsAxis"),
   rejectsSvg: document.getElementById("depositFlowRejectsSvg"),
   rejectsAxis: document.getElementById("depositFlowRejectsAxis"),
-  tableBody: document.getElementById("depositFlowTableBody"),
-  tableNote: document.getElementById("depositFlowTableNote"),
 };
 
 const state = {
@@ -398,32 +396,6 @@ function renderDualLineChart(options = {}) {
   `;
 }
 
-function renderBuckets(snapshot = null) {
-  const buckets = Array.isArray(snapshot?.buckets) ? snapshot.buckets : [];
-  if (!buckets.length) {
-    dom.tableBody.innerHTML = `<tr><td colspan="8" class="empty-copy">Aucun depot trouve sur cette fenetre.</td></tr>`;
-    dom.tableNote.textContent = "Change la periode si tu veux analyser un autre flux.";
-    return;
-  }
-
-  dom.tableBody.innerHTML = buckets.map((bucket) => `
-    <tr>
-      <td>${escapeHtml(bucket.label || "-")}</td>
-      <td>${formatHtg(bucket.requestedHtg)}</td>
-      <td>${formatHtg(bucket.approvedHtg)}</td>
-      <td>${formatHtg(bucket.rejectedHtg)}</td>
-      <td>${formatPercent(bucket.approvalRatePct)}</td>
-      <td>${formatHtg(bucket.moncashApprovedHtg)}</td>
-      <td>${formatHtg(bucket.natcashApprovedHtg)}</td>
-      <td>${formatHtg(bucket.cumulativeApprovedHtg)}</td>
-    </tr>
-  `).join("");
-
-  dom.tableNote.textContent = snapshot?.truncated
-    ? `Le snapshot a ete tronque apres ${formatInt(snapshot.scanLimit)} depots lus pour proteger les couts Firestore.`
-    : `${formatInt(snapshot.scannedOrderDocs)} depots de la periode ont ete lus directement depuis les sous-collections orders.`;
-}
-
 function renderSnapshot(snapshot = null) {
   state.snapshot = snapshot;
   syncWindowUi(snapshot);
@@ -491,7 +463,6 @@ function renderSnapshot(snapshot = null) {
     emptyLabel: "La comparaison demande/rejete apparaitra ici.",
   });
 
-  renderBuckets(snapshot);
 }
 
 async function loadSnapshot() {
