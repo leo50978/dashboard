@@ -364,7 +364,6 @@ export async function getDepositMethodAnalyticsSnapshotSecure(payload = {}) {
     payload,
     requireAuth: true,
     fallbackError,
-    timeoutMs: 45000,
   });
 }
 
@@ -434,6 +433,24 @@ export async function getDuelBotPilotSnapshotSecure(payload = {}) {
 export async function setDuelBotPilotControlSecure(payload = {}) {
   const fallbackError = "Impossible de mettre a jour le pilotage Duel.";
   return invokeBackendHttp("/api/dashboard/duel-bot-pilot/control", {
+    payload,
+    requireAuth: true,
+    fallbackError,
+  });
+}
+
+export async function getChessBotPilotSnapshotSecure(payload = {}) {
+  const fallbackError = "Impossible de charger le pilotage Echec.";
+  return invokeBackendHttp("/api/dashboard/chess-bot-pilot/snapshot", {
+    payload,
+    requireAuth: true,
+    fallbackError,
+  });
+}
+
+export async function setChessBotPilotControlSecure(payload = {}) {
+  const fallbackError = "Impossible de mettre a jour le pilotage Echec.";
+  return invokeBackendHttp("/api/dashboard/chess-bot-pilot/control", {
     payload,
     requireAuth: true,
     fallbackError,
