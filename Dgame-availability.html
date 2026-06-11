@@ -286,9 +286,9 @@
         <div class="hero__grid">
           <div>
             <p class="eyebrow">Disponibilite jeux</p>
-            <h1>Fermer ou rouvrir Pong, Ludo, Domino duel et Domino 4 player</h1>
+            <h1>Fermer ou rouvrir Echec, Ludo, Domino duel et Domino 4 player</h1>
             <p>
-              Cette page coupe l'entree publique de <strong>Pong</strong>, de <strong>Ludo</strong>, de <strong>Domino duel</strong> et de <strong>Domino 4 player</strong>
+              Cette page coupe l'entree publique de <strong>Echec</strong>, de <strong>Ludo</strong>, de <strong>Domino duel</strong> et de <strong>Domino 4 player</strong>
               en un clic. Le site lit ces drapeaux via le runtime public Vercel, et le backend bloque aussi
               les demarrages de partie pour eviter les contournements par URL directe.
             </p>
@@ -305,7 +305,7 @@
             <strong>Source de verite</strong>
             <div class="hero__chips">
               <span class="chip">settings/public_app_settings</span>
-              <span class="chip">pongEnabled</span>
+              <span class="chip">chessEnabled</span>
               <span class="chip">ludoEnabled</span>
               <span class="chip">dominoClassicEnabled</span>
               <span class="chip">dominoDuelPublicEnabled</span>
@@ -320,18 +320,18 @@
       </section>
 
       <section class="games-grid" aria-label="Jeux pilotables">
-        <article class="game-card" data-game-card="pong">
+        <article class="game-card" data-game-card="chess">
           <div class="game-card__head">
-            <h2 class="game-card__label">Pong</h2>
-            <span class="badge is-open" data-game-status-badge="pong">Actif</span>
+            <h2 class="game-card__label">Echec</h2>
+            <span class="badge is-open" data-game-status-badge="chess">Actif</span>
           </div>
-          <p class="game-card__copy" data-game-status-copy="pong">
-            Les utilisateurs peuvent lancer Pong depuis la page d'accueil.
+          <p class="game-card__copy" data-game-status-copy="chess">
+            Les utilisateurs peuvent lancer Echec depuis la page d'accueil.
           </p>
           <div class="game-card__meta">
             <div class="meta-box">
               <small>Flag public</small>
-              <strong>pongEnabled</strong>
+              <strong>chessEnabled</strong>
             </div>
             <div class="meta-box">
               <small>UI site</small>
@@ -339,8 +339,8 @@
             </div>
           </div>
           <div class="game-card__actions">
-            <button type="button" class="danger" data-game-key="pong" data-game-next-state="close">Fermer Pong</button>
-            <button type="button" class="primary" data-game-key="pong" data-game-next-state="open">Rouvrir Pong</button>
+            <button type="button" class="danger" data-game-key="chess" data-game-next-state="close">Fermer Echec</button>
+            <button type="button" class="primary" data-game-key="chess" data-game-next-state="open">Rouvrir Echec</button>
           </div>
         </article>
 
@@ -428,7 +428,7 @@
       </section>
     </main>
 
-    <script type="module" src="./Dgame-availability.js?v=dgav-v5-duel-debug1"></script>
+    <script type="module" src="./Dgame-availability.js?v=dgav-v6-chess1"></script>
     <script src="./dashboard-nav-bubble.js"></script>
   </body>
 </html>

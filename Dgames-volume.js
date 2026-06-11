@@ -22,14 +22,14 @@ const dom = {
   duelMatches: document.getElementById("gamesVolumeDuel"),
   morpionMatches: document.getElementById("gamesVolumeMorpion"),
   dameMatches: document.getElementById("gamesVolumeDame"),
-  pongMatches: document.getElementById("gamesVolumePong"),
+  chessMatches: document.getElementById("gamesVolumeChess"),
   ludoMatches: document.getElementById("gamesVolumeLudo"),
   totalMatchesNote: document.getElementById("gamesVolumeTotalNote"),
   classicMatchesNote: document.getElementById("gamesVolumeClassicNote"),
   duelMatchesNote: document.getElementById("gamesVolumeDuelNote"),
   morpionMatchesNote: document.getElementById("gamesVolumeMorpionNote"),
   dameMatchesNote: document.getElementById("gamesVolumeDameNote"),
-  pongMatchesNote: document.getElementById("gamesVolumePongNote"),
+  chessMatchesNote: document.getElementById("gamesVolumeChessNote"),
   ludoMatchesNote: document.getElementById("gamesVolumeLudoNote"),
   avgMatches: document.getElementById("gamesVolumeAvg"),
   peakMatches: document.getElementById("gamesVolumePeak"),
@@ -182,7 +182,7 @@ function renderSummary(snapshot = {}, result = {}) {
   if (dom.duelMatches) dom.duelMatches.textContent = formatInt(summary.duelMatches);
   if (dom.morpionMatches) dom.morpionMatches.textContent = formatInt(summary.morpionMatches);
   if (dom.dameMatches) dom.dameMatches.textContent = formatInt(summary.dameMatches);
-  if (dom.pongMatches) dom.pongMatches.textContent = formatInt(summary.pongMatches);
+  if (dom.chessMatches) dom.chessMatches.textContent = formatInt(summary.chessMatches);
   if (dom.ludoMatches) dom.ludoMatches.textContent = formatInt(summary.ludoMatches);
 
   if (dom.totalMatchesNote) dom.totalMatchesNote.textContent = `${formatInt(summary.avgMatchesPerBucket)} match(s) en moyenne par point`;
@@ -190,14 +190,14 @@ function renderSummary(snapshot = {}, result = {}) {
   if (dom.duelMatchesNote) dom.duelMatchesNote.textContent = `${formatInt(summary.duelWithBots)} avec bot sur le duel`;
   if (dom.morpionMatchesNote) dom.morpionMatchesNote.textContent = `${formatInt(summary.morpionWithBots)} avec bot sur Morpion`;
   if (dom.dameMatchesNote) dom.dameMatchesNote.textContent = `${formatInt(summary.dameWithBots)} avec bot sur Dame`;
-  if (dom.pongMatchesNote) dom.pongMatchesNote.textContent = `${formatInt(summary.pongWithBots)} avec bot sur Pong`;
+  if (dom.chessMatchesNote) dom.chessMatchesNote.textContent = `${formatInt(summary.chessWithBots)} avec bot sur Echec`;
   if (dom.ludoMatchesNote) dom.ludoMatchesNote.textContent = `${formatInt(summary.ludoWithBots)} avec bot sur Ludo`;
 
   if (dom.avgMatches) dom.avgMatches.textContent = formatInt(summary.avgMatchesPerBucket);
   if (dom.peakMatches) dom.peakMatches.textContent = formatInt(summary.peakBucketMatches);
   if (dom.peakLabel) dom.peakLabel.textContent = summary.peakBucketLabel || "--";
   if (dom.botMix) {
-    dom.botMix.textContent = `Bots: classique ${formatInt(summary.classicWithBots)} • duel ${formatInt(summary.duelWithBots)} • Morpion ${formatInt(summary.morpionWithBots)} • Dame ${formatInt(summary.dameWithBots)} • Pong ${formatInt(summary.pongWithBots)} • Ludo ${formatInt(summary.ludoWithBots)}`;
+    dom.botMix.textContent = `Bots: classique ${formatInt(summary.classicWithBots)} • duel ${formatInt(summary.duelWithBots)} • Morpion ${formatInt(summary.morpionWithBots)} • Dame ${formatInt(summary.dameWithBots)} • Echec ${formatInt(summary.chessWithBots)} • Ludo ${formatInt(summary.ludoWithBots)}`;
   }
 
   if (dom.coverage) {
@@ -276,8 +276,8 @@ function renderCharts(snapshot = {}) {
             borderWidth: 2,
           },
           {
-            label: "Pong",
-            data: trend.map((item) => safeInt(item.pongMatches)),
+            label: "Echec",
+            data: trend.map((item) => safeInt(item.chessMatches)),
             borderColor: "#ffd166",
             backgroundColor: "rgba(255, 209, 102, 0.12)",
             fill: false,

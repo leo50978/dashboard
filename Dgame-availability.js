@@ -10,20 +10,20 @@ import {
 const PUBLIC_SETTINGS_DOC = "public_app_settings";
 const DEBUG_GAME_AVAILABILITY = true;
 const DEFAULT_GAME_AVAILABILITY = Object.freeze({
-  pongEnabled: true,
+  chessEnabled: true,
   dominoClassicEnabled: true,
   dominoDuelPublicEnabled: true,
   ludoEnabled: true,
 });
 
 const GAME_META = Object.freeze({
-  pong: {
-    label: "Pong",
-    field: "pongEnabled",
-    statusOpen: "Pong actif",
-    statusClosed: "Pong ferme",
-    copyOpen: "Les utilisateurs peuvent lancer Pong depuis la page d'accueil.",
-    copyClosed: "Le site affiche maintenant une modal d'indisponibilite pour Pong.",
+  chess: {
+    label: "Echec",
+    field: "chessEnabled",
+    statusOpen: "Echec actif",
+    statusClosed: "Echec ferme",
+    copyOpen: "Les utilisateurs peuvent lancer Echec depuis la page d'accueil.",
+    copyClosed: "Le site affiche maintenant une modal d'indisponibilite pour Echec.",
   },
   ludo: {
     label: "Ludo",
@@ -104,7 +104,7 @@ function formatDateTime(value) {
 function normalizeSnapshot(raw = {}) {
   const source = raw && typeof raw === "object" ? raw : {};
   return {
-    pongEnabled: source.pongEnabled !== false,
+    chessEnabled: source.chessEnabled !== false,
     dominoClassicEnabled: source.dominoClassicEnabled !== false,
     dominoDuelPublicEnabled: source.dominoDuelPublicEnabled !== false,
     ludoEnabled: source.ludoEnabled !== false,
@@ -253,14 +253,14 @@ function bindActions() {
   dom.closeAllBtn?.addEventListener("click", () => {
     saveAvailability(
       buildBulkState(false),
-      "Pong, Ludo, Domino duel et Domino 4 player sont maintenant fermes."
+      "Echec, Ludo, Domino duel et Domino 4 player sont maintenant fermes."
     );
   });
 
   dom.openAllBtn?.addEventListener("click", () => {
     saveAvailability(
       buildBulkState(true),
-      "Pong, Ludo, Domino duel et Domino 4 player sont maintenant rouverts."
+      "Echec, Ludo, Domino duel et Domino 4 player sont maintenant rouverts."
     );
   });
 
