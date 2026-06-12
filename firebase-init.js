@@ -1,4 +1,7 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {
+  initializeApp,
+  setLogLevel,
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
   initializeAppCheck,
   ReCaptchaV3Provider,
@@ -108,6 +111,12 @@ function readRuntimeFirebaseConfig() {
 const dashboardRuntimeConfig = readDashboardRuntimeConfig();
 const firebaseConfig = readRuntimeFirebaseConfig();
 const DEFAULT_RUNTIME_CONFIG_HTTP_TIMEOUT_MS = 12000;
+
+try {
+  setLogLevel("error");
+} catch (_) {
+  // Keep Firebase usable even if a hosted SDK version changes logging support.
+}
 
 function isDashboardAppCheckEnabled() {
   return dashboardRuntimeConfig?.appCheckEnabled === true;
