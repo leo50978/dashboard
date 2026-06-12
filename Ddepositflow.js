@@ -2,6 +2,7 @@ import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js";
 import { getDepositMethodAnalyticsSnapshotSecure } from "./secure-functions.js";
 
 const DEFAULT_RANGE_DAYS = 1;
+const DEFAULT_MAX_DOCS = 600;
 
 const dom = {
   adminEmail: document.getElementById("depositFlowAdminEmail"),
@@ -147,6 +148,7 @@ function getSelectedPayload() {
     startMs: parseDateInputMs(dom.dateFrom.value, false),
     endMs: parseDateInputMs(dom.dateTo.value, true),
     granularity: String(dom.granularity.value || "day"),
+    maxDocs: DEFAULT_MAX_DOCS,
   };
 }
 

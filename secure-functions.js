@@ -364,6 +364,7 @@ export async function getDepositMethodAnalyticsSnapshotSecure(payload = {}) {
     payload,
     requireAuth: true,
     fallbackError,
+    timeoutMs: 60000,
   });
 }
 
