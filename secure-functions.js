@@ -517,6 +517,7 @@ export async function getHtgCashflowSnapshotSecure(payload = {}) {
   return invokeBackendHttp("/api/dashboard/cashflow-htg/snapshot", {
     payload,
     requireAuth: true,
+    timeoutMs: 60000,
     fallbackError,
   });
 }

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
@@ -12,19 +12,22 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    :root { --page-accent:#0f766e; --bg:#f0fdfa; --text:#0f172a; --muted:#155e75; --line:rgba(15,118,110,.18); }
+    :root { --page-accent:#0f766e; --bg:#f0fdfa; --text:#0f172a; --muted:#155e75; --line:rgba(15,118,110,.18); --line-2:rgba(15,23,42,.08); }
     *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
     body{margin:0;min-height:100dvh;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;font-family:Inter,system-ui,sans-serif;color:var(--text);background:radial-gradient(circle at top right, rgba(15,118,110,.12), transparent 28%),linear-gradient(180deg,var(--bg),#f8fafc)}
     .shell{width:min(100%,1280px);margin:0 auto;padding:calc(12px + env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-left, 0px)) calc(34px + env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-right, 0px))}
     .panel{border:1px solid var(--line);background:rgba(255,255,255,.95);border-radius:24px;box-shadow:0 18px 38px rgba(15,23,42,.08);padding:16px;overflow:hidden}
-    .topbar,.actions,.controls,.stats,.mix-grid{display:grid;gap:12px}.topbar{grid-template-columns:1fr;align-items:start}
+    .topbar,.actions,.controls,.stats,.mix-grid,.recent-grid{display:grid;gap:12px}.topbar{grid-template-columns:1fr;align-items:start}
     .chip{display:inline-flex;align-items:center;gap:10px;width:fit-content;border:1px solid var(--line);background:white;border-radius:999px;color:var(--muted);padding:12px 14px;font-size:14px;font-weight:700;overflow-wrap:anywhere}
     .actions{grid-template-columns:1fr;margin-top:18px}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;border-radius:14px;padding:12px 16px;text-decoration:none;font-weight:800;text-align:center;border:1px solid var(--line);background:white;color:var(--text)}.btn-primary{background:var(--page-accent);color:white}
     .controls{grid-template-columns:1fr;margin-top:18px;padding:16px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(180deg, rgba(240,253,250,.95), white)}
     .field{display:grid;gap:6px}.field label{font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:800}.field input,.field select{min-height:46px;border-radius:14px;border:1px solid var(--line);background:white;color:var(--text);padding:12px 14px;font:inherit}.field input:disabled{opacity:.6;cursor:not-allowed;background:#f0fdfa}
-    .stats,.mix-grid{margin-top:18px;grid-template-columns:1fr}.stat,.mix-card{border:1px solid var(--line);background:white;border-radius:18px;padding:16px;min-width:0}.stat p,.mix-card p{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);font-weight:800}.stat strong,.mix-card strong{display:block;margin-top:10px;font-size:2rem;font-weight:900;overflow-wrap:anywhere}.stat small,.mix-card small{display:block;margin-top:8px;color:var(--muted);line-height:1.6}
+    .stats,.mix-grid,.recent-grid{margin-top:18px;grid-template-columns:1fr}.stat,.mix-card,.recent-card{border:1px solid var(--line);background:white;border-radius:18px;padding:16px;min-width:0}.stat p,.mix-card p,.recent-card p{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);font-weight:800}.stat strong,.mix-card strong{display:block;margin-top:10px;font-size:2rem;font-weight:900;overflow-wrap:anywhere}.stat small,.mix-card small,.recent-card small{display:block;margin-top:8px;color:var(--muted);line-height:1.6}
     .source-note{margin-top:18px;padding:14px 16px;border-radius:18px;border:1px dashed var(--line);background:#f6fffb;color:var(--muted);line-height:1.7}.status{margin-top:18px;color:var(--muted);font-weight:700;min-height:22px}.status[data-tone="error"]{color:#b91c1c}.status[data-tone="success"]{color:#047857}
-    @media (min-width:640px){.panel{padding:22px}.actions{grid-template-columns:repeat(3,minmax(0,1fr))}.controls{grid-template-columns:repeat(4,minmax(0,1fr));align-items:end}.stats{grid-template-columns:repeat(4,minmax(0,1fr))}.mix-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    .table-shell{margin-top:20px;overflow:visible} table{width:100%;border-collapse:separate;border-spacing:0} th,td{padding:14px 12px;text-align:left;border-bottom:1px solid var(--line-2);font-size:14px;vertical-align:top} th{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)} .hidden{display:none!important}
+    .recent-list{margin:14px 0 0;padding:0;list-style:none;display:grid;gap:10px}.recent-list li{padding:12px 14px;border-radius:14px;border:1px solid rgba(15,118,110,.12);background:#fbfffe}.recent-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.recent-meta{font-size:12px;color:var(--muted);line-height:1.5}.money-positive{color:#047857;font-weight:900}.money-negative{color:#b91c1c;font-weight:900}
+    @media (max-width:899px){thead{display:none}table,tbody{display:block;width:100%}tbody{display:grid;gap:12px}tr{display:block;border:1px solid rgba(148,163,184,.16);border-radius:16px;padding:12px 14px;background:white;box-shadow:0 8px 20px rgba(15,23,42,.05)}td{display:flex;flex-direction:column;gap:6px;width:100%;padding:8px 0;border-bottom:1px solid rgba(148,163,184,.12);overflow-wrap:anywhere;word-break:break-word}td:last-child{border-bottom:none;padding-bottom:0}td::before{content:attr(data-label);font-size:11px;line-height:1.4;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:800}}
+    @media (min-width:640px){.panel{padding:22px}.actions{grid-template-columns:repeat(3,minmax(0,1fr))}.controls{grid-template-columns:repeat(4,minmax(0,1fr));align-items:end}.stats{grid-template-columns:repeat(4,minmax(0,1fr))}.mix-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.recent-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media (min-width:900px){.shell{padding:calc(24px + env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-left, 0px)) calc(38px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-right, 0px))}.topbar{grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center}.actions{grid-template-columns:repeat(3,max-content);justify-content:end}}
   </style>
 </head>
@@ -35,7 +38,7 @@
         <div>
           <span class="chip"><i class="fa-solid fa-chart-line"></i> Cashflow HTG</span>
           <h1 style="margin:16px 0 0;font-size:clamp(2rem,4vw,3.3rem);line-height:1.02;">Combien HTG entre, sort et reste</h1>
-          <p style="margin:14px 0 0;max-width:900px;color:var(--muted);line-height:1.75;">Cette vue affiche seulement les chiffres reels de la periode: depots approuves, retraits approuves, mises utilisateurs, gains utilisateurs et resultat exploitation.</p>
+          <p style="margin:14px 0 0;max-width:900px;color:var(--muted);line-height:1.75;">Ce dashboard compare les depots approuves, les retraits approuves et le net jeux des utilisateurs pour te montrer la marge HTG d'une journee ou d'une periode donnee.</p>
         </div>
         <div class="actions">
           <a class="btn" href="./index.html"><i class="fa-solid fa-grid-2"></i> Hub</a>
@@ -88,9 +91,11 @@
 
       <div class="source-note" id="cashflowSourceNote">Les definitions du snapshot apparaitront ici pour rappeler comment les chiffres sont calcules.</div>
       <p class="status" id="cashflowStatus">Initialisation...</p>
+      <p class="status" id="cashflowGeneratedAt"></p>
     </section>
   </main>
-  <script type="module" src="./Dcashflow-htg.js?v=20260607-cashflow-lite1"></script>
-  <script src="./dashboard-nav-bubble.js?v=20260607-cashflow-lite1"></script>
+  <script type="module" src="./Dcashflow-htg.js?v=20260612-cashflow-timeout1"></script>
+  <script src="./dashboard-nav-bubble.js?v=20260603-cashflow2"></script>
 </body>
 </html>
+

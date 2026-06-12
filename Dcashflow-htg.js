@@ -1,5 +1,7 @@
-﻿import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js?v=20260607-cashflow-lite1";
-import { getHtgCashflowSnapshotSecure } from "./secure-functions.js?v=20260607-cashflow-lite1";
+import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js?v=20260603-cashflow2";
+import { getHtgCashflowSnapshotSecure } from "./secure-functions.js?v=20260603-cashflow2";
+
+const CASHFLOW_MAX_DOCS = 600;
 
 const dom = {
   status: document.getElementById("cashflowStatus"),
@@ -7,6 +9,7 @@ const dom = {
   windowSelect: document.getElementById("cashflowWindow"),
   dateFrom: document.getElementById("cashflowDateFrom"),
   dateTo: document.getElementById("cashflowDateTo"),
+  generatedAt: document.getElementById("cashflowGeneratedAt"),
   coverage: document.getElementById("cashflowCoverage"),
   sourceNote: document.getElementById("cashflowSourceNote"),
   depositsValue: document.getElementById("cashflowDepositsValue"),
@@ -118,22 +121,33 @@ function syncDateFieldState() {
 
 function buildPayload() {
   const windowKey = String(dom.windowSelect?.value || "today").trim().toLowerCase();
+  const basePayload = {
+    includeRecent: false,
+    includeBuckets: false,
+    listLimit: 0,
+    maxDocs: CASHFLOW_MAX_DOCS,
+  };
   if (windowKey === "custom") {
     return {
+      ...basePayload,
       window: "custom",
       startMs: parseDateInput(dom.dateFrom?.value || "", false),
       endMs: parseDateInput(dom.dateTo?.value || "", true),
-      listLimit: 0,
-      includeRecent: false,
-      includeBuckets: false,
     };
   }
   return {
+    ...basePayload,
     window: windowKey,
-    listLimit: 0,
-    includeRecent: false,
-    includeBuckets: false,
   };
+}
+
+function pickNumber(source = {}, keys = []) {
+  for (const key of keys) {
+    if (Object.prototype.hasOwnProperty.call(source || {}, key)) {
+      return safeInt(source[key]);
+    }
+  }
+  return 0;
 }
 
 function renderSummary(result = {}) {
@@ -141,36 +155,46 @@ function renderSummary(result = {}) {
   const summary = snapshot.summary || {};
   const range = result.range || {};
   const defs = snapshot.definitions || {};
+  const approvedDepositsHtg = pickNumber(summary, ["approvedDepositsHtg", "totalApprovedHtg", "approvedHtg"]);
+  const approvedDepositsCount = pickNumber(summary, ["approvedDepositsCount", "totalApprovedCount", "approvedCount"]);
+  const approvedWithdrawalsHtg = pickNumber(summary, ["approvedWithdrawalsHtg", "withdrawalsApprovedHtg", "totalWithdrawalsHtg", "withdrawalsHtg"]);
+  const approvedWithdrawalsCount = pickNumber(summary, ["approvedWithdrawalsCount", "withdrawalsApprovedCount", "withdrawalsCount"]);
+  const directApprovedDepositsHtg = pickNumber(summary, ["directApprovedDepositsHtg", "directApprovedHtg", "directDepositsHtg"]);
+  const directApprovedDepositsCount = pickNumber(summary, ["directApprovedDepositsCount", "directApprovedCount", "directDepositsCount"]);
+  const agentApprovedDepositsHtg = pickNumber(summary, ["agentApprovedDepositsHtg", "agentApprovedHtg", "agentDepositsHtg"]);
+  const agentApprovedDepositsCount = pickNumber(summary, ["agentApprovedDepositsCount", "agentApprovedCount", "agentDepositsCount"]);
+  const netCashHtg = pickNumber(summary, ["netCashHtg"]);
+  const operatorGameEdgeHtg = pickNumber(summary, ["operatorGameEdgeHtg", "gameEdgeHtg"]);
+  const usersStakeHtg = pickNumber(summary, ["usersStakeHtg"]);
+  const usersPayoutHtg = pickNumber(summary, ["usersPayoutHtg"]);
+  const usersNetHtg = pickNumber(summary, ["usersNetHtg"]);
+  const netBusinessHtg = pickNumber(summary, ["netBusinessHtg", "businessHtg"]);
 
-  if (dom.depositsValue) dom.depositsValue.textContent = formatHtg(summary.approvedDepositsHtg);
-  if (dom.depositsCopy) dom.depositsCopy.textContent = `${formatInt(summary.approvedDepositsCount)} depot(s) approuves`;
-  if (dom.withdrawalsValue) dom.withdrawalsValue.textContent = formatHtg(summary.approvedWithdrawalsHtg);
-  if (dom.withdrawalsCopy) dom.withdrawalsCopy.textContent = `${formatInt(summary.approvedWithdrawalsCount)} retrait(s) approuves`;
-  if (dom.netCashValue) dom.netCashValue.textContent = formatSignedHtg(summary.netCashHtg);
-  if (dom.netCashCopy) dom.netCashCopy.textContent = "Entrees - sorties reelles";
-  if (dom.gameEdgeValue) dom.gameEdgeValue.textContent = formatSignedHtg(summary.operatorGameEdgeHtg);
-  if (dom.gameEdgeCopy) dom.gameEdgeCopy.textContent = "Marge reelle des jeux finis";
-  if (dom.usersStakeValue) dom.usersStakeValue.textContent = formatHtg(summary.usersStakeHtg);
-  if (dom.usersStakeCopy) dom.usersStakeCopy.textContent = "Total engage par les joueurs";
-  if (dom.usersPayoutValue) dom.usersPayoutValue.textContent = formatHtg(summary.usersPayoutHtg);
-  if (dom.usersPayoutCopy) dom.usersPayoutCopy.textContent = "Payouts reels verses";
-  if (dom.usersNetValue) dom.usersNetValue.textContent = formatSignedHtg(summary.usersNetHtg);
-  if (dom.usersNetCopy) dom.usersNetCopy.textContent = "Gains moins pertes des joueurs";
-  if (dom.businessValue) dom.businessValue.textContent = formatSignedHtg(summary.netBusinessHtg);
-  if (dom.businessCopy) dom.businessCopy.textContent = "Net cash + marge jeux";
-  if (dom.directValue) dom.directValue.textContent = formatHtg(summary.directApprovedDepositsHtg);
-  if (dom.directCopy) dom.directCopy.textContent = `${formatInt(summary.approvedDepositsCount - summary.agentApprovedDepositsCount)} depot(s) directs`;
-  if (dom.agentValue) dom.agentValue.textContent = formatHtg(summary.agentApprovedDepositsHtg);
-  if (dom.agentCopy) dom.agentCopy.textContent = `${formatInt(summary.agentApprovedDepositsCount)} depot(s) agent`;
-  if (dom.withdrawalsCountValue) dom.withdrawalsCountValue.textContent = formatInt(summary.approvedWithdrawalsCount);
-  if (dom.withdrawalsCountCopy) dom.withdrawalsCountCopy.textContent = `${formatHtg(summary.approvedWithdrawalsHtg)} sortis sur la periode`;
+  if (dom.depositsValue) dom.depositsValue.textContent = formatHtg(approvedDepositsHtg);
+  if (dom.depositsCopy) dom.depositsCopy.textContent = `${formatInt(approvedDepositsCount)} depot(s) approuves`;
+  if (dom.withdrawalsValue) dom.withdrawalsValue.textContent = formatHtg(approvedWithdrawalsHtg);
+  if (dom.withdrawalsCopy) dom.withdrawalsCopy.textContent = `${formatInt(approvedWithdrawalsCount)} retrait(s) approuves`;
+  if (dom.netCashValue) dom.netCashValue.textContent = formatSignedHtg(netCashHtg);
+  if (dom.gameEdgeValue) dom.gameEdgeValue.textContent = formatSignedHtg(operatorGameEdgeHtg);
+  if (dom.usersStakeValue) dom.usersStakeValue.textContent = formatHtg(usersStakeHtg);
+  if (dom.usersPayoutValue) dom.usersPayoutValue.textContent = formatHtg(usersPayoutHtg);
+  if (dom.usersNetValue) dom.usersNetValue.textContent = formatSignedHtg(usersNetHtg);
+  if (dom.businessValue) dom.businessValue.textContent = formatSignedHtg(netBusinessHtg);
+  if (dom.businessCopy) dom.businessCopy.textContent = "Lecture finale de la periode.";
+  if (dom.directValue) dom.directValue.textContent = formatHtg(directApprovedDepositsHtg);
+  if (dom.directCopy) dom.directCopy.textContent = `${formatInt(directApprovedDepositsCount || Math.max(0, approvedDepositsCount - agentApprovedDepositsCount))} depot(s) directs`;
+  if (dom.agentValue) dom.agentValue.textContent = formatHtg(agentApprovedDepositsHtg);
+  if (dom.agentCopy) dom.agentCopy.textContent = `${formatInt(agentApprovedDepositsCount)} depot(s) agent`;
+  if (dom.withdrawalsCountValue) dom.withdrawalsCountValue.textContent = formatInt(approvedWithdrawalsCount);
+  if (dom.withdrawalsCountCopy) dom.withdrawalsCountCopy.textContent = `${formatHtg(approvedWithdrawalsHtg)} sortis sur la periode`;
+  if (dom.generatedAt) dom.generatedAt.textContent = "";
   if (dom.coverage) {
     const startText = range?.isGlobal ? "Debut historique" : formatDateTime(range.startMs);
     dom.coverage.textContent = `${startText} -> ${formatDateTime(range.endMs)}`;
   }
   if (dom.sourceNote) {
     dom.sourceNote.innerHTML = `
-      <strong>Chiffres reels utilises:</strong><br>
+      <strong>Definitions:</strong><br>
       ${escapeHtml(defs.depositsRule || "-")}<br>
       ${escapeHtml(defs.withdrawalsRule || "-")}<br>
       ${escapeHtml(defs.gamesRule || "-")}<br>
@@ -219,3 +243,4 @@ async function init() {
 }
 
 void init();
+
