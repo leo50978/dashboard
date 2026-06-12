@@ -410,7 +410,7 @@
           <p class="hero-copy">Cette page te montre comment l'argent entre reellement dans l'entreprise via les depots. Tu peux comparer `MonCash` et `NatCash`, suivre les montants approuves ou rejetes, et lire une vraie courbe cumulative.</p>
           <div class="chip-row">
             <span class="admin-chip" id="depositFlowAdminEmail">Session admin</span>
-            <span class="badge-pill" id="depositFlowWindowBadge">Fenetre 30 jours · journaliere</span>
+            <span class="badge-pill" id="depositFlowWindowBadge">Fenetre aujourd'hui · journaliere</span>
             <span class="badge-pill" id="depositFlowScanBadge">Source: orders</span>
           </div>
         </div>
@@ -454,7 +454,7 @@
       <div class="section-head">
         <div>
           <h2>Fenetre d'analyse</h2>
-          <p class="section-copy">Charge seulement la periode utile. La granularite horaire est reservee aux fenetres tres courtes, puis la vue bascule en journalier ou hebdomadaire.</p>
+          <p class="section-copy">Au premier chargement, la page lit seulement les depots d'aujourd'hui. Choisis une autre date si tu veux analyser une periode plus large.</p>
         </div>
       </div>
       <div class="control-grid">
@@ -598,9 +598,40 @@
       </div>
     </section>
 
+    <section class="panel">
+      <div class="section-head">
+        <div>
+          <h2>Lecture par bucket</h2>
+          <p class="section-copy">Chaque ligne te permet de comparer le demande, l'approuve et le rejete par periode, avec un zoom sur la part approuvee MonCash et NatCash.</p>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Periode</th>
+              <th>Demande</th>
+              <th>Approuve</th>
+              <th>Rejete</th>
+              <th>Taux approuve</th>
+              <th>MonCash approuve</th>
+              <th>NatCash approuve</th>
+              <th>Cumul approuve</th>
+            </tr>
+          </thead>
+          <tbody id="depositFlowTableBody">
+            <tr>
+              <td colspan="8" class="empty-copy">Chargement...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p id="depositFlowTableNote" class="table-note">Le snapshot mentionnera ici s'il a ete tronque pour rester dans le plafond de lecture prevu.</p>
+    </section>
   </main>
 
   <script src="./dashboard-nav-bubble.js"></script>
-  <script type="module" src="./Ddepositflow.js?v=20260610-depositflow-lite2"></script>
+  <script type="module" src="./Ddepositflow.js?v=20260612-today-default1"></script>
 </body>
 </html>

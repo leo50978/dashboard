@@ -1,7 +1,7 @@
 import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js";
 import { getDepositMethodAnalyticsSnapshotSecure } from "./secure-functions.js";
 
-const DEFAULT_RANGE_DAYS = 7;
+const DEFAULT_RANGE_DAYS = 1;
 
 const dom = {
   adminEmail: document.getElementById("depositFlowAdminEmail"),
@@ -49,6 +49,8 @@ const dom = {
   methodsAxis: document.getElementById("depositFlowMethodsAxis"),
   rejectsSvg: document.getElementById("depositFlowRejectsSvg"),
   rejectsAxis: document.getElementById("depositFlowRejectsAxis"),
+  tableBody: document.getElementById("depositFlowTableBody"),
+  tableNote: document.getElementById("depositFlowTableNote"),
 };
 
 const state = {
@@ -145,7 +147,6 @@ function getSelectedPayload() {
     startMs: parseDateInputMs(dom.dateFrom.value, false),
     endMs: parseDateInputMs(dom.dateTo.value, true),
     granularity: String(dom.granularity.value || "day"),
-    maxDocs: 6000,
   };
 }
 
@@ -396,6 +397,32 @@ function renderDualLineChart(options = {}) {
   `;
 }
 
+function renderBuckets(snapshot = null) {
+  const buckets = Array.isArray(snapshot?.buckets) ? snapshot.buckets : [];
+  if (!buckets.length) {
+    dom.tableBody.innerHTML = `<tr><td colspan="8" class="empty-copy">Aucun depot trouve sur cette fenetre.</td></tr>`;
+    dom.tableNote.textContent = "Change la periode si tu veux analyser un autre flux.";
+    return;
+  }
+
+  dom.tableBody.innerHTML = buckets.map((bucket) => `
+    <tr>
+      <td>${escapeHtml(bucket.label || "-")}</td>
+      <td>${formatHtg(bucket.requestedHtg)}</td>
+      <td>${formatHtg(bucket.approvedHtg)}</td>
+      <td>${formatHtg(bucket.rejectedHtg)}</td>
+      <td>${formatPercent(bucket.approvalRatePct)}</td>
+      <td>${formatHtg(bucket.moncashApprovedHtg)}</td>
+      <td>${formatHtg(bucket.natcashApprovedHtg)}</td>
+      <td>${formatHtg(bucket.cumulativeApprovedHtg)}</td>
+    </tr>
+  `).join("");
+
+  dom.tableNote.textContent = snapshot?.truncated
+    ? `Le snapshot a ete tronque apres ${formatInt(snapshot.scanLimit)} depots lus pour proteger les couts Firestore.`
+    : `${formatInt(snapshot.scannedOrderDocs)} depots de la periode ont ete lus directement depuis les sous-collections orders.`;
+}
+
 function renderSnapshot(snapshot = null) {
   state.snapshot = snapshot;
   syncWindowUi(snapshot);
@@ -463,6 +490,7 @@ function renderSnapshot(snapshot = null) {
     emptyLabel: "La comparaison demande/rejete apparaitra ici.",
   });
 
+  renderBuckets(snapshot);
 }
 
 async function loadSnapshot() {
@@ -484,7 +512,7 @@ async function loadSnapshot() {
 
 function seedDefaultDates() {
   const end = new Date();
-  const start = new Date(end.getTime() - ((DEFAULT_RANGE_DAYS - 1) * 24 * 60 * 60 * 1000));
+  const start = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 0, 0, 0, 0);
   dom.dateFrom.value = formatDateInput(start.getTime());
   dom.dateTo.value = formatDateInput(end.getTime());
   dom.granularity.value = "day";
