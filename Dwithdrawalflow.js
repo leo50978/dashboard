@@ -1,5 +1,5 @@
 import { ensureFinanceDashboardSession } from "./dashboard-admin-auth.js";
-import { getWithdrawalFlowAnalyticsSnapshotSecure } from "./secure-functions.js";
+import { getWithdrawalFlowAnalyticsSnapshotSecure } from "./secure-functions.js?v=20260618-withdrawal-flow2";
 
 const DEFAULT_RANGE_DAYS = 1;
 const DEFAULT_MAX_DOCS = 600;
