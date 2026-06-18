@@ -368,6 +368,16 @@ export async function getDepositMethodAnalyticsSnapshotSecure(payload = {}) {
   });
 }
 
+export async function getWithdrawalFlowAnalyticsSnapshotSecure(payload = {}) {
+  const fallbackError = "Impossible de charger les analytics des retraits.";
+  return invokeBackendHttp("/api/dashboard/withdrawal-flow/snapshot", {
+    payload,
+    requireAuth: true,
+    fallbackError,
+    timeoutMs: 60000,
+  });
+}
+
 export async function getApprovedDepositsSnapshotSecure(payload = {}) {
   const fallbackError = "Impossible de charger les depots approuves.";
   return invokeBackendHttp("/api/dashboard/approved-deposits/snapshot", {
